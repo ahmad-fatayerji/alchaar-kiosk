@@ -10,5 +10,20 @@ services:
       - "5432:5432"
     volumes:
       - dbdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://kiosk:secret@db:5432/pharmacy # note host = db
+      ADMIN_PASS: "changeme"
+      PORT: 3000
+    ports:
+      - "3000:3000" # host:container
+    depends_on:
+      - db
+    volumes:
+      - ./public/products:/app/public/products # images persist on host
+
 volumes:
   dbdata:
