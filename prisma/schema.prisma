@@ -1,0 +1,164 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/**
+ * ───────────────────────────────
+ * ENUMS
+ * ───────────────────────────────
+ */
+enum FilterType {
+  RANGE // e.g. Weight 2-5 kg  (two floats)
+  NUMBER // e.g. Pack of 24     (single int)
+  LABEL // e.g. Gluten-free    (string tag)
+}
+
+/**
+ * ───────────────────────────────
+ * CATEGORIES  (∞ levels allowed)
+ * ───────────────────────────────
+ */
+model Category {
+  id      Int    @id @default(autoincrement())
+  slug    String @unique // “baby-diapers”
+  name_en String
+  name_ar String
+
+  /**
+   * Self-referencing tree — parent nullable
+   */
+  parentId Int?
+  parent   Category?  @relation("CatParent", fields: [parentId], references: [id])
+  children Category[] @relation("CatParent")
+
+  /**
+   * Filters enabled for this category
+   */
+  filters CategoryFilter[]
+
+  /**
+   * Products belonging to (sub)category
+   */
+  products Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * ───────────────────────────────
+ * FILTER DEFINITIONS
+ * ───────────────────────────────
+ */
+model FilterDef {
+  id      Int        @id @default(autoincrement())
+  name_en String // “Weight”
+  name_ar String
+  type    FilterType
+  units   String? // “kg”, “pieces”, …
+
+  /**
+   * Enabled where?
+   */
+  categories CategoryFilter[]
+
+  /**
+   * Values per product
+   */
+  values ProductFilterValue[]
+}
+
+/**
+ * Enabled filter X on category Y
+ */
+model CategoryFilter {
+  categoryId Int
+  filterId   Int
+  category   Category  @relation(fields: [categoryId], references: [id])
+  filter     FilterDef @relation(fields: [filterId], references: [id])
+
+  @@id([categoryId, filterId])
+}
+
+/**
+ * ───────────────────────────────
+ * PRODUCTS
+ * ───────────────────────────────
+ */
+model Product {
+  barcode    BigInt   @id // 7261894217018  (also image name)
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  name_en    String
+  name_ar    String
+  price      Decimal @db.Decimal(10, 2)
+  qtyInStock Int // 0 => unavailable
+
+  /**
+   * Filter values (many-to-many w/ payload)
+   */
+  filterValues ProductFilterValue[]
+
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  OrderItem OrderItem[]
+}
+
+/**
+ * Value of filter F on product P
+ */
+model ProductFilterValue {
+  productId BigInt
+  filterId  Int
+
+  /**
+   * Only ONE of the following should be non-null,
+   * depending on FilterDef.type
+   */
+  rangeFrom Float?
+  rangeTo   Float?
+  numberVal Int?
+  labelVal  String?
+
+  product Product   @relation(fields: [productId], references: [barcode])
+  filter  FilterDef @relation(fields: [filterId], references: [id])
+
+  @@id([productId, filterId])
+}
+
+/**
+ * ───────────────────────────────
+ * ORDERS  (no payments, just queue)
+ * ───────────────────────────────
+ */
+model Order {
+  id          Int         @id @default(autoincrement())
+  lang        String // “en” | “ar”
+  createdAt   DateTime    @default(now())
+  isFulfilled Boolean     @default(false)
+  items       OrderItem[]
+}
+
+model OrderItem {
+  orderId   Int
+  productId BigInt
+  qty       Int
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [barcode])
+
+  @@id([orderId, productId])
+}
