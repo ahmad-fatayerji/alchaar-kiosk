@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// prisma/schema.prisma (monolingual)
 
 generator client {
   provider = "prisma-client-js"
@@ -15,119 +11,86 @@ datasource db {
 }
 
 /**
- * ───────────────────────────────
- * ENUMS
- * ───────────────────────────────
+ * ──────────── ENUMS ────────────
  */
 enum FilterType {
-  RANGE // e.g. Weight 2-5 kg  (two floats)
-  NUMBER // e.g. Pack of 24     (single int)
-  LABEL // e.g. Gluten-free    (string tag)
+  RANGE
+  NUMBER
+  LABEL
 }
 
 /**
- * ───────────────────────────────
- * CATEGORIES  (∞ levels allowed)
- * ───────────────────────────────
+ * ───────── CATEGORIES ─────────
  */
 model Category {
-  id      Int    @id @default(autoincrement())
-  slug    String @unique // “baby-diapers”
-  name_en String
-  name_ar String
+  id   Int    @id @default(autoincrement())
+  slug String @unique
+  name String // <-- single name
 
-  /**
-   * Self-referencing tree — parent nullable
-   */
   parentId Int?
   parent   Category?  @relation("CatParent", fields: [parentId], references: [id])
   children Category[] @relation("CatParent")
 
-  /**
-   * Filters enabled for this category
-   */
-  filters CategoryFilter[]
-
-  /**
-   * Products belonging to (sub)category
-   */
+  filters  CategoryFilter[]
   products Product[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([slug])
 }
 
 /**
- * ───────────────────────────────
- * FILTER DEFINITIONS
- * ───────────────────────────────
+ * ──────── FILTER DEFINITIONS ───
  */
 model FilterDef {
-  id      Int        @id @default(autoincrement())
-  name_en String // “Weight”
-  name_ar String
-  type    FilterType
-  units   String? // “kg”, “pieces”, …
+  id    Int        @id @default(autoincrement())
+  name  String
+  type  FilterType
+  units String?
 
-  /**
-   * Enabled where?
-   */
   categories CategoryFilter[]
-
-  /**
-   * Values per product
-   */
-  values ProductFilterValue[]
+  values     ProductFilterValue[]
 }
 
-/**
- * Enabled filter X on category Y
- */
 model CategoryFilter {
   categoryId Int
   filterId   Int
-  category   Category  @relation(fields: [categoryId], references: [id])
-  filter     FilterDef @relation(fields: [filterId], references: [id])
+
+  category Category  @relation(fields: [categoryId], references: [id])
+  filter   FilterDef @relation(fields: [filterId], references: [id])
 
   @@id([categoryId, filterId])
 }
 
 /**
- * ───────────────────────────────
- * PRODUCTS
- * ───────────────────────────────
+ * ────────── PRODUCTS ───────────
  */
 model Product {
-  barcode    BigInt   @id // 7261894217018  (also image name)
+  barcode    BigInt   @id
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id])
 
-  name_en    String
-  name_ar    String
+  name       String // <-- single name
   price      Decimal @db.Decimal(10, 2)
-  qtyInStock Int // 0 => unavailable
+  qtyInStock Int     @default(0)
 
-  /**
-   * Filter values (many-to-many w/ payload)
-   */
   filterValues ProductFilterValue[]
+  OrderItem    OrderItem[]
 
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  OrderItem OrderItem[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
 }
 
 /**
- * Value of filter F on product P
+ * ─── FILTER VALUES PER PRODUCT ─
  */
 model ProductFilterValue {
   productId BigInt
   filterId  Int
 
-  /**
-   * Only ONE of the following should be non-null,
-   * depending on FilterDef.type
-   */
   rangeFrom Float?
   rangeTo   Float?
   numberVal Int?
@@ -137,19 +100,19 @@ model ProductFilterValue {
   filter  FilterDef @relation(fields: [filterId], references: [id])
 
   @@id([productId, filterId])
+  @@index([filterId, rangeFrom, rangeTo])
 }
 
 /**
- * ───────────────────────────────
- * ORDERS  (no payments, just queue)
- * ───────────────────────────────
+ * ────────── ORDERS ─────────────
  */
 model Order {
   id          Int         @id @default(autoincrement())
-  lang        String // “en” | “ar”
   createdAt   DateTime    @default(now())
   isFulfilled Boolean     @default(false)
   items       OrderItem[]
+
+  @@index([isFulfilled])
 }
 
 model OrderItem {
