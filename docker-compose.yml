@@ -3,9 +3,9 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_USER: kiosk
-      POSTGRES_PASSWORD: secret
-      POSTGRES_DB: pharmacy
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
@@ -15,15 +15,15 @@ services:
     build: .
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://kiosk:secret@db:5432/pharmacy # note host = db
-      ADMIN_PASS: "changeme"
+      DATABASE_URL: ${DATABASE_URL}
+      NEXT_PUBLIC_ADMIN_PASS: ${NEXT_PUBLIC_ADMIN_PASS}
       PORT: 3000
     ports:
-      - "3000:3000" # host:container
+      - "3000:3000"
     depends_on:
       - db
     volumes:
-      - ./public/products:/app/public/products # images persist on host
+      - ./public/products:/app/public/products
 
 volumes:
   dbdata:
