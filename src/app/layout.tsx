@@ -1,5 +1,6 @@
 // Global layout for every route — no locale logic.
 import type { Metadata } from "next";
+import "@/app/global.css";
 
 export const metadata: Metadata = {
   title: "Al-Chaar Kiosk",
