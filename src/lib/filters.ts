@@ -5,7 +5,7 @@
 // -----------------------------------------------------
 
 // src/lib/filters.ts
-import type { Prisma } from "@/generated/prisma"; // 👈 adjust path
+import type { Prisma } from "@/generated/prisma";
 
 // …rest of the file
 // <- works with the default `@prisma/client`
