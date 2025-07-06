@@ -2,7 +2,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -25,7 +24,7 @@ enum FilterType {
 model Category {
   id   Int    @id @default(autoincrement())
   slug String @unique
-  name String // <-- single name
+  name String
 
   parentId Int?
   parent   Category?  @relation("CatParent", fields: [parentId], references: [id])
