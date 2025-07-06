@@ -1,9 +1,8 @@
-// app/admin/layout.tsx
 "use client";
 
 import { useState } from "react";
 
-const PASS = process.env.NEXT_PUBLIC_ADMIN_PASS ?? "";
+const PASS = process.env.NEXT_PUBLIC_ADMIN_PASS;
 
 export default function AdminLayout({
   children,
@@ -39,7 +38,5 @@ export default function AdminLayout({
       </main>
     );
   }
-
-  // ✔️ Password was correct → show real admin pages
   return <>{children}</>;
 }
