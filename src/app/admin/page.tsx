@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { isAuthed, login, logout } from "@/lib/adminAuth";
+import CategoriesPanel from "@/components/CategoriesPanel";
 
 /* ------------------------------------------------------------------ */
-/*  Types & constants                                                 */
+/*  Tabs & Types                                                      */
 /* ------------------------------------------------------------------ */
 
 const tabs = ["categories", "filters", "products"] as const;
@@ -15,26 +16,27 @@ type Tab = (typeof tabs)[number];
 /* ------------------------------------------------------------------ */
 
 export default function AdminPage() {
-  /* ───────────────────────── state ───────────────────────── */
+  /* ─────────────────────── state ─────────────────────── */
   const [authed, setAuthed] = useState(false);
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
   const [tab, setTab] = useState<Tab>("categories");
 
-  /* ──────────────── read localStorage on first load ─────────────── */
+  /* ───────── read login state on first mount ────────── */
   useEffect(() => setAuthed(isAuthed()), []);
 
-  /* ───────────────────────── login handler ──────────────────────── */
-  const handleLogin = () => {
+  /* ─────────────── login helper ─────────────── */
+  function handleLogin() {
     if (login(pass)) {
       setAuthed(true);
+      setError("");
     } else {
       setError("Wrong password");
       setPass("");
     }
-  };
+  }
 
-  /* ───────────────────────── login screen ───────────────────────── */
+  /* ───────────────────── login screen ───────────────────── */
   if (!authed) {
     return (
       <main className="grid min-h-screen place-items-center">
@@ -63,7 +65,7 @@ export default function AdminPage() {
     );
   }
 
-  /* ───────────────────────── admin panel ────────────────────────── */
+  /* ───────────────────── admin workspace ───────────────────── */
   return (
     <main className="flex h-screen flex-col">
       {/* top bar */}
@@ -102,15 +104,13 @@ export default function AdminPage() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Placeholder panels – swap for real CRUD UIs later                 */
+/*  Temporary stubs – replace with real panels later                  */
 /* ------------------------------------------------------------------ */
 
-function CategoriesPanel() {
-  return <p>📂 Categories CRUD coming soon…</p>;
-}
 function FiltersPanel() {
   return <p>🏷️ Filters CRUD coming soon…</p>;
 }
+
 function ProductsPanel() {
   return <p>📦 Products CRUD coming soon…</p>;
 }
