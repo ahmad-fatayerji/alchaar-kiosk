@@ -1,34 +1,64 @@
-// src/app/api/categories/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { slugify } from "@/lib/slugify";
 
-// GET  /api/categories   → full tree (2 levels deep for now)
+/* ------------------------------------------------------------------
+   GET /api/categories                → root categories (+1 level)
+-------------------------------------------------------------------*/
 export async function GET() {
-    const categories = await prisma.category.findMany({
+    /** grab root + one level, but also ask for `_count` so we know
+        if *any* child has further kids */
+    const roots = await prisma.category.findMany({
         where: { parentId: null },
         include: {
+            _count: { select: { children: true } },
             children: {
-                include: { children: true }   // second level; deeper can be fetched client-side
+                include: { _count: { select: { children: true } } },
+                orderBy: { id: "asc" }
             }
         },
         orderBy: { id: "asc" }
     });
-    return NextResponse.json(categories);
+
+    /* convert `_count.children` → `hasChildren`  (recursive) */
+    const withFlags = roots.map(flagLeafs);
+
+    return NextResponse.json(withFlags);           // 200 OK
 }
 
-// POST /api/categories   body: { parentId?: number, name: string }
+/* helper ───────────────────────────────────────────────────────── */
+function flagLeafs(cat: any): any {
+    const { _count, ...rest } = cat;
+    const hasChildren = (_count?.children ?? 0) > 0;
+
+    return {
+        ...rest,
+        hasChildren,
+        children: cat.children?.map(flagLeafs)
+    };
+}
+
+/* ------------------------------------------------------------------
+   POST /api/categories               → create new category
+   body: { name: string, parentId?: number }
+-------------------------------------------------------------------*/
 export async function POST(req: Request) {
-    const { parentId, name } = await req.json() as { parentId?: number; name?: string };
+    const { name, parentId } = (await req.json()) as {
+        name?: string;
+        parentId?: number;
+    };
 
     if (!name?.trim()) {
         return NextResponse.json({ error: "name required" }, { status: 400 });
     }
 
-    const slug = slugify(name);
-    const newCat = await prisma.category.create({
-        data: { name, slug, parentId: parentId ?? null }
+    const created = await prisma.category.create({
+        data: {
+            name,
+            slug: slugify(name),
+            parentId: parentId ?? null
+        }
     });
 
-    return NextResponse.json(newCat, { status: 201 });
+    return NextResponse.json(created, { status: 201 });
 }
