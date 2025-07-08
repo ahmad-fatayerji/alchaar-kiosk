@@ -1,10 +1,8 @@
-/* ------------------------------------------------------------------ */
-/* Filters CRUD panel                                                 */
-/* ------------------------------------------------------------------ */
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Category } from "@/components/CategoriesPanel"; // absolute path
+import type { Category } from "@/components/CategoriesPanel";
+import Portal from "@/components/Portal";
 
 type FilterDef = {
   id: number;
@@ -29,7 +27,7 @@ export default function FiltersPanel() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
-  /* first load */
+  /* initial load */
   useEffect(() => {
     refresh();
     fetch("/api/categories")
@@ -44,7 +42,7 @@ export default function FiltersPanel() {
       .catch(() => setErr("Could not load filters"));
   }
 
-  /* ---------- create ---------- */
+  /* ------------ CRUD helpers ------------ */
   async function create() {
     if (!newName.trim()) return;
     setBusy(true);
@@ -62,7 +60,6 @@ export default function FiltersPanel() {
     refresh();
   }
 
-  /* ---------- row actions ---------- */
   async function rename(f: FilterDef) {
     const name = prompt("New name:", f.name);
     if (!name || name === f.name) return;
@@ -91,9 +88,8 @@ export default function FiltersPanel() {
     refresh();
   }
 
-  /* ---------- drawer ---------- */
+  /* ------------ drawer helpers ------------ */
   async function openDrawer(f: FilterDef) {
-    console.log("open drawer for filter", f.id);
     setSelFilter(f);
     setLinkedIds(new Set());
     const ids: number[] = await fetch(`/api/filters/${f.id}/categories`).then(
@@ -119,7 +115,7 @@ export default function FiltersPanel() {
     refresh();
   }
 
-  /* ---------- render ---------- */
+  /* ------------ render ------------ */
   return (
     <section>
       <header className="mb-4 flex items-center justify-between">
@@ -170,6 +166,7 @@ export default function FiltersPanel() {
         </tbody>
       </table>
 
+      {/* ---------- modal ---------- */}
       {showNew && (
         <NewFilterModal
           busy={busy}
@@ -184,39 +181,42 @@ export default function FiltersPanel() {
         />
       )}
 
+      {/* ---------- category drawer ---------- */}
       {selFilter && (
-        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur">
-          <aside className="absolute right-0 top-0 z-50 h-full w-[24rem] overflow-y-auto bg-white p-6 shadow-2xl">
-            <h3 className="mb-4 text-lg font-semibold">
-              Enable “{selFilter.name}”
-            </h3>
+        <Portal>
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur">
+            <aside className="absolute right-0 top-0 z-60 h-full w-[24rem] overflow-y-auto bg-white p-6 shadow-2xl">
+              <h3 className="mb-4 text-lg font-semibold">
+                Enable “{selFilter.name}”
+              </h3>
 
-            {cats.map((c) => (
-              <label key={c.id} className="mb-1 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={linkedIds.has(c.id)}
-                  disabled={busy}
-                  onChange={(e) => toggleLink(c.id, e.target.checked)}
-                />
-                {c.name}
-              </label>
-            ))}
+              {cats.map((c) => (
+                <label key={c.id} className="mb-1 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={linkedIds.has(c.id)}
+                    disabled={busy}
+                    onChange={(e) => toggleLink(c.id, e.target.checked)}
+                  />
+                  {c.name}
+                </label>
+              ))}
 
-            <button
-              onClick={() => setSelFilter(null)}
-              className="mt-6 rounded bg-gray-800 px-4 py-2 text-white"
-            >
-              Close
-            </button>
-          </aside>
-        </div>
+              <button
+                onClick={() => setSelFilter(null)}
+                className="mt-6 rounded bg-gray-800 px-4 py-2 text-white"
+              >
+                Close
+              </button>
+            </aside>
+          </div>
+        </Portal>
       )}
     </section>
   );
 }
 
-/* ---------- modal component ---------- */
+/* ---------- modal helper ---------- */
 function NewFilterModal({
   busy,
   newName,
@@ -239,68 +239,70 @@ function NewFilterModal({
   close: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur">
-      <div className="w-[26rem] rounded-lg bg-white p-6 shadow-2xl">
-        <h3 className="mb-4 text-lg font-semibold">Create new filter</h3>
+    <Portal>
+      <div className="fixed inset-0 z-70 grid place-items-center bg-black/40 backdrop-blur">
+        <div className="w-[26rem] rounded-lg bg-white p-6 shadow-2xl">
+          <h3 className="mb-4 text-lg font-semibold">Create new filter</h3>
 
-        <label className="mb-3 block">
-          <span className="mb-1 block text-sm text-gray-700">Name</span>
-          <input
-            className="w-full rounded border px-3 py-2"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="e.g. Weight"
-          />
-        </label>
+          <label className="mb-3 block">
+            <span className="mb-1 block text-sm text-gray-700">Name</span>
+            <input
+              className="w-full rounded border px-3 py-2"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="e.g. Weight"
+            />
+          </label>
 
-        <div className="mb-3">
-          <p className="mb-1 text-sm text-gray-700">Type</p>
-          <div className="flex gap-3">
-            {(["RANGE", "NUMBER", "LABEL"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setNewType(t)}
-                className={`rounded px-3 py-1 text-sm ${
-                  newType === t
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                }`}
-              >
-                {t.toLowerCase()}
-              </button>
-            ))}
+          <div className="mb-3">
+            <p className="mb-1 text-sm text-gray-700">Type</p>
+            <div className="flex gap-3">
+              {(["RANGE", "NUMBER", "LABEL"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setNewType(t)}
+                  className={`rounded px-3 py-1 text-sm ${
+                    newType === t
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                  }`}
+                >
+                  {t.toLowerCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="mb-6 block">
+            <span className="mb-1 block text-sm text-gray-700">
+              Units (optional)
+            </span>
+            <input
+              className="w-full rounded border px-3 py-2"
+              value={newUnits}
+              onChange={(e) => setNewUnits(e.target.value)}
+              placeholder="e.g. kg"
+            />
+          </label>
+
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={close}
+              className="rounded bg-gray-200 px-4 py-2 text-sm hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={!newName.trim() || busy}
+              onClick={create}
+              className="rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
+            >
+              {busy ? "Saving…" : "Create"}
+            </button>
           </div>
         </div>
-
-        <label className="mb-6 block">
-          <span className="mb-1 block text-sm text-gray-700">
-            Units (optional)
-          </span>
-          <input
-            className="w-full rounded border px-3 py-2"
-            value={newUnits}
-            onChange={(e) => setNewUnits(e.target.value)}
-            placeholder="e.g. kg"
-          />
-        </label>
-
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={close}
-            className="rounded bg-gray-200 px-4 py-2 text-sm hover:bg-gray-300"
-          >
-            Cancel
-          </button>
-          <button
-            disabled={!newName.trim() || busy}
-            onClick={create}
-            className="rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
-            {busy ? "Saving…" : "Create"}
-          </button>
-        </div>
       </div>
-    </div>
+    </Portal>
   );
 }
