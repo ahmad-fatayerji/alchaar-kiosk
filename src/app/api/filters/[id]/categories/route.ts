@@ -1,25 +1,21 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-async function getFilterId(raw: { params: { id: string } }): Promise<number> {
-    const { id } = await Promise.resolve(raw.params);   // ✅ awaited
-    const num = Number(id);
-    if (Number.isNaN(num)) {
-        throw NextResponse.json({ error: "bad id" }, { status: 400 });
-    }
-    return num;
-}
-
+/*  GET /api/filters/[id]/categories
+    returns array of category IDs that already use this filter            */
 export async function GET(
     _req: Request,
     ctx: { params: { id: string } },
 ) {
-    const filterId = await getFilterId(ctx);
+    const filterId = Number(ctx.params.id);
+    if (Number.isNaN(filterId))
+        return NextResponse.json({ error: "bad id" }, { status: 400 });
 
-    const rows = await prisma.categoryFilter.findMany({
+    const links = await prisma.categoryFilter.findMany({
         where: { filterId },
         select: { categoryId: true },
     });
 
-    return NextResponse.json(rows.map(r => r.categoryId));
+    /* plain number[] is enough for the client */
+    return NextResponse.json(links.map((l) => l.categoryId));
 }

@@ -1,11 +1,11 @@
 /* ------------------------------------------------------------------ */
-/* Filters CRUD panel                                                 */
+/* Filters CRUD panel – enables/​disables per-category                 */
 /* ------------------------------------------------------------------ */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  ColumnDef,
+  type ColumnDef,
   flexRender,
   getCoreRowModel,
   useReactTable,
@@ -20,14 +20,24 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Plus } from "lucide-react";
+import { FolderCog, MoreHorizontal, Plus } from "lucide-react";
 
 /* ─────────── Types ─────────── */
 type FilterDef = {
@@ -38,62 +48,32 @@ type FilterDef = {
   catCount: number;
 };
 
-/* ─────────── Small DataTable helper ─────────── */
-function DataTable<T>({
-  columns,
-  data,
-}: {
-  columns: ColumnDef<T>[];
-  data: T[];
-}) {
-  const table = useReactTable({
-    columns,
-    data,
-    getCoreRowModel: getCoreRowModel(),
-  });
+type Category = { id: number; name: string };
 
-  return (
-    <Table className="w-full text-sm">
-      <TableHeader>
-        {table.getHeaderGroups().map((hg) => (
-          <TableRow key={hg.id}>
-            {hg.headers.map((h) => (
-              <TableHead key={h.id}>
-                {flexRender(h.column.columnDef.header, h.getContext())}
-              </TableHead>
-            ))}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody>
-        {table.getRowModel().rows.map((row) => (
-          <TableRow key={row.id}>
-            {row.getVisibleCells().map((cell) => (
-              <TableCell key={cell.id}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
-}
-
-/* ------------------------------------------------------------------ */
+/* ─────────── Main panel ─────────── */
 export default function FiltersPanel() {
   const [rows, setRows] = useState<FilterDef[]>([]);
+  const [cats, setCats] = useState<Category[]>([]);
 
-  async function refresh() {
+  /* drawer state */
+  const [selFilter, setSelFilter] = useState<FilterDef | null>(null);
+  const [linkedIds, setLinkedIds] = useState<Set<number>>(new Set());
+  const [busy, setBusy] = useState(false);
+
+  /* ──────── data ──────── */
+  const refresh = useCallback(async () => {
     const data = await fetch("/api/filters").then((r) => r.json());
     setRows(data);
-  }
+  }, []);
 
   useEffect(() => {
     refresh();
-  }, []);
+    fetch("/api/categories")
+      .then((r) => r.json())
+      .then(setCats);
+  }, [refresh]);
 
-  /* ───────── create ───────── */
+  /* ──────── CRUD ops ──────── */
   async function create() {
     const name = prompt("Filter name:");
     if (!name?.trim()) return;
@@ -101,11 +81,7 @@ export default function FiltersPanel() {
     const type = prompt("Type (RANGE | NUMBER | LABEL):", "LABEL")
       ?.toUpperCase()
       .trim();
-
-    if (!["RANGE", "NUMBER", "LABEL"].includes(type ?? "")) {
-      alert("Invalid type");
-      return;
-    }
+    if (!["RANGE", "NUMBER", "LABEL"].includes(type ?? "")) return;
 
     await fetch("/api/filters", {
       method: "POST",
@@ -115,29 +91,57 @@ export default function FiltersPanel() {
     refresh();
   }
 
-  /* ───────── delete ───────── */
   async function del(id: number, name: string) {
     if (!confirm(`Delete “${name}”?`)) return;
     await fetch(`/api/filters/${id}`, { method: "DELETE" });
     refresh();
   }
 
-  /* ───────── columns ───────── */
-  const cols: ColumnDef<FilterDef>[] = [
+  /* enable / disable drawer helpers */
+  async function openDrawer(f: FilterDef) {
+    setBusy(true);
+    setSelFilter(f);
+    const ids: number[] = await fetch(`/api/filters/${f.id}/categories`).then(
+      (r) => r.json()
+    );
+    setLinkedIds(new Set(ids));
+    setBusy(false);
+  }
+
+  async function toggle(catId: number, checked: boolean) {
+    if (!selFilter) return;
+    setBusy(true);
+    await fetch("/api/category-filters", {
+      method: checked ? "POST" : "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ categoryId: catId, filterId: selFilter.id }),
+    });
+    setLinkedIds((prev) => {
+      const next = new Set(prev);
+      checked ? next.add(catId) : next.delete(catId);
+      return next;
+    });
+    setBusy(false);
+    refresh();
+  }
+
+  /* ───────── table columns ───────── */
+  const cols = [
     { accessorKey: "name", header: "Name" },
     {
       accessorKey: "type",
       header: "Type",
-      cell: ({ getValue }) => <Badge>{getValue<string>()}</Badge>,
+      cell: ({ getValue }) => <Badge>{getValue() as string}</Badge>,
     },
     {
       accessorKey: "units",
       header: "Units",
-      cell: ({ getValue }) => getValue<string>() ?? "—",
+      cell: ({ getValue }) => (getValue() as string) ?? "—",
     },
     { accessorKey: "catCount", header: "# cats" },
     {
       id: "actions",
+      enableSorting: false,
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -146,6 +150,12 @@ export default function FiltersPanel() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => openDrawer(row.original)}
+              className="flex items-center gap-2"
+            >
+              <FolderCog size={14} /> Enable / disable
+            </DropdownMenuItem>
             <DropdownMenuItem
               className="text-red-600"
               onClick={() => del(row.original.id, row.original.name)}
@@ -156,18 +166,75 @@ export default function FiltersPanel() {
         </DropdownMenu>
       ),
     },
-  ];
+  ] satisfies ColumnDef<FilterDef>[]; // ✅ typed
+
+  /* tiny react-table wrapper (keeps bundle small) */
+  const table = useReactTable({
+    data: rows,
+    columns: cols,
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   /* ───────── render ───────── */
   return (
     <>
+      {/* header */}
       <div className="mb-4 flex justify-end">
         <Button size="sm" onClick={create}>
           <Plus className="mr-1.5 h-4 w-4" /> New
         </Button>
       </div>
 
-      <DataTable columns={cols} data={rows} />
+      {/* table */}
+      <Table className="text-sm">
+        <TableHeader>
+          {table.getHeaderGroups().map((hg) => (
+            <TableRow key={hg.id}>
+              {hg.headers.map((h) => (
+                <TableHead key={h.id}>
+                  {flexRender(h.column.columnDef.header, h.getContext())}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows.map((row) => (
+            <TableRow key={row.id}>
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      {/* enable / disable dialog */}
+      <Dialog open={!!selFilter} onOpenChange={() => setSelFilter(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {selFilter ? `Enable “${selFilter.name}”` : ""}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-1 max-h-[60vh] overflow-y-auto">
+            {cats.map((c) => (
+              <label key={c.id} className="flex items-center gap-2">
+                <Checkbox
+                  checked={linkedIds.has(c.id)}
+                  disabled={busy}
+                  /* annotate v so TS doesn’t complain */
+                  onCheckedChange={(v: boolean) => toggle(c.id, v)}
+                />
+                {c.name}
+              </label>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
