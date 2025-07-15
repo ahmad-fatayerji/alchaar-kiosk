@@ -1,11 +1,11 @@
 /* ------------------------------------------------------------------ */
-/* Products CRUD panel                                                */
+/* Products CRUD panel + thumbnail upload                             */
 /* ------------------------------------------------------------------ */
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  ColumnDef,
+  type ColumnDef,
   flexRender,
   getCoreRowModel,
   useReactTable,
@@ -43,11 +43,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Plus } from "lucide-react";
 
 /* ─────────── Types ─────────── */
 type Product = {
-  barcode: string; // string on the client
+  barcode: string;
   name: string;
   price: string;
   qtyInStock: number;
@@ -57,7 +57,7 @@ type Product = {
 
 type Category = { id: number; name: string };
 
-/* ─────────── Local DataTable wrapper ─────────── */
+/* ─────────── Tiny table wrapper ─────────── */
 function DataTable<T>({
   columns,
   data,
@@ -99,45 +99,54 @@ function DataTable<T>({
   );
 }
 
-/* ─────────── Main panel ─────────── */
+/* ------------------------------------------------------------------ */
 export default function ProductsPanel() {
   const [rows, setRows] = useState<Product[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [editing, setEditing] = useState<Product | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
 
-  /* reload helpers */
+  /* ---------- data loaders ---------- */
   const refresh = useCallback(async () => {
-    const res = await fetch("/api/products");
-    if (!res.ok) return setRows([]); // 4xx / 5xx → empty table
+    try {
+      const r = await fetch("/api/products");
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const txt = await r.text();
+      setRows(txt.trim() ? (JSON.parse(txt) as Product[]) : []);
+    } catch (e) {
+      console.error("load products:", e);
+      setRows([]);
+    }
+  }, []);
 
-    const text = await res.text();
-    if (!text.trim()) return setRows([]); // 204 / empty → empty table
-
-    setRows(JSON.parse(text));
+  const loadCats = useCallback(async () => {
+    try {
+      const r = await fetch("/api/categories");
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const txt = await r.text();
+      const data = txt.trim() ? JSON.parse(txt) : [];
+      setCats(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("load categories:", e);
+      setCats([]);
+    }
   }, []);
 
   useEffect(() => {
     refresh();
-    fetch("/api/categories")
-      .then((r) => r.json())
-      .then(setCats);
-  }, [refresh]);
+    loadCats();
+  }, [refresh, loadCats]);
 
-  /* create / update */
+  /* ---------- create / update ---------- */
   async function upsert(p: Partial<Product>) {
     setBusy(true);
-
-    // make sure barcode is a plain string before JSON-ifying
-    const payload = { ...p, barcode: String(p.barcode ?? "") };
-
     const url = editing ? `/api/products/${editing.barcode}` : "/api/products";
     const method = editing ? "PATCH" : "POST";
 
     await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...p, barcode: String(p.barcode ?? "") }),
     });
 
     setBusy(false);
@@ -145,15 +154,43 @@ export default function ProductsPanel() {
     refresh();
   }
 
-  /* delete */
+  /* ---------- delete ---------- */
   async function remove(barcode: string) {
     if (!confirm("Delete this product?")) return;
     await fetch(`/api/products/${barcode}`, { method: "DELETE" });
     refresh();
   }
 
-  /* columns */
+  /* ---------- columns ---------- */
   const cols: ColumnDef<Product>[] = [
+    {
+      id: "thumb",
+      header: "",
+      enableSorting: false,
+      cell: ({ row }) => {
+        const tries = [".avif", ".jpg", ".png", ".webp"];
+        const base = `/products/${row.original.barcode}`;
+
+        const next = (img: HTMLImageElement) => {
+          const ext = "." + img.src.split(".").pop()!;
+          const idx = tries.indexOf(ext);
+          if (idx >= 0 && idx + 1 < tries.length) {
+            img.src = base + tries[idx + 1];
+          } else {
+            img.style.display = "none";
+          }
+        };
+
+        return (
+          <img
+            src={base + tries[0]}
+            onError={(e) => next(e.currentTarget)}
+            className="h-8 w-8 rounded object-cover"
+            alt=""
+          />
+        );
+      },
+    },
     { accessorKey: "barcode", header: "Barcode" },
     { accessorKey: "name", header: "Name" },
     { accessorKey: "category.name", header: "Category" },
@@ -185,12 +222,13 @@ export default function ProductsPanel() {
     },
   ];
 
-  /* render */
+  /* ---------- UI ---------- */
   return (
     <>
       <div className="mb-4 flex justify-end">
         <Button size="sm" onClick={() => setEditing(null)}>
-          <Plus className="mr-1.5 h-4 w-4" /> New
+          <Plus className="mr-1.5 h-4 w-4" />
+          New
         </Button>
       </div>
 
@@ -208,7 +246,7 @@ export default function ProductsPanel() {
   );
 }
 
-/* ─────────── row dropdown ─────────── */
+/* ─────────── Row dropdown ─────────── */
 function RowActions({
   prod,
   onEdit,
@@ -218,27 +256,64 @@ function RowActions({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const inputId = `file-${prod.barcode}`;
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className="p-1 rounded hover:bg-muted">
-          <MoreHorizontal size={16} />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
-        <DropdownMenuItem
-          className="text-red-600 focus:bg-red-50"
-          onClick={onDelete}
-        >
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="p-1 rounded hover:bg-muted">
+            <MoreHorizontal size={16} />
+          </button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
+
+          <DropdownMenuItem>
+            <label htmlFor={inputId} className="flex flex-1 cursor-pointer">
+              Upload thumb
+            </label>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            className="text-red-600 focus:bg-red-50"
+            onClick={onDelete}
+          >
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* hidden file input */}
+      <input
+        id={inputId}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+
+          const fd = new FormData();
+          fd.append("file", file);
+          await fetch(`/api/products/${prod.barcode}/thumbnail`, {
+            method: "POST",
+            body: fd,
+          });
+
+          // bust cache so new image shows immediately
+          const img = document.querySelector(
+            `img[src^="/products/${prod.barcode}"]`
+          ) as HTMLImageElement | null;
+          if (img) img.src = img.src.split("?")[0] + "?t=" + Date.now();
+        }}
+      />
+    </>
   );
 }
 
-/* ─────────── dialog ─────────── */
+/* ─────────── Dialog ─────────── */
 function ProdDialog({
   open,
   product,
@@ -248,7 +323,7 @@ function ProdDialog({
   onSave,
 }: {
   open: boolean;
-  product: Product | null; // null = brand-new
+  product: Product | null;
   cats: Category[];
   busy: boolean;
   onCancel: () => void;
@@ -258,10 +333,8 @@ function ProdDialog({
     barcode: product?.barcode ?? "",
     name: product?.name ?? "",
     price: product?.price ?? "",
-    stock: product?.qtyInStock.toString() ?? "",
-    catId:
-      product?.categoryId.toString() ??
-      (cats.length ? cats[0].id.toString() : ""),
+    stock: product?.qtyInStock?.toString() ?? "",
+    catId: product?.categoryId?.toString() ?? (cats[0]?.id.toString() || ""),
   }));
 
   useEffect(() => {
@@ -269,16 +342,13 @@ function ProdDialog({
       barcode: product?.barcode ?? "",
       name: product?.name ?? "",
       price: product?.price ?? "",
-      stock: product?.qtyInStock.toString() ?? "",
-      catId:
-        product?.categoryId.toString() ??
-        (cats.length ? cats[0].id.toString() : ""),
+      stock: product?.qtyInStock?.toString() ?? "",
+      catId: product?.categoryId?.toString() ?? (cats[0]?.id.toString() || ""),
     });
   }, [product, cats]);
 
-  function upd<K extends keyof typeof form>(k: K, v: string) {
+  const upd = <K extends keyof typeof form>(k: K, v: string) =>
     setForm((s) => ({ ...s, [k]: v }));
-  }
 
   const disabled =
     !form.barcode || !form.name.trim() || !form.price || !form.catId;
@@ -291,6 +361,7 @@ function ProdDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* barcode + category */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Barcode</Label>
@@ -308,7 +379,7 @@ function ProdDialog({
                   <SelectValue placeholder="Choose…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {cats.map((c) => (
+                  {(cats ?? []).map((c) => (
                     <SelectItem key={c.id} value={c.id.toString()}>
                       {c.name}
                     </SelectItem>
@@ -318,6 +389,7 @@ function ProdDialog({
             </div>
           </div>
 
+          {/* name */}
           <div>
             <Label>Name</Label>
             <Input
@@ -326,6 +398,7 @@ function ProdDialog({
             />
           </div>
 
+          {/* price + stock */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Price ($)</Label>
@@ -355,7 +428,7 @@ function ProdDialog({
             disabled={disabled || busy}
             onClick={() =>
               onSave({
-                barcode: form.barcode, // string → stringify OK
+                barcode: form.barcode,
                 categoryId: Number(form.catId),
                 name: form.name.trim(),
                 price: form.price,
