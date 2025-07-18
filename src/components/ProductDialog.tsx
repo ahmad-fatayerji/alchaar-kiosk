@@ -71,7 +71,7 @@ export default function ProductDialog({
 
   /* ---------- dynamic filters ---------- */
   const [defs, setDefs] = useState<
-    { id: number; name: string; kind: "LABEL" | "NUMBER" | "RANGE" }[]
+    { id: number; name: string; type: "LABEL" | "NUMBER" | "RANGE" }[]
   >([]);
   const [vals, setVals] = useState<Record<number, any>>({});
 
@@ -81,13 +81,10 @@ export default function ProductDialog({
     if (!cat) return;
     fetch(`/api/categories/${cat}/filters`)
       .then((r) => r.json())
-      .then((j) => {
-        setDefs(j);
-        setVals({});
-      });
+      .then(setDefs)
+      .then(() => setVals({}));
   }, [form.catId]);
 
-  /* helper to patch value for one filter */
   const put = (id: number, patch: object) =>
     setVals((s) => ({
       ...s,
@@ -97,7 +94,7 @@ export default function ProductDialog({
   /* build per-filter UI */
   function render(def: (typeof defs)[number]) {
     const v = vals[def.id] ?? {};
-    switch (def.kind) {
+    switch (def.type) {
       /* LABEL → single yes/no checkbox */
       case "LABEL":
         return (

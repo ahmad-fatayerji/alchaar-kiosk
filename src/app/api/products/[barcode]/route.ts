@@ -1,21 +1,39 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-function getId(ctx: { params: { id: string } }): bigint {
-    const n = BigInt(ctx.params.id);
-    return n;
+/* helper – await params once, then cast to BigInt */
+async function getBarcode(
+    ctx: { params: { barcode: string } },
+): Promise<bigint> {
+    const { barcode } = await Promise.resolve(ctx.params);
+    return BigInt(barcode);
 }
 
-export async function PATCH(req: Request, ctx: { params: { id: string } }) {
+/* ---------- UPDATE ---------- */
+export async function PATCH(
+    req: Request,
+    ctx: { params: { barcode: string } },
+) {
     const data = await req.json();
+
     const updated = await prisma.product.update({
-        where: { barcode: getId(ctx) },
+        where: { barcode: await getBarcode(ctx) },
         data,
     });
-    return NextResponse.json(updated);
+
+    /* BigInt & Decimal → strings so Next can serialise */
+    return NextResponse.json({
+        ...updated,
+        barcode: updated.barcode.toString(),
+        price: updated.price.toString(),
+    });
 }
 
-export async function DELETE(_req: Request, ctx: { params: { id: string } }) {
-    await prisma.product.delete({ where: { barcode: getId(ctx) } });
+/* ---------- DELETE ---------- */
+export async function DELETE(
+    _req: Request,
+    ctx: { params: { barcode: string } },
+) {
+    await prisma.product.delete({ where: { barcode: await getBarcode(ctx) } });
     return NextResponse.json({ ok: true });
 }
