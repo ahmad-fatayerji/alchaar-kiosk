@@ -7,15 +7,7 @@ import ProductsToolbar from "./ProductsToolbar";
 import { useProducts } from "@/hooks/useProducts";
 
 export default function ProductsPanel() {
-  const {
-    products,
-    busy,
-    refresh,
-    upsert,
-    remove,
-    bulkUpload,
-    /* exportExcel no longer used */
-  } = useProducts();
+  const { products, busy, refresh, upsert, remove, bulkUpload } = useProducts();
 
   /* initial load */
   useEffect(() => {
@@ -34,7 +26,14 @@ export default function ProductsPanel() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Product | null | undefined>(undefined);
 
-  /* ---- new server-side Excel endpoint ---- */
+  /* wrapper closes dialog after save */
+  const handleSave = async (p: Partial<Product>, values: any[]) => {
+    const isNew = editing === null; // ← brand-new product?
+    await upsert(p, values, isNew);
+    setEditing(undefined); // close dialog
+  };
+
+  /* Excel export */
   const exportAll = () => {
     window.location.href = "/api/products/export";
   };
@@ -64,7 +63,7 @@ export default function ProductsPanel() {
         cats={cats}
         busy={busy}
         onCancel={() => setEditing(undefined)}
-        onSave={upsert}
+        onSave={handleSave} /* uses wrapper */
       />
     </>
   );

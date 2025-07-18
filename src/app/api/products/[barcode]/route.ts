@@ -1,34 +1,52 @@
+/* ------------------------------------------------------------------ */
+/*  PATCH /api/products/:barcode        – update OR report “not-found” */
+/*  DELETE /api/products/:barcode       – delete                       */
+/*  (Node runtime – fs / Prisma)                                      */
+/* ------------------------------------------------------------------ */
+
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-/* -------------------------------------------------- */
-/* helper – await ctx.params once, return BigInt code */
-/* -------------------------------------------------- */
+/* helper – read `ctx.params` exactly once, then reuse */
 async function code(
-    ctx: { params: Promise<{ barcode: string }> },   // ← note the key name
+    ctx: { params: Promise<{ barcode: string }> },
 ): Promise<bigint> {
-    const { barcode } = await ctx.params;           // ✅ awaited exactly once
-    try {
-        return BigInt(barcode);
-    } catch {
-        throw NextResponse.json({ error: "invalid barcode" }, { status: 400 });
-    }
+    const { barcode } = await ctx.params;               // ✅ awaited
+    if (!/^\d+$/.test(barcode))
+        throw NextResponse.json({ error: "bad barcode" }, { status: 400 });
+
+    return BigInt(barcode);
 }
 
-/* ───────── PATCH /api/products/:barcode  (update) ───────── */
+/* ───────────── PATCH (update) ───────────── */
 export async function PATCH(
     req: Request,
     ctx: { params: Promise<{ barcode: string }> },
 ) {
     const data = await req.json();
-    const updated = await prisma.product.update({
-        where: { barcode: await code(ctx) },
-        data,
-    });
-    return NextResponse.json(updated);
+
+    try {
+        const updated = await prisma.product.update({
+            where: { barcode: await code(ctx) },
+            data,
+        });
+
+        /* BigInt / Decimal → JSON-safe strings */
+        return NextResponse.json({
+            ...updated,
+            barcode: updated.barcode.toString(),
+            price: updated.price.toString(),
+        });
+    } catch (err: any) {
+        /* P2025 = row doesn’t exist → tell client with 404, not 500 */
+        if (err.code === "P2025") {
+            return NextResponse.json({ error: "not-found" }, { status: 404 });
+        }
+        throw err; // unknown error ⇒ let Next.js log it
+    }
 }
 
-/* ───────── DELETE /api/products/:barcode (remove) ───────── */
+/* ───────────── DELETE ───────────── */
 export async function DELETE(
     _req: Request,
     ctx: { params: Promise<{ barcode: string }> },
@@ -37,5 +55,5 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
 }
 
-/* Prisma (Node) runtime */
+/* Prisma & fs need the Node runtime */
 export const dynamic = "force-dynamic";

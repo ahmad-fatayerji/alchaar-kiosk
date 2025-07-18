@@ -1,3 +1,6 @@
+/* ------------------------------------------------------------------ */
+/* src/hooks/useProducts.ts                                            */
+/* ------------------------------------------------------------------ */
 "use client";
 
 import { useCallback, useState } from "react";
@@ -25,28 +28,38 @@ export function useProducts() {
         async (p: Partial<Product>, values: FilterValue[]) => {
             setBusy(true);
 
-            /* 1️⃣ product row */
-            const url = p.barcode
-                ? `/api/products/${p.barcode}`
-                : "/api/products";
-            const method = p.barcode ? "PATCH" : "POST";
+            /* Does this barcode already exist? → decide POST vs PATCH */
+            const exists = products.some(
+                (prod) => prod.barcode === String(p.barcode ?? "")
+            );
+
+            const url = exists ? `/api/products/${p.barcode}` : "/api/products";
+            const method = exists ? "PATCH" : "POST";
+
+            /* 1️⃣  product row */
             await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...p, barcode: String(p.barcode ?? "") }),
+                body: JSON.stringify({
+                    ...p,
+                    barcode: String(p.barcode ?? ""),
+                }),
             });
 
-            /* 2️⃣ associated filter values */
+            /* 2️⃣  associated filter values */
             await fetch("/api/product-filters", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ productBarcode: p.barcode, values }),
+                body: JSON.stringify({
+                    productBarcode: String(p.barcode ?? ""),
+                    values,
+                }),
             });
 
             await refresh();
             setBusy(false);
         },
-        [refresh],
+        [products, refresh]
     );
 
     /* ---- delete --------------------------------------------------- */
@@ -55,7 +68,7 @@ export function useProducts() {
             await fetch(`/api/products/${barcode}`, { method: "DELETE" });
             refresh();
         },
-        [refresh],
+        [refresh]
     );
 
     /* ---- bulk thumbnail upload ----------------------------------- */
@@ -66,7 +79,7 @@ export function useProducts() {
             await fetch("/api/products/bulk-thumbnails", { method: "POST", body: fd });
             refresh();
         },
-        [refresh],
+        [refresh]
     );
 
     return {
