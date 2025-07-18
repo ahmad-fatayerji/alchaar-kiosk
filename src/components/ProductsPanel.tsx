@@ -7,16 +7,22 @@ import ProductsToolbar from "./ProductsToolbar";
 import { useProducts } from "@/hooks/useProducts";
 
 export default function ProductsPanel() {
-  /* data + CRUD helpers */
-  const { products, busy, refresh, upsert, remove, bulkUpload, exportExcel } =
-    useProducts();
+  const {
+    products,
+    busy,
+    refresh,
+    upsert,
+    remove,
+    bulkUpload,
+    /* exportExcel no longer used */
+  } = useProducts();
 
   /* initial load */
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  /* categories (for dialog) */
+  /* categories for dialog */
   const [cats, setCats] = useState<Category[]>([]);
   useEffect(() => {
     fetch("/api/categories")
@@ -28,6 +34,11 @@ export default function ProductsPanel() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Product | null | undefined>(undefined);
 
+  /* ---- new server-side Excel endpoint ---- */
+  const exportAll = () => {
+    window.location.href = "/api/products/export";
+  };
+
   return (
     <>
       <ProductsToolbar
@@ -35,7 +46,7 @@ export default function ProductsPanel() {
         onSearch={setSearch}
         onNew={() => setEditing(null)}
         onBulk={bulkUpload}
-        onExport={exportExcel}
+        onExport={exportAll}
         disabled={busy}
       />
 
