@@ -1,20 +1,37 @@
+import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-/* GET /api/categories/:id/filters */
+/**
+ * GET /api/categories/:id/filters
+ * Returns every FilterDef that is enabled for the given category.
+ *
+ * ⚠️  In Next 15 the `params` object is a *then-able*.
+ *     We **must await** it exactly once before reading `id`,
+ *     otherwise the build emits ParamCheck errors.
+ */
 export async function GET(
     _req: Request,
-    ctx: { params: { id: string } },
+    // 👉 declare `params` as a Promise and await it
+    { params }: { params: Promise<{ id: string }> },
 ) {
-    // ✅ satisfy the “await params” rule once, then use the value
-    const { id } = await Promise.resolve(ctx.params);
-    const num = Number(id);
-    if (Number.isNaN(num))
-        return new Response("invalid category id", { status: 400 });
+    /* satisfy the “await params” rule */
+    const { id } = await params;
+
+    const categoryId = Number(id);
+    if (Number.isNaN(categoryId)) {
+        return NextResponse.json(
+            { error: "invalid category id" },
+            { status: 400 },
+        );
+    }
 
     const defs = await prisma.filterDef.findMany({
-        where: { categories: { some: { categoryId: num } } },
+        where: { categories: { some: { categoryId } } },
         orderBy: { name: "asc" },
     });
 
-    return Response.json(defs);
+    return NextResponse.json(defs);
 }
+
+/* Prisma (Node) runtime needed */
+export const dynamic = "force-dynamic";

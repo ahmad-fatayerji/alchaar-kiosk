@@ -1,39 +1,41 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-/* helper – await params once, then cast to BigInt */
-async function getBarcode(
-    ctx: { params: { barcode: string } },
+/* -------------------------------------------------- */
+/* helper – await ctx.params once, return BigInt code */
+/* -------------------------------------------------- */
+async function code(
+    ctx: { params: Promise<{ barcode: string }> },   // ← note the key name
 ): Promise<bigint> {
-    const { barcode } = await Promise.resolve(ctx.params);
-    return BigInt(barcode);
+    const { barcode } = await ctx.params;           // ✅ awaited exactly once
+    try {
+        return BigInt(barcode);
+    } catch {
+        throw NextResponse.json({ error: "invalid barcode" }, { status: 400 });
+    }
 }
 
-/* ---------- UPDATE ---------- */
+/* ───────── PATCH /api/products/:barcode  (update) ───────── */
 export async function PATCH(
     req: Request,
-    ctx: { params: { barcode: string } },
+    ctx: { params: Promise<{ barcode: string }> },
 ) {
     const data = await req.json();
-
     const updated = await prisma.product.update({
-        where: { barcode: await getBarcode(ctx) },
+        where: { barcode: await code(ctx) },
         data,
     });
-
-    /* BigInt & Decimal → strings so Next can serialise */
-    return NextResponse.json({
-        ...updated,
-        barcode: updated.barcode.toString(),
-        price: updated.price.toString(),
-    });
+    return NextResponse.json(updated);
 }
 
-/* ---------- DELETE ---------- */
+/* ───────── DELETE /api/products/:barcode (remove) ───────── */
 export async function DELETE(
     _req: Request,
-    ctx: { params: { barcode: string } },
+    ctx: { params: Promise<{ barcode: string }> },
 ) {
-    await prisma.product.delete({ where: { barcode: await getBarcode(ctx) } });
+    await prisma.product.delete({ where: { barcode: await code(ctx) } });
     return NextResponse.json({ ok: true });
 }
+
+/* Prisma (Node) runtime */
+export const dynamic = "force-dynamic";

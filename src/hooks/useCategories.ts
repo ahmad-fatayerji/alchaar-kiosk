@@ -25,7 +25,7 @@ export function useCategories() {
         setTree(root);
     }, []);
 
-    /* ---- ensure sub-children --------------------------------------- */
+    /* ---- ensure children (mutate in place so row components persist) --- */
     const ensureChildren = useCallback(
         async (cat: Category) => {
             if (cat.hasChildren === false || cat.children !== undefined) return;
@@ -35,13 +35,13 @@ export function useCategories() {
                 const kids: Category[] = await fetch(`/api/categories/${cat.id}`).then(
                     (r) => r.json(),
                 );
-                setTree((t) =>
-                    t.map((c) =>
-                        c.id === cat.id
-                            ? { ...c, children: kids, hasChildren: kids.length > 0 }
-                            : c,
-                    ),
-                );
+
+                // ***** no new object ***** just mutate the live instance
+                cat.children = kids;
+                cat.hasChildren = kids.length > 0;
+
+                // trigger React to notice the change
+                setTree((t) => [...t]);
             } finally {
                 setBusyIds((s) => {
                     const cp = new Set(s);

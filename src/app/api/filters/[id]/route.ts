@@ -1,22 +1,29 @@
+/* ------------------------------------------------------------------ */
+/* src/app/api/filters/[id]/route.ts                                   */
+/* ------------------------------------------------------------------ */
+
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import type { FilterType } from "@prisma/client";
+import type { FilterType } from "@prisma/client"; // enum comes from Prisma
 
-async function getId(raw: { params: { id: string } }): Promise<number> {
-    const { id } = await Promise.resolve(raw.params);   // ✅ awaited
-    const num = Number(id);
-    if (Number.isNaN(num)) {
+/* helper – await ctx.params once, then reuse */
+async function filterId(
+    ctx: { params: Promise<{ id: string }> },
+): Promise<number> {
+    const { id } = await ctx.params;        // ✅ awaited
+    const n = Number(id);
+    if (Number.isNaN(n)) {
         throw NextResponse.json({ error: "bad id" }, { status: 400 });
     }
-    return num;
+    return n;
 }
 
-/* PATCH: rename / units */
+/* ─────────── PATCH  /api/filters/:id           (rename / units) ─────────── */
 export async function PATCH(
     req: Request,
-    ctx: { params: { id: string } },
+    ctx: { params: Promise<{ id: string }> },
 ) {
-    const id = await getId(ctx);
+    const id = await filterId(ctx);
     const { name, units } =
         (await req.json()) as { name?: string; units?: string };
 
@@ -28,22 +35,22 @@ export async function PATCH(
     return NextResponse.json(updated);
 }
 
-/* DELETE */
+/* ─────────── DELETE /api/filters/:id                                ────── */
 export async function DELETE(
     _req: Request,
-    ctx: { params: { id: string } },
+    ctx: { params: Promise<{ id: string }> },
 ) {
-    const id = await getId(ctx);
+    const id = await filterId(ctx);
     await prisma.filterDef.delete({ where: { id } });
     return NextResponse.json({ ok: true });
 }
 
-/* POST: (optional) change type */
+/* ─────────── POST   /api/filters/:id           (change type) ───────────── */
 export async function POST(
     req: Request,
-    ctx: { params: { id: string } },
+    ctx: { params: Promise<{ id: string }> },
 ) {
-    const id = await getId(ctx);
+    const id = await filterId(ctx);
     const { type } = (await req.json()) as { type?: string };
 
     if (!["RANGE", "NUMBER", "LABEL"].includes(type ?? "")) {
@@ -57,3 +64,6 @@ export async function POST(
 
     return NextResponse.json(updated);
 }
+
+/* Prisma (Node) runtime required */
+export const dynamic = "force-dynamic";

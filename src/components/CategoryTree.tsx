@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 import type { Category } from "@/hooks/useCategories";
 import CatThumb from "./CatThumb";
 import {
@@ -11,12 +11,19 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-type Props = {
-  cats: Category[];
-  busy: Set<number>;
-  ensure(cat: Category): Promise<void>;
-
+/* -------------------------------------------------- */
+/* Memo-ised row                                      */
+/* -------------------------------------------------- */
+type RowProps = {
+  cat: Category;
+  depth: number;
+  open: boolean;
+  loading: boolean;
+  toggle(cat: Category): void;
+  busyIds: Set<number>;
+  /* actions */
   create(parentId: number | null): void;
   rename(cat: Category): void;
   remove(cat: Category): void;
@@ -24,55 +31,36 @@ type Props = {
   uploadThumb(catId: number): void;
 };
 
-export default function CategoryTree({
-  cats,
-  busy,
-  ensure,
-  create,
-  rename,
-  remove,
-  openDialog,
-  uploadThumb,
-}: Props) {
-  const [openIds, setOpen] = useState<Set<number>>(new Set());
-
-  /* ─── toggle + lazy children ───────────────────────────────────── */
-  const toggle = async (cat: Category) => {
-    if (openIds.has(cat.id)) {
-      setOpen((s) => {
-        const cp = new Set(s);
-        cp.delete(cat.id);
-        return cp;
-      });
-    } else {
-      await ensure(cat);
-      setOpen((s) => new Set(s).add(cat.id));
-    }
-  };
-
-  /* ─── single node ──────────────────────────────────────────────── */
-  const Node = ({ cat, depth }: { cat: Category; depth: number }) => {
-    const open = openIds.has(cat.id);
-    const loading = busy.has(cat.id);
-
+const Row = memo(
+  function Row({
+    cat,
+    depth,
+    open,
+    loading,
+    toggle,
+    busyIds,
+    create,
+    rename,
+    remove,
+    openDialog,
+    uploadThumb,
+  }: RowProps) {
     const hasArrow =
       cat.hasChildren !== false &&
       (cat.children === undefined || cat.children.length > 0);
 
     return (
       <li className="relative">
-        {/* vertical line for all children below this node */}
+        {/* vertical guideline */}
         {depth > 0 && (
-          <span className="absolute left-0 top-0 h-full w-px bg-border" />
+          <>
+            <span className="absolute left-0 top-0 h-full w-px bg-border" />
+            <span className="absolute left-0 top-4 w-6 border-t border-border" />
+          </>
         )}
 
-        {/* row */}
-        <div className="flex items-center gap-2 pl-6 relative">
-          {/* horizontal connector */}
-          {depth > 0 && (
-            <span className="absolute left-0 top-4 w-6 border-t bg-transparent border-border" />
-          )}
-
+        <div className="flex items-center gap-2 pl-6">
+          {/* arrow / spinner / placeholder */}
           {hasArrow ? (
             <button
               className="w-4 text-xs text-gray-500"
@@ -85,10 +73,11 @@ export default function CategoryTree({
             <span className="w-4" />
           )}
 
+          {/* thumbnail + name */}
           <CatThumb id={cat.id} size={28} />
           <span>{cat.name}</span>
 
-          {/* actions */}
+          {/* actions dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="p-1 rounded hover:bg-muted/50">
@@ -119,23 +108,96 @@ export default function CategoryTree({
           </DropdownMenu>
         </div>
 
-        {/* children list */}
-        {open && cat.children?.length ? (
-          <ul className="pl-6 space-y-1">
+        {/* children stay mounted – just hidden */}
+        {cat.children && (
+          <ul
+            className={cn(
+              "pl-6 space-y-1",
+              !open && "hidden" // toggle visibility only
+            )}
+          >
             {cat.children.map((ch) => (
-              <Node key={ch.id} cat={ch} depth={depth + 1} />
+              <Row
+                key={ch.id}
+                cat={ch}
+                depth={depth + 1}
+                open={open && busyIds.has(ch.id) === false}
+                loading={busyIds.has(ch.id)}
+                toggle={toggle}
+                busyIds={busyIds}
+                create={create}
+                rename={rename}
+                remove={remove}
+                openDialog={openDialog}
+                uploadThumb={uploadThumb}
+              />
             ))}
           </ul>
-        ) : null}
+        )}
       </li>
     );
-  };
+  },
+  /* re-render only if these primitives change */
+  (prev, next) =>
+    prev.open === next.open &&
+    prev.loading === next.loading &&
+    prev.cat === next.cat
+);
 
-  /* ─── root list ────────────────────────────────────────────────── */
+/* -------------------------------------------------- */
+/* Main tree component                                */
+/* -------------------------------------------------- */
+type Props = {
+  cats: Category[];
+  busy: Set<number>;
+  ensure(cat: Category): Promise<void>;
+} & Omit<RowProps, "cat" | "depth" | "open" | "loading" | "toggle" | "busyIds">;
+
+export default function CategoryTree({
+  cats,
+  busy,
+  ensure,
+  create,
+  rename,
+  remove,
+  openDialog,
+  uploadThumb,
+}: Props) {
+  const [openIds, setOpen] = useState<Set<number>>(new Set());
+
+  const toggle = useCallback(
+    async (cat: Category) => {
+      if (openIds.has(cat.id)) {
+        setOpen((s) => {
+          const cp = new Set(s);
+          cp.delete(cat.id);
+          return cp;
+        });
+      } else {
+        await ensure(cat);
+        setOpen((s) => new Set(s).add(cat.id));
+      }
+    },
+    [openIds, ensure]
+  );
+
   return (
     <ul className="space-y-1">
       {cats.map((c) => (
-        <Node key={c.id} cat={c} depth={0} />
+        <Row
+          key={c.id}
+          cat={c}
+          depth={0}
+          open={openIds.has(c.id)}
+          loading={busy.has(c.id)}
+          toggle={toggle}
+          busyIds={busy}
+          create={create}
+          rename={rename}
+          remove={remove}
+          openDialog={openDialog}
+          uploadThumb={uploadThumb}
+        />
       ))}
     </ul>
   );

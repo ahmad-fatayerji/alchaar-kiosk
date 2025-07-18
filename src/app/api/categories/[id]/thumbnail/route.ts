@@ -4,32 +4,36 @@ import { extname, join } from "path";
 
 /* ------------------------------------------------------------------ */
 /* POST /api/categories/:id/thumbnail                                 */
-/* Body: multipart/form-data  (field = file)                          */
+/* Body: multipart/form-data  field = file                            */
 /* ------------------------------------------------------------------ */
 export async function POST(
     req: Request,
-    ctx: { params: { id: string } },
+    // ✅ declare params as a Promise and await it
+    { params }: { params: Promise<{ id: string }> },
 ) {
-    /* ✅ satisfy “await params” rule once, then reuse */
-    const { id } = await Promise.resolve(ctx.params);
+    /* satisfy “await params” rule */
+    const { id } = await params;
     const catId = Number(id);
-    if (Number.isNaN(catId))
+    if (Number.isNaN(catId)) {
         return NextResponse.json({ error: "bad id" }, { status: 400 });
+    }
 
-    /* ---- file from form-data ---- */
+    /* file from form-data */
     const form = await req.formData();
     const file = form.get("file") as File | null;
-    if (!file)
+    if (!file) {
         return NextResponse.json({ error: "file missing" }, { status: 400 });
+    }
 
-    /* block SVG for security */
+    /* block SVG for safety */
     const ext = (extname(file.name) || ".jpg").toLowerCase();
-    if (ext === ".svg")
+    if (ext === ".svg") {
         return NextResponse.json({ error: "SVG not allowed" }, { status: 400 });
+    }
 
     const buf = Buffer.from(await file.arrayBuffer());
 
-    /* save to /public/categories/{id}.{ext} (create folder once) */
+    /* save to /public/categories/{id}.{ext} */
     const dir = join(process.cwd(), "public", "categories");
     await mkdir(dir, { recursive: true });
     await writeFile(join(dir, `${catId}${ext}`), buf);
@@ -37,5 +41,5 @@ export async function POST(
     return NextResponse.json({ ok: true });
 }
 
-/* needs Node runtime (fs) */
+/* Node runtime required (fs) */
 export const dynamic = "force-dynamic";
