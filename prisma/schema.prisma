@@ -66,9 +66,9 @@ model CategoryFilter {
  * ────────── PRODUCTS ───────────
  */
 model Product {
-  barcode    BigInt   @id
-  categoryId Int
-  category   Category @relation(fields: [categoryId], references: [id])
+  barcode    BigInt    @id
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id])
 
   name       String // <-- single name
   price      Decimal @db.Decimal(10, 2)
