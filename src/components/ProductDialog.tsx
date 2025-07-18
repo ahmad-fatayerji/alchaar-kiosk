@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import {
   Dialog,
@@ -18,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+/* ─────────── Types ─────────── */
 export type Category = { id: number; name: string };
 export type Product = {
   barcode: string;
@@ -33,9 +35,10 @@ type Props = {
   cats: Category[];
   busy: boolean;
   onCancel(): void;
-  onSave(p: Partial<Product>): void;
+  onSave(p: Partial<Product>, values: any[]): void;
 };
 
+/* ------------------------------------------------------------------ */
 export default function ProductDialog({
   open,
   product,
@@ -44,6 +47,7 @@ export default function ProductDialog({
   onCancel,
   onSave,
 }: Props) {
+  /* ---------- static product fields ---------- */
   const [form, setForm] = useState({
     barcode: product?.barcode ?? "",
     name: product?.name ?? "",
@@ -65,9 +69,105 @@ export default function ProductDialog({
   const upd = <K extends keyof typeof form>(k: K, v: string) =>
     setForm((s) => ({ ...s, [k]: v }));
 
+  /* ---------- dynamic filters ---------- */
+  const [defs, setDefs] = useState<
+    { id: number; name: string; kind: "LABEL" | "NUMBER" | "RANGE" }[]
+  >([]);
+  const [vals, setVals] = useState<Record<number, any>>({});
+
+  /* fetch filter-defs whenever category changes */
+  useEffect(() => {
+    const cat = Number(form.catId);
+    if (!cat) return;
+    fetch(`/api/categories/${cat}/filters`)
+      .then((r) => r.json())
+      .then((j) => {
+        setDefs(j);
+        setVals({});
+      });
+  }, [form.catId]);
+
+  /* helper to patch value for one filter */
+  const put = (id: number, patch: object) =>
+    setVals((s) => ({
+      ...s,
+      [id]: { ...(s[id] ?? { filterId: id }), ...patch },
+    }));
+
+  /* build per-filter UI */
+  function render(def: (typeof defs)[number]) {
+    const v = vals[def.id] ?? {};
+    switch (def.kind) {
+      /* LABEL → single yes/no checkbox */
+      case "LABEL":
+        return (
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!v.labelVal}
+              onChange={(e) =>
+                put(def.id, { labelVal: e.target.checked ? "1" : null })
+              }
+            />
+            {v.labelVal ? "yes" : "no"}
+          </label>
+        );
+
+      /* NUMBER → one int field */
+      case "NUMBER":
+        return (
+          <Input
+            type="number"
+            step="1"
+            value={v.numberVal ?? ""}
+            onChange={(e) =>
+              put(def.id, {
+                numberVal:
+                  e.target.value === "" ? null : e.target.valueAsNumber,
+              })
+            }
+          />
+        );
+
+      /* RANGE → two int fields */
+      case "RANGE":
+        return (
+          <div className="flex gap-2">
+            <Input
+              className="flex-1"
+              type="number"
+              step="1"
+              placeholder="from"
+              value={v.rangeFrom ?? ""}
+              onChange={(e) =>
+                put(def.id, {
+                  rangeFrom:
+                    e.target.value === "" ? null : e.target.valueAsNumber,
+                })
+              }
+            />
+            <Input
+              className="flex-1"
+              type="number"
+              step="1"
+              placeholder="to"
+              value={v.rangeTo ?? ""}
+              onChange={(e) =>
+                put(def.id, {
+                  rangeTo:
+                    e.target.value === "" ? null : e.target.valueAsNumber,
+                })
+              }
+            />
+          </div>
+        );
+    }
+  }
+
   const disabled =
     !form.barcode || !form.name.trim() || !form.price || !form.catId;
 
+  /* ---------- render ---------- */
   return (
     <Dialog open={open} onOpenChange={open ? onCancel : undefined}>
       <DialogContent className="sm:max-w-lg">
@@ -75,7 +175,7 @@ export default function ProductDialog({
           <DialogTitle>{product ? "Edit product" : "New product"}</DialogTitle>
         </DialogHeader>
 
-        {/* ---- fields ---- */}
+        {/* ---- static fields ---- */}
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -114,7 +214,7 @@ export default function ProductDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Price ($)</Label>
+              <Label>Price&nbsp;($)</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -126,13 +226,28 @@ export default function ProductDialog({
               <Label>Stock</Label>
               <Input
                 type="number"
+                step="1"
                 value={form.stock}
                 onChange={(e) => upd("stock", e.target.value)}
               />
             </div>
           </div>
+
+          {/* ---- dynamic filters ---- */}
+          {defs.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Filters</h3>
+              {defs.map((d) => (
+                <div key={d.id} className="grid gap-2">
+                  <Label>{d.name}</Label>
+                  {render(d)}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
+        {/* ---- actions ---- */}
         <DialogFooter>
           <Button variant="ghost" onClick={onCancel}>
             Cancel
@@ -140,13 +255,23 @@ export default function ProductDialog({
           <Button
             disabled={disabled || busy}
             onClick={() =>
-              onSave({
-                barcode: form.barcode,
-                categoryId: Number(form.catId),
-                name: form.name.trim(),
-                price: form.price,
-                qtyInStock: Number(form.stock || 0),
-              })
+              onSave(
+                {
+                  barcode: form.barcode,
+                  categoryId: Number(form.catId),
+                  name: form.name.trim(),
+                  price: form.price,
+                  qtyInStock: Number(form.stock || 0),
+                },
+                /* keep only rows with at least one populated field */
+                Object.values(vals).filter(
+                  (v) =>
+                    v.labelVal != null ||
+                    v.numberVal != null ||
+                    v.rangeFrom != null ||
+                    v.rangeTo != null
+                )
+              )
             }
           >
             {busy ? "Saving…" : "Save"}

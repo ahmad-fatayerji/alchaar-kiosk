@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Plus, Search, Upload } from "lucide-react";
-import ProductTable from "./ProductTable";
 import ProductDialog, { Product, Category } from "./ProductDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import ProductTable from "./ProductTable";
 
 export default function ProductsPanel() {
   const [rows, setRows] = useState<Product[]>([]);
@@ -33,15 +33,27 @@ export default function ProductsPanel() {
   }, [loadProducts, loadCategories]);
 
   /* ---------- CRUD ---------- */
-  async function upsert(p: Partial<Product>) {
+  type FilterValue = Parameters<
+    Parameters<typeof ProductDialog>[0]["onSave"]
+  >[1];
+
+  async function upsert(p: Partial<Product>, values: FilterValue[]) {
     setBusy(true);
+
+    /* 1️⃣  product itself */
     const url = editing ? `/api/products/${editing.barcode}` : "/api/products";
     const method = editing ? "PATCH" : "POST";
-
     await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...p, barcode: String(p.barcode ?? "") }),
+    });
+
+    /* 2️⃣  associated filter values */
+    await fetch("/api/product-filters", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productBarcode: p.barcode, values }),
     });
 
     setBusy(false);
