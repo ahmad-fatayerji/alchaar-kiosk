@@ -1,240 +1,124 @@
-/* ------------------------------------------------------------------ */
-/* Filters CRUD panel – enables/​disables per-category                 */
-/* ------------------------------------------------------------------ */
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import {
-  type ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-
-import {
-  Table,
-  TableHeader,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
-import { Checkbox } from "@/components/ui/checkbox";
+import { useEffect, useState } from "react";
+import { Plus, Pencil, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FolderCog, MoreHorizontal, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import FilterDialog, { FilterRow } from "./FilterDialog";
 
-/* ─────────── Types ─────────── */
-type FilterDef = {
-  id: number;
-  name: string;
-  type: "RANGE" | "NUMBER" | "LABEL";
-  units: string | null;
-  catCount: number;
-};
-
-type Category = { id: number; name: string };
-
-/* ─────────── Main panel ─────────── */
 export default function FiltersPanel() {
-  const [rows, setRows] = useState<FilterDef[]>([]);
-  const [cats, setCats] = useState<Category[]>([]);
-
-  /* drawer state */
-  const [selFilter, setSelFilter] = useState<FilterDef | null>(null);
-  const [linkedIds, setLinkedIds] = useState<Set<number>>(new Set());
+  const [rows, setRows] = useState<FilterRow[]>([]);
+  const [filter, setFilter] = useState("");
+  const [editing, setEditing] = useState<FilterRow | null>(null);
   const [busy, setBusy] = useState(false);
 
-  /* ──────── data ──────── */
-  const refresh = useCallback(async () => {
-    const data = await fetch("/api/filters").then((r) => r.json());
-    setRows(data);
-  }, []);
+  async function load() {
+    const res = await fetch("/api/filters");
+    const list = (await res.json()) as (FilterRow & { catCount: number })[];
+    setRows(list);
+  }
 
   useEffect(() => {
-    refresh();
-    fetch("/api/categories")
-      .then((r) => r.json())
-      .then(setCats);
-  }, [refresh]);
+    load();
+  }, []);
 
-  /* ──────── CRUD ops ──────── */
+  /* ---------- create ---------- */
   async function create() {
-    const name = prompt("Filter name:");
+    const name = prompt("New filter name:");
     if (!name?.trim()) return;
 
-    const type = prompt("Type (RANGE | NUMBER | LABEL):", "LABEL")
-      ?.toUpperCase()
-      .trim();
-    if (!["RANGE", "NUMBER", "LABEL"].includes(type ?? "")) return;
+    const type = prompt(
+      'Type? Enter "label", "number" or "range":',
+      "label"
+    )?.toUpperCase();
+    if (!["LABEL", "NUMBER", "RANGE"].includes(type ?? ""))
+      return alert("Bad type");
 
     await fetch("/api/filters", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: name.trim(), type }),
     });
-    refresh();
+    load();
   }
 
-  async function del(id: number, name: string) {
-    if (!confirm(`Delete “${name}”?`)) return;
+  /* ---------- delete ---------- */
+  async function remove(id: number) {
+    if (!confirm("Delete this filter?")) return;
+    setBusy(true);
     await fetch(`/api/filters/${id}`, { method: "DELETE" });
-    refresh();
-  }
-
-  /* enable / disable drawer helpers */
-  async function openDrawer(f: FilterDef) {
-    setBusy(true);
-    setSelFilter(f);
-    const ids: number[] = await fetch(`/api/filters/${f.id}/categories`).then(
-      (r) => r.json()
-    );
-    setLinkedIds(new Set(ids));
     setBusy(false);
+    load();
   }
 
-  async function toggle(catId: number, checked: boolean) {
-    if (!selFilter) return;
-    setBusy(true);
-    await fetch("/api/category-filters", {
-      method: checked ? "POST" : "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ categoryId: catId, filterId: selFilter.id }),
-    });
-    setLinkedIds((prev) => {
-      const next = new Set(prev);
-      checked ? next.add(catId) : next.delete(catId);
-      return next;
-    });
-    setBusy(false);
-    refresh();
-  }
+  /* ---------- render ---------- */
+  const shown = rows.filter((r) =>
+    r.name.toLowerCase().includes(filter.toLowerCase())
+  );
 
-  /* ───────── table columns ───────── */
-  const cols = [
-    { accessorKey: "name", header: "Name" },
-    {
-      accessorKey: "type",
-      header: "Type",
-      cell: ({ getValue }) => <Badge>{getValue() as string}</Badge>,
-    },
-    {
-      accessorKey: "units",
-      header: "Units",
-      cell: ({ getValue }) => (getValue() as string) ?? "—",
-    },
-    { accessorKey: "catCount", header: "# cats" },
-    {
-      id: "actions",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="p-1 hover:bg-muted rounded">
-              <MoreHorizontal size={16} />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => openDrawer(row.original)}
-              className="flex items-center gap-2"
-            >
-              <FolderCog size={14} /> Enable / disable
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-red-600"
-              onClick={() => del(row.original.id, row.original.name)}
-            >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ] satisfies ColumnDef<FilterDef>[]; // ✅ typed
-
-  /* tiny react-table wrapper (keeps bundle small) */
-  const table = useReactTable({
-    data: rows,
-    columns: cols,
-    getCoreRowModel: getCoreRowModel(),
-  });
-
-  /* ───────── render ───────── */
   return (
     <>
-      {/* header */}
-      <div className="mb-4 flex justify-end">
+      {/* toolbar */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <Input
+          placeholder="Search…"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="w-56"
+        />
         <Button size="sm" onClick={create}>
-          <Plus className="mr-1.5 h-4 w-4" /> New
+          <Plus className="mr-1.5 h-4 w-4" />
+          New
         </Button>
       </div>
 
       {/* table */}
-      <Table className="text-sm">
-        <TableHeader>
-          {table.getHeaderGroups().map((hg) => (
-            <TableRow key={hg.id}>
-              {hg.headers.map((h) => (
-                <TableHead key={h.id}>
-                  {flexRender(h.column.columnDef.header, h.getContext())}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-
-      {/* enable / disable dialog */}
-      <Dialog open={!!selFilter} onOpenChange={() => setSelFilter(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {selFilter ? `Enable “${selFilter.name}”` : ""}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-1 max-h-[60vh] overflow-y-auto">
-            {cats.map((c) => (
-              <label key={c.id} className="flex items-center gap-2">
-                <Checkbox
-                  checked={linkedIds.has(c.id)}
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-left">
+            <th className="py-1 pr-2">Name</th>
+            <th className="py-1 pr-2">Type</th>
+            <th className="py-1 pr-2">Units</th>
+            <th className="py-1">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {shown.map((r) => (
+            <tr key={r.id} className="border-b last:border-0">
+              <td className="py-1 pr-2">{r.name}</td>
+              <td className="py-1 pr-2">{r.type}</td>
+              <td className="py-1 pr-2">{r.units ?? "—"}</td>
+              <td className="py-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="mr-1.5 h-8 w-8"
+                  onClick={() => setEditing(r)}
+                >
+                  <Pencil size={14} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
                   disabled={busy}
-                  /* annotate v so TS doesn’t complain */
-                  onCheckedChange={(v: boolean) => toggle(c.id, v)}
-                />
-                {c.name}
-              </label>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
+                  onClick={() => remove(r.id)}
+                >
+                  <Trash size={14} />
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* edit dialog */}
+      <FilterDialog
+        open={editing !== null}
+        filter={editing}
+        onClose={() => setEditing(null)}
+        onSaved={load}
+      />
     </>
   );
 }
