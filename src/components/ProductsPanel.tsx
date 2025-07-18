@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Plus, Search, Upload } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import ProductDialog, { Product, Category } from "./ProductDialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import ProductTable from "./ProductTable";
+import SearchBox from "./SearchBox";
 
 export default function ProductsPanel() {
   const [rows, setRows] = useState<Product[]>([]);
@@ -87,16 +87,11 @@ export default function ProductsPanel() {
     <>
       {/* toolbar */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        {/* search box */}
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Search…"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="w-56 pl-8"
-          />
-        </div>
+        <SearchBox
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="w-56"
+        />
 
         <div className="flex gap-2">
           {/* bulk upload */}
@@ -132,7 +127,7 @@ export default function ProductsPanel() {
         globalFilter={filter}
         onEdit={setEditing}
         onDelete={remove}
-        onUploaded={loadProducts} /* refresh after per-row thumb upload */
+        onUploaded={loadProducts}
       />
 
       {/* dialog */}
