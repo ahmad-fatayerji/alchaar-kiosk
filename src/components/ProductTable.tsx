@@ -3,7 +3,7 @@
 import * as React from "react";
 import {
   ColumnDef,
-  flexRender, // ⬅️  NEW
+  flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
@@ -18,27 +18,44 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
 import RowActions from "./RowActions";
+import Thumb from "./Thumb";
 import type { Product } from "./ProductDialog";
 
+/* ------------------------------------------------------------------ */
+/* Props                                                               */
+/* ------------------------------------------------------------------ */
 type Props = {
   data: Product[];
   globalFilter: string;
   onEdit(p: Product): void;
   onDelete(code: string): void;
-  onUploaded(): void;
+  onUploaded(): void; // refresh after single-row thumb upload
 };
 
-/* ---------- column defs ---------- */
+/* ------------------------------------------------------------------ */
+/* Column definitions                                                  */
+/* ------------------------------------------------------------------ */
 const buildColumns = (
   onEdit: Props["onEdit"],
   onDelete: Props["onDelete"],
   onUploaded: Props["onUploaded"]
 ): ColumnDef<Product>[] => [
+  /* ---- thumbnail (fixed size) ---- */
+  {
+    id: "thumb",
+    header: () => <span className="sr-only">Image</span>,
+    enableSorting: false,
+    size: 70,
+    cell: ({ row }) => <Thumb code={row.original.barcode} />,
+  },
+  /* ---- barcode ---- */
   {
     accessorKey: "barcode",
     header: "Barcode",
   },
+  /* ---- name ---- */
   {
     accessorKey: "name",
     header: "Name",
@@ -46,41 +63,32 @@ const buildColumns = (
       <span className="font-medium">{getValue() as string}</span>
     ),
   },
+  /* ---- category ---- */
   {
     accessorKey: "category",
     header: "Category",
+    cell: ({ getValue }) =>
+      // react-table flattens dot-accessors, we stored full object earlier
+      typeof getValue() === "string"
+        ? (getValue() as string)
+        : (getValue() as any)?.name ?? "",
   },
+  /* ---- price ---- */
   {
     accessorKey: "price",
     header: "Price",
     cell: ({ getValue }) => Number(getValue()).toFixed(2),
   },
+  /* ---- stock ---- */
   {
-    id: "thumbnail",
-    header: "Thumbnail",
-    enableSorting: false,
-    cell: ({ row }) => {
-      const [src, setSrc] = React.useState<string>(
-        `/products/${row.original.barcode}.jpg`
-      );
-
-      return (
-        <img
-          src={src}
-          alt="thumb"
-          className="h-16 w-16 rounded border object-contain"
-          onError={() => {
-            if (src.endsWith(".jpg")) {
-              setSrc(`/products/${row.original.barcode}.png`);
-            }
-          }}
-        />
-      );
-    },
+    accessorKey: "qtyInStock",
+    header: "Stock",
   },
+  /* ---- row actions ---- */
   {
     id: "actions",
     enableSorting: false,
+    size: 60,
     cell: ({ row }) => (
       <RowActions
         code={row.original.barcode}
@@ -92,6 +100,9 @@ const buildColumns = (
   },
 ];
 
+/* ------------------------------------------------------------------ */
+/* Component                                                           */
+/* ------------------------------------------------------------------ */
 export default function ProductTable({
   data,
   globalFilter,
@@ -99,27 +110,23 @@ export default function ProductTable({
   onDelete,
   onUploaded,
 }: Props) {
-  /* ---------- react-table setup ---------- */
-  const columns = React.useMemo(
-    () => buildColumns(onEdit, onDelete, onUploaded),
-    [onEdit, onDelete, onUploaded]
-  );
-
+  /* react-table instance */
   const table = useReactTable({
     data,
-    columns,
+    columns: React.useMemo(
+      () => buildColumns(onEdit, onDelete, onUploaded),
+      [onEdit, onDelete, onUploaded]
+    ),
     state: { globalFilter },
     onGlobalFilterChange: () => {},
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    debugTable: false,
   });
 
-  /* ---------- render ---------- */
+  /* render */
   return (
     <Table>
-      {/* table header */}
       <TableHeader>
         {table.getHeaderGroups().map((hg) => (
           <TableRow key={hg.id}>
@@ -134,7 +141,6 @@ export default function ProductTable({
         ))}
       </TableHeader>
 
-      {/* table body */}
       <TableBody>
         {table.getRowModel().rows.map((row) => (
           <TableRow key={row.id}>
