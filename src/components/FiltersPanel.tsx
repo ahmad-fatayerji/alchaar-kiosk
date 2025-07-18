@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash, Search } from "lucide-react";
+import { Plus, Pencil, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import SearchBox from "./SearchBox";
 import FilterDialog, { FilterRow } from "./FilterDialog";
 
 export default function FiltersPanel() {
   const [rows, setRows] = useState<FilterRow[]>([]);
-  const [filter, setFilter] = useState("");
+  const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<FilterRow | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -26,10 +26,7 @@ export default function FiltersPanel() {
     const name = prompt("New filter name:");
     if (!name?.trim()) return;
 
-    const type = prompt(
-      'Type? Enter "label", "number" or "range":',
-      "label"
-    )?.toUpperCase();
+    const type = prompt("Type? label / number / range", "label")?.toUpperCase();
     if (!["LABEL", "NUMBER", "RANGE"].includes(type ?? ""))
       return alert("Bad type");
 
@@ -50,25 +47,20 @@ export default function FiltersPanel() {
     load();
   }
 
-  /* ---------- filtered view ---------- */
   const shown = rows.filter((r) =>
-    r.name.toLowerCase().includes(filter.toLowerCase())
+    r.name.toLowerCase().includes(search.toLowerCase())
   );
 
   /* ---------- render ---------- */
   return (
     <>
-      {/* toolbar – identical styling to ProductsPanel */}
+      {/* toolbar */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Search…"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="w-56 pl-8"
-          />
-        </div>
+        <SearchBox
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-56"
+        />
 
         <Button size="sm" onClick={create}>
           <Plus className="mr-1.5 h-4 w-4" />
@@ -76,7 +68,7 @@ export default function FiltersPanel() {
         </Button>
       </div>
 
-      {/* table – same look as ProductsTable */}
+      {/* table */}
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b text-left">
