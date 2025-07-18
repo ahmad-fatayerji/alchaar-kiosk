@@ -29,7 +29,7 @@ export default function ProductsPanel() {
   /* wrapper closes dialog after save */
   const handleSave = async (p: Partial<Product>, values: any[]) => {
     const isNew = editing === null; // ← brand-new product?
-    await upsert(p, values, isNew);
+    await upsert(p, values);
     setEditing(undefined); // close dialog
   };
 
