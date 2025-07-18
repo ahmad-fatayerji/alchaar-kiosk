@@ -57,7 +57,7 @@ export default function CategoryTree({
 
     const hasArrow =
       cat.hasChildren !== false &&
-      (cat.children === undefined || (cat.children?.length ?? 0) > 0);
+      (cat.children === undefined || cat.children.length > 0);
 
     return (
       <li className="relative">
