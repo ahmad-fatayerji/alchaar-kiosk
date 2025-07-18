@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Upload } from "lucide-react";
+import { Plus, Upload, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SearchBox from "./SearchBox";
 import { useRef } from "react";
@@ -10,25 +10,20 @@ type Props = {
   onSearch(v: string): void;
   onNew(): void;
   onBulk(files: FileList): void;
+  onExport(): void;
   disabled?: boolean;
 };
 
-/** Shared toolbar for the Products panel (keeps JSX out of the main file). */
+/** Top toolbar for the Products panel (search + buttons). */
 export default function ProductsToolbar({
   search,
   onSearch,
   onNew,
   onBulk,
+  onExport,
   disabled,
 }: Props) {
   const bulkRef = useRef<HTMLInputElement>(null);
-
-  function handleBulk(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files?.length) {
-      onBulk(e.target.files);
-      e.target.value = ""; // allow re-select
-    }
-  }
 
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -39,6 +34,7 @@ export default function ProductsToolbar({
       />
 
       <div className="flex gap-2">
+        {/* bulk upload */}
         <Button
           variant="outline"
           size="sm"
@@ -55,9 +51,25 @@ export default function ProductsToolbar({
           type="file"
           accept="image/*"
           multiple
-          onChange={handleBulk}
+          onChange={(e) => {
+            if (e.target.files?.length) onBulk(e.target.files);
+            e.target.value = "";
+          }}
         />
 
+        {/* export */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onExport}
+          disabled={disabled}
+          title="Download products.xlsx"
+        >
+          <FileDown className="mr-1.5 h-4 w-4" />
+          Export
+        </Button>
+
+        {/* new product */}
         <Button size="sm" onClick={onNew}>
           <Plus className="mr-1.5 h-4 w-4" />
           New
