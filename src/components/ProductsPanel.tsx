@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ProductDialog, { Product, Category } from "./ProductDialog";
+import ProductDialog, { Product } from "./ProductDialog";
 import ProductTable from "./ProductTable";
 import ProductsToolbar from "./ProductsToolbar";
+import BulkAssignDialog, { Category } from "./BulkAssignDialog";
 import { useProducts } from "@/hooks/useProducts";
 
 export default function ProductsPanel() {
@@ -20,12 +21,12 @@ export default function ProductsPanel() {
     bulkAssign,
   } = useProducts();
 
-  /* initial load */
+  /* ---------- load products on mount ---------- */
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  /* categories for dialog */
+  /* ---------- load categories once ---------- */
   const [cats, setCats] = useState<Category[]>([]);
   useEffect(() => {
     fetch("/api/categories")
@@ -33,22 +34,19 @@ export default function ProductsPanel() {
       .then((t) => setCats(t.trim() ? (JSON.parse(t) as Category[]) : []));
   }, []);
 
-  /* UI state */
+  /* ---------- UI state ---------- */
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Product | null | undefined>(undefined);
+  const [assignOpen, setAssignOpen] = useState(false);
 
-  /* ---- export via server endpoint ---- */
+  /* ---------- export ---------- */
   const exportAll = () => {
     window.location.href = "/api/products/export";
   };
 
-  /* ---- bulk assign helper (prompt for category ID) ---- */
-  const bulkAssignPrompt = () => {
-    const input = prompt("Move to category ID (leave blank = none):", "");
-    if (input === null) return;
-    const catId = input.trim() === "" ? null : Number(input.trim());
-    if (catId !== null && Number.isNaN(catId))
-      return alert("Not a valid number.");
+  /* ---------- bulk assign helper ---------- */
+  const assignTo = (catId: number | null) => {
+    setAssignOpen(false);
     bulkAssign([...selected], catId);
   };
 
@@ -61,7 +59,7 @@ export default function ProductsPanel() {
         onBulk={bulkUpload}
         onExport={exportAll}
         onBulkDelete={() => bulkDelete([...selected])}
-        onBulkAssign={bulkAssignPrompt}
+        onBulkAssignClick={() => setAssignOpen(true)}
         disabled={busy}
         selectedCount={selected.size}
       />
@@ -76,6 +74,7 @@ export default function ProductsPanel() {
         onUploaded={refresh}
       />
 
+      {/* product edit dialog */}
       <ProductDialog
         open={editing !== undefined}
         product={editing ?? null}
@@ -83,6 +82,14 @@ export default function ProductsPanel() {
         busy={busy}
         onCancel={() => setEditing(undefined)}
         onSave={upsert}
+      />
+
+      {/* bulk-assign dialog */}
+      <BulkAssignDialog
+        open={assignOpen}
+        cats={cats}
+        onClose={() => setAssignOpen(false)}
+        onAssign={assignTo}
       />
     </>
   );

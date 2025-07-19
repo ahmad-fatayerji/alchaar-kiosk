@@ -12,12 +12,11 @@ type Props = {
   onBulk(files: FileList): void;
   onExport(): void;
   onBulkDelete(): void;
-  onBulkAssign(): void;
+  onBulkAssignClick(): void;
   disabled?: boolean;
   selectedCount: number;
 };
 
-/** Top toolbar with search + buttons (now bulk buttons too). */
 export default function ProductsToolbar({
   search,
   onSearch,
@@ -25,7 +24,7 @@ export default function ProductsToolbar({
   onBulk,
   onExport,
   onBulkDelete,
-  onBulkAssign,
+  onBulkAssignClick,
   disabled,
   selectedCount,
 }: Props) {
@@ -46,7 +45,6 @@ export default function ProductsToolbar({
           size="sm"
           onClick={() => bulkRef.current?.click()}
           disabled={disabled}
-          title="Upload multiple images"
         >
           <Upload className="mr-1.5 h-4 w-4" />
           Upload&nbsp;images
@@ -69,7 +67,6 @@ export default function ProductsToolbar({
           size="sm"
           onClick={onExport}
           disabled={disabled}
-          title="Download products.xlsx"
         >
           <FileDown className="mr-1.5 h-4 w-4" />
           Export
@@ -81,7 +78,6 @@ export default function ProductsToolbar({
           size="sm"
           disabled={disabled || selectedCount === 0}
           onClick={onBulkDelete}
-          title="Delete selected products"
         >
           <Trash2 className="mr-1.5 h-4 w-4" />
           Delete&nbsp;selected
@@ -92,8 +88,7 @@ export default function ProductsToolbar({
           variant="outline"
           size="sm"
           disabled={disabled || selectedCount === 0}
-          onClick={onBulkAssign}
-          title="Move selected to category"
+          onClick={onBulkAssignClick}
         >
           <FolderSymlink className="mr-1.5 h-4 w-4" />
           Move&nbsp;to&nbsp;category
