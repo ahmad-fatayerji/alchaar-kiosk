@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import CategoryTree from "./CategoryTree";
 import CategoryProductsDialog from "./CategoryProductsDialog";
 import { useCategories } from "@/hooks/useCategories";
+import { bumpThumbVersion } from "@/hooks/useThumbVersion";
 
 export default function CategoriesPanel() {
   const { tree, busyIds, loadRoot, ensureChildren, create, rename, remove } =
@@ -16,7 +17,7 @@ export default function CategoriesPanel() {
   const [thumbCatId, setThumbCatId] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  /* first load */
+  /* initial load */
   useEffect(() => {
     loadRoot();
   }, [loadRoot]);
@@ -32,11 +33,10 @@ export default function CategoriesPanel() {
       body: fd,
     });
 
-    /* 🔄 reload tree so CatThumb gets new props (forces re-render) */
-    await loadRoot();
-
+    bumpThumbVersion(); // 🔄 refresh all <CatThumb> components
+    await loadRoot(); // reload tree so new props propagate
     setThumbCatId(null);
-    e.target.value = "";
+    e.target.value = ""; // reset chooser
   }
 
   return (
@@ -79,8 +79,8 @@ export default function CategoriesPanel() {
 
       {/* hidden file input */}
       <input
-        hidden
         ref={fileRef}
+        hidden
         type="file"
         accept="image/*"
         onChange={onThumb}

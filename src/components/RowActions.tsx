@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
+import { bumpThumbVersion } from "@/hooks/useThumbVersion";
 
 type Props = {
   code: string; // product barcode
@@ -37,8 +38,9 @@ export default function RowActions({
       body: fd,
     });
 
-    onUploaded(); // let parent refresh list
-    e.target.value = ""; // allow the same file to be chosen again later
+    bumpThumbVersion(); // 🔄 refresh all <Thumb> components
+    onUploaded(); // reload product list data
+    e.target.value = ""; // allow picking the same file again later
   }
 
   return (

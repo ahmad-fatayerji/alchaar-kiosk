@@ -1,10 +1,11 @@
 /* ------------------------------------------------------------------ */
-/* src/hooks/useProducts.ts                                            */
+/* src/hooks/useProducts.ts                                           */
 /* ------------------------------------------------------------------ */
 "use client";
 
 import { useCallback, useState } from "react";
 import type { Product } from "@/components/ProductDialog";
+import { bumpThumbVersion } from "@/hooks/useThumbVersion";
 
 /* ---------- Types ------------------------------------------------ */
 type FilterValue = Parameters<
@@ -28,7 +29,7 @@ export function useProducts() {
         async (p: Partial<Product>, values: FilterValue[]) => {
             setBusy(true);
 
-            /* Does this barcode already exist? → decide POST vs PATCH */
+            /* Does this barcode already exist? */
             const exists = products.some(
                 (prod) => prod.barcode === String(p.barcode ?? "")
             );
@@ -36,17 +37,14 @@ export function useProducts() {
             const url = exists ? `/api/products/${p.barcode}` : "/api/products";
             const method = exists ? "PATCH" : "POST";
 
-            /* 1️⃣  product row */
+            /* 1️⃣ product row */
             await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...p,
-                    barcode: String(p.barcode ?? ""),
-                }),
+                body: JSON.stringify({ ...p, barcode: String(p.barcode ?? "") }),
             });
 
-            /* 2️⃣  associated filter values */
+            /* 2️⃣ associated filter values */
             await fetch("/api/product-filters", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -77,6 +75,7 @@ export function useProducts() {
             const fd = new FormData();
             Array.from(files).forEach((f) => fd.append("files", f));
             await fetch("/api/products/bulk-thumbnails", { method: "POST", body: fd });
+            bumpThumbVersion();          // 🔄 refresh all thumbnails
             refresh();
         },
         [refresh]
