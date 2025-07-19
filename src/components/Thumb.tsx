@@ -9,16 +9,17 @@ export default function Thumb({
   code: string;
   size?: number;
 }) {
-  const v = useThumbVersion(); // 👈 subscribe
+  const v = useThumbVersion(); // bump changes on every upload
   const base = `/files/products/${code}`;
   const exts = [".webp", ".jpg", ".jpeg", ".png", ".avif"];
 
+  /** Try the next extension when 404. */
   function fallback(img: HTMLImageElement) {
     const tried = img.src.split("?")[0];
     const ext = tried.slice(tried.lastIndexOf("."));
     const next = exts[exts.indexOf(ext) + 1];
     if (next) img.src = `${base}${next}?v=${v}`;
-    else img.style.display = "none";
+    /* else: out of options – leave src as-is so a future v bump retries */
   }
 
   return (
@@ -27,7 +28,7 @@ export default function Thumb({
       className="flex items-center justify-center rounded bg-white ring-1 ring-border overflow-hidden"
     >
       <img
-        src={`${base}${exts[0]}?v=${v}`} // 👈 version in query-string
+        src={`${base}${exts[0]}?v=${v}`}
         onError={(e) => fallback(e.currentTarget)}
         alt=""
         loading="lazy"

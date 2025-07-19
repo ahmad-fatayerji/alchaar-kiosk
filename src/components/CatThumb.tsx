@@ -10,7 +10,7 @@ export default function CatThumb({
   folder?: "categories" | "products";
   size?: number;
 }) {
-  const v = useThumbVersion(); // 👈 subscribe
+  const v = useThumbVersion();
   const base = `/files/${folder}/${id}`;
   const exts = [".webp", ".jpg", ".jpeg", ".png", ".avif"];
 
@@ -19,7 +19,6 @@ export default function CatThumb({
     const ext = tried.slice(tried.lastIndexOf("."));
     const next = exts[exts.indexOf(ext) + 1];
     if (next) img.src = `${base}${next}?v=${v}`;
-    else img.style.display = "none";
   }
 
   return (
@@ -28,7 +27,7 @@ export default function CatThumb({
       className="flex items-center justify-center rounded bg-white ring-1 ring-border overflow-hidden shrink-0"
     >
       <img
-        src={`${base}${exts[0]}?v=${v}`} // 👈 version in query-string
+        src={`${base}${exts[0]}?v=${v}`}
         onError={(e) => fallback(e.currentTarget)}
         alt=""
         draggable={false}
