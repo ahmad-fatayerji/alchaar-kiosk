@@ -7,7 +7,18 @@ import ProductsToolbar from "./ProductsToolbar";
 import { useProducts } from "@/hooks/useProducts";
 
 export default function ProductsPanel() {
-  const { products, busy, refresh, upsert, remove, bulkUpload } = useProducts();
+  const {
+    products,
+    selected,
+    setSelected,
+    busy,
+    refresh,
+    upsert,
+    remove,
+    bulkUpload,
+    bulkDelete,
+    bulkAssign,
+  } = useProducts();
 
   /* initial load */
   useEffect(() => {
@@ -26,16 +37,19 @@ export default function ProductsPanel() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Product | null | undefined>(undefined);
 
-  /* wrapper closes dialog after save */
-  const handleSave = async (p: Partial<Product>, values: any[]) => {
-    const isNew = editing === null; // ← brand-new product?
-    await upsert(p, values);
-    setEditing(undefined); // close dialog
-  };
-
-  /* Excel export */
+  /* ---- export via server endpoint ---- */
   const exportAll = () => {
     window.location.href = "/api/products/export";
+  };
+
+  /* ---- bulk assign helper (prompt for category ID) ---- */
+  const bulkAssignPrompt = () => {
+    const input = prompt("Move to category ID (leave blank = none):", "");
+    if (input === null) return;
+    const catId = input.trim() === "" ? null : Number(input.trim());
+    if (catId !== null && Number.isNaN(catId))
+      return alert("Not a valid number.");
+    bulkAssign([...selected], catId);
   };
 
   return (
@@ -46,12 +60,17 @@ export default function ProductsPanel() {
         onNew={() => setEditing(null)}
         onBulk={bulkUpload}
         onExport={exportAll}
+        onBulkDelete={() => bulkDelete([...selected])}
+        onBulkAssign={bulkAssignPrompt}
         disabled={busy}
+        selectedCount={selected.size}
       />
 
       <ProductTable
         data={products}
         globalFilter={search}
+        selected={selected}
+        setSelected={setSelected}
         onEdit={setEditing}
         onDelete={remove}
         onUploaded={refresh}
@@ -63,7 +82,7 @@ export default function ProductsPanel() {
         cats={cats}
         busy={busy}
         onCancel={() => setEditing(undefined)}
-        onSave={handleSave} /* uses wrapper */
+        onSave={upsert}
       />
     </>
   );

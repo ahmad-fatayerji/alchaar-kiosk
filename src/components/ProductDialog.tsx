@@ -26,8 +26,11 @@ export type Product = {
   name: string;
   price: string;
   qtyInStock: number;
-  categoryId: number;
+  categoryId: number | null;
 };
+
+/* sentinel for “no category” */
+const NONE = "_none";
 
 type Props = {
   open: boolean;
@@ -49,11 +52,11 @@ export default function ProductDialog({
 }: Props) {
   /* ---------- static product fields ---------- */
   const [form, setForm] = useState({
-    barcode: product?.barcode ?? "",
-    name: product?.name ?? "",
-    price: product?.price ?? "",
-    stock: product?.qtyInStock.toString() ?? "",
-    catId: product?.categoryId.toString() ?? (cats[0]?.id.toString() || ""),
+    barcode: "",
+    name: "",
+    price: "",
+    stock: "",
+    catId: NONE, // default to “no category”
   });
 
   useEffect(() => {
@@ -62,9 +65,12 @@ export default function ProductDialog({
       name: product?.name ?? "",
       price: product?.price ?? "",
       stock: product?.qtyInStock.toString() ?? "",
-      catId: product?.categoryId.toString() ?? (cats[0]?.id.toString() || ""),
+      catId:
+        product && product.categoryId != null
+          ? product.categoryId.toString()
+          : NONE,
     });
-  }, [product, cats]);
+  }, [product, open]);
 
   const upd = <K extends keyof typeof form>(k: K, v: string) =>
     setForm((s) => ({ ...s, [k]: v }));
@@ -78,7 +84,11 @@ export default function ProductDialog({
   /* fetch filter-defs whenever category changes */
   useEffect(() => {
     const cat = Number(form.catId);
-    if (!cat) return;
+    if (!cat) {
+      setDefs([]);
+      setVals({});
+      return;
+    }
     fetch(`/api/categories/${cat}/filters`)
       .then((r) => r.json())
       .then(setDefs)
@@ -91,11 +101,10 @@ export default function ProductDialog({
       [id]: { ...(s[id] ?? { filterId: id }), ...patch },
     }));
 
-  /* build per-filter UI */
+  /* ---- render helpers for filters ---- */
   function render(def: (typeof defs)[number]) {
     const v = vals[def.id] ?? {};
     switch (def.type) {
-      /* LABEL → single yes/no checkbox */
       case "LABEL":
         return (
           <label className="flex items-center gap-2">
@@ -109,8 +118,6 @@ export default function ProductDialog({
             {v.labelVal ? "yes" : "no"}
           </label>
         );
-
-      /* NUMBER → one int field */
       case "NUMBER":
         return (
           <Input
@@ -125,8 +132,6 @@ export default function ProductDialog({
             }
           />
         );
-
-      /* RANGE → two int fields */
       case "RANGE":
         return (
           <div className="flex gap-2">
@@ -161,8 +166,7 @@ export default function ProductDialog({
     }
   }
 
-  const disabled =
-    !form.barcode || !form.name.trim() || !form.price || !form.catId;
+  const disabled = !form.barcode || !form.name.trim() || !form.price; // category may be NONE
 
   /* ---------- render ---------- */
   return (
@@ -172,7 +176,7 @@ export default function ProductDialog({
           <DialogTitle>{product ? "Edit product" : "New product"}</DialogTitle>
         </DialogHeader>
 
-        {/* ---- static fields ---- */}
+        {/* ---- form fields ---- */}
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -191,6 +195,7 @@ export default function ProductDialog({
                   <SelectValue placeholder="Choose…" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={NONE}>— None —</SelectItem>
                   {cats.map((c) => (
                     <SelectItem key={c.id} value={c.id.toString()}>
                       {c.name}
@@ -255,7 +260,7 @@ export default function ProductDialog({
               onSave(
                 {
                   barcode: form.barcode,
-                  categoryId: Number(form.catId),
+                  categoryId: form.catId === NONE ? null : Number(form.catId),
                   name: form.name.trim(),
                   price: form.price,
                   qtyInStock: Number(form.stock || 0),

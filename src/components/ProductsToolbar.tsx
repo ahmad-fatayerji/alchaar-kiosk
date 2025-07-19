@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Upload, FileDown } from "lucide-react";
+import { Plus, Upload, FileDown, Trash2, FolderSymlink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SearchBox from "./SearchBox";
 import { useRef } from "react";
@@ -11,17 +11,23 @@ type Props = {
   onNew(): void;
   onBulk(files: FileList): void;
   onExport(): void;
+  onBulkDelete(): void;
+  onBulkAssign(): void;
   disabled?: boolean;
+  selectedCount: number;
 };
 
-/** Top toolbar for the Products panel (search + buttons). */
+/** Top toolbar with search + buttons (now bulk buttons too). */
 export default function ProductsToolbar({
   search,
   onSearch,
   onNew,
   onBulk,
   onExport,
+  onBulkDelete,
+  onBulkAssign,
   disabled,
+  selectedCount,
 }: Props) {
   const bulkRef = useRef<HTMLInputElement>(null);
 
@@ -33,14 +39,14 @@ export default function ProductsToolbar({
         className="w-56"
       />
 
-      <div className="flex gap-2">
-        {/* bulk upload */}
+      <div className="flex flex-wrap gap-2">
+        {/* bulk thumbnail upload */}
         <Button
           variant="outline"
           size="sm"
           onClick={() => bulkRef.current?.click()}
           disabled={disabled}
-          title="Upload multiple images at once"
+          title="Upload multiple images"
         >
           <Upload className="mr-1.5 h-4 w-4" />
           Upload&nbsp;images
@@ -67,6 +73,30 @@ export default function ProductsToolbar({
         >
           <FileDown className="mr-1.5 h-4 w-4" />
           Export
+        </Button>
+
+        {/* bulk delete */}
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={disabled || selectedCount === 0}
+          onClick={onBulkDelete}
+          title="Delete selected products"
+        >
+          <Trash2 className="mr-1.5 h-4 w-4" />
+          Delete&nbsp;selected
+        </Button>
+
+        {/* bulk assign */}
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={disabled || selectedCount === 0}
+          onClick={onBulkAssign}
+          title="Move selected to category"
+        >
+          <FolderSymlink className="mr-1.5 h-4 w-4" />
+          Move&nbsp;to&nbsp;category
         </Button>
 
         {/* new product */}

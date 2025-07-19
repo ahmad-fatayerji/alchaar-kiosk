@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------ */
-/* src/hooks/useProducts.ts                                           */
+/* Products state + CRUD + BULK helpers                               */
 /* ------------------------------------------------------------------ */
 "use client";
 
@@ -17,6 +17,9 @@ export function useProducts() {
     const [products, setProducts] = useState<Product[]>([]);
     const [busy, setBusy] = useState(false);
 
+    /* NEW: set of selected barcodes for bulk ops */
+    const [selected, setSelected] = useState<Set<string>>(new Set());
+
     /* ---- list loader ---------------------------------------------- */
     const refresh = useCallback(async () => {
         const res = await fetch("/api/products");
@@ -29,11 +32,9 @@ export function useProducts() {
         async (p: Partial<Product>, values: FilterValue[]) => {
             setBusy(true);
 
-            /* Does this barcode already exist? */
             const exists = products.some(
                 (prod) => prod.barcode === String(p.barcode ?? "")
             );
-
             const url = exists ? `/api/products/${p.barcode}` : "/api/products";
             const method = exists ? "PATCH" : "POST";
 
@@ -60,11 +61,52 @@ export function useProducts() {
         [products, refresh]
     );
 
-    /* ---- delete --------------------------------------------------- */
+    /* ---- single delete -------------------------------------------- */
     const remove = useCallback(
         async (barcode: string) => {
             await fetch(`/api/products/${barcode}`, { method: "DELETE" });
             refresh();
+        },
+        [refresh]
+    );
+
+    /* ---- bulk delete ---------------------------------------------- */
+    const bulkDelete = useCallback(
+        async (codes: string[]) => {
+            if (!codes.length) return;
+            if (!confirm(`Delete ${codes.length} products?`)) return;
+
+            setBusy(true);
+            await fetch("/api/products/bulk", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ codes }),
+            });
+            setSelected(new Set());
+            await refresh();
+            setBusy(false);
+        },
+        [refresh]
+    );
+
+    /* ---- bulk assign to category ---------------------------------- */
+    const bulkAssign = useCallback(
+        async (codes: string[], categoryId: number | null) => {
+            if (!codes.length) return;
+
+            setBusy(true);
+            await fetch("/api/category-products", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    categoryId,
+                    add: codes,
+                    remove: [],
+                }),
+            });
+            setSelected(new Set());
+            await refresh();
+            setBusy(false);
         },
         [refresh]
     );
@@ -75,18 +117,25 @@ export function useProducts() {
             const fd = new FormData();
             Array.from(files).forEach((f) => fd.append("files", f));
             await fetch("/api/products/bulk-thumbnails", { method: "POST", body: fd });
-            bumpThumbVersion();          // 🔄 refresh all thumbnails
+            bumpThumbVersion(); // refresh thumbnails
             refresh();
         },
         [refresh]
     );
 
     return {
+        /* data */
         products,
+        selected,
         busy,
+        /* setters */
+        setSelected,
+        /* operations */
         refresh,
         upsert,
         remove,
+        bulkDelete,
+        bulkAssign,
         bulkUpload,
     };
 }
