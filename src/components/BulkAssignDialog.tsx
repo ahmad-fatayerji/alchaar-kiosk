@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,7 @@ import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { RadioGroup, RadioGroupItem } from "@radix-ui/react-radio-group";
 
 export type Category = { id: number; name: string };
+const NONE_VAL = "_none";
 
 type Props = {
   open: boolean;
@@ -27,8 +29,18 @@ export default function BulkAssignDialog({
   onClose,
   onAssign,
 }: Props) {
-  const handle = (value: string) =>
-    onAssign(value === "_none" ? null : Number(value));
+  /* local selection state */
+  const [choice, setChoice] = useState<string>(NONE_VAL);
+
+  /* reset to “None” whenever dialog opens */
+  useEffect(() => {
+    if (open) setChoice(NONE_VAL);
+  }, [open]);
+
+  function handleAssign() {
+    const catId = choice === NONE_VAL ? null : Number(choice);
+    onAssign(catId);
+  }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -37,15 +49,16 @@ export default function BulkAssignDialog({
           <DialogTitle>Move selected products</DialogTitle>
         </DialogHeader>
 
+        {/* scrollable list of categories */}
         <div className="max-h-[60vh]">
           <ScrollArea>
             <RadioGroup
-              defaultValue="_none"
-              onValueChange={handle}
+              value={choice}
+              onValueChange={setChoice}
               className="grid gap-3"
             >
               <Label className="flex items-center gap-3 text-sm cursor-pointer">
-                <RadioGroupItem value="_none" /> — None —
+                <RadioGroupItem value={NONE_VAL} /> — None —
               </Label>
 
               {cats.map((c) => (
@@ -65,6 +78,7 @@ export default function BulkAssignDialog({
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
+          <Button onClick={handleAssign}>Assign</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
