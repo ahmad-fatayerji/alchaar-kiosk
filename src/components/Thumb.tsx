@@ -1,27 +1,31 @@
 "use client";
 
+import React from "react";
+
 /**
- * Re-usable thumbnail component.
- * Renders a **fixed-size square** (defaults to 56 px) and
- * falls back through multiple extensions until one exists.
+ * Product thumbnail.
+ * • Fixed square (size = 56 px by default)
+ * • Tries .webp → .jpg → .jpeg → .png → .avif
+ * • `?v=<timestamp>` busts any 404/stale-image cache
  */
 export default function Thumb({
   code,
-  size = 56, // ← tweak this once and it scales everywhere
+  size = 56,
 }: {
   code: string;
   size?: number;
 }) {
-  const base = `/products/${code}`;
+  const base = `/files/products/${code}`;
   const exts = [".webp", ".jpg", ".jpeg", ".png", ".avif"];
+  const ver = Date.now(); // new on every render
 
-  /** swap to next extension when 404 */
+  /** Swap to the next extension when the current one 404s. */
   function fallback(img: HTMLImageElement) {
-    const curr = img.src;
-    const ext = curr.slice(curr.lastIndexOf("."));
+    const tried = img.src.split("?")[0];
+    const ext = tried.slice(tried.lastIndexOf("."));
     const next = exts[exts.indexOf(ext) + 1];
-    if (next) img.src = base + next;
-    else img.style.display = "none"; // nothing matched
+    if (next) img.src = `${base}${next}?v=${ver}`;
+    else img.style.display = "none"; // none matched
   }
 
   return (
@@ -30,7 +34,7 @@ export default function Thumb({
       className="flex items-center justify-center rounded bg-white ring-1 ring-border overflow-hidden"
     >
       <img
-        src={base + exts[0]}
+        src={`${base}${exts[0]}?v=${ver}`}
         onError={(e) => fallback(e.currentTarget)}
         alt=""
         loading="lazy"

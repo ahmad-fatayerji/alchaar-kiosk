@@ -1,68 +1,46 @@
 // src/components/CatThumb.tsx
 "use client";
 
-import React, { forwardRef, useEffect, useState } from "react";
+/**
+ * Category thumbnail.
+ * • Shows the image immediately after upload (no HEAD probe).
+ * • Uses the dynamic /files route so Next.js’s static snapshot is bypassed.
+ * • Cache-busts with ?v=<timestamp> to avoid stale 404s.
+ */
+export default function CatThumb({
+  id,
+  folder = "categories",
+  size = 56,
+}: {
+  id: string | number;
+  folder?: "categories" | "products";
+  size?: number;
+}) {
+  const base = `/files/${folder}/${id}`;
+  const exts = [".webp", ".jpg", ".jpeg", ".png", ".avif"];
+  const ver = Date.now(); // new on every render → bypass browser cache
 
-type Key = string | number;
-const exts = [".webp", ".jpg", ".jpeg", ".png", ".avif"];
-const CACHE = new Map<Key, string | null>(); // id → chosen url (or null = none)
-
-/* resolve once per ID, ever */
-async function probe(id: Key, folder: string): Promise<string | null> {
-  if (CACHE.has(id)) return CACHE.get(id)!;
-
-  for (const ext of exts) {
-    const url = `/${folder}/${id}${ext}`;
-    try {
-      const head = await fetch(url, { method: "HEAD" });
-      if (head.ok) {
-        CACHE.set(id, url);
-        return url;
-      }
-    } catch {
-      /* ignore */
-    }
+  /** If the current extension 404s, try the next one. */
+  function fallback(img: HTMLImageElement) {
+    const tried = img.src.split("?")[0]; // strip ?v
+    const ext = tried.slice(tried.lastIndexOf("."));
+    const next = exts[exts.indexOf(ext) + 1];
+    if (next) img.src = `${base}${next}?v=${ver}`;
+    else img.style.display = "none"; // none matched
   }
-  CACHE.set(id, null);
-  return null;
-}
-
-/* ------------------------------------------------------------------ */
-/* Thumbnail component                                                 */
-/* ------------------------------------------------------------------ */
-const CatThumb = forwardRef<
-  HTMLDivElement,
-  { id: Key; folder?: "categories" | "products"; size?: number }
->(function CatThumb({ id, folder = "categories", size = 56 }, ref) {
-  const [url, setUrl] = useState<string | null>(() => CACHE.get(id) ?? null);
-
-  /* first (and only) asynchronous probe */
-  useEffect(() => {
-    if (url !== null || CACHE.has(id)) return; // already resolved
-    probe(id, folder).then((resolved) => {
-      if (resolved) setUrl(resolved);
-      else setUrl(null);
-    });
-  }, [id, folder, url]);
 
   return (
     <div
-      ref={ref}
       style={{ width: size, height: size }}
       className="flex items-center justify-center rounded bg-white ring-1 ring-border overflow-hidden shrink-0"
-      /* 👇 stable key so React never swaps the DOM element */
-      key={`thumb-${id}`}
     >
-      {url && (
-        <img
-          src={url}
-          alt=""
-          draggable={false}
-          className="h-full w-full object-contain"
-        />
-      )}
+      <img
+        src={`${base}${exts[0]}?v=${ver}`}
+        onError={(e) => fallback(e.currentTarget)}
+        alt=""
+        draggable={false}
+        className="h-full w-full object-contain"
+      />
     </div>
   );
-});
-
-export default React.memo(CatThumb);
+}

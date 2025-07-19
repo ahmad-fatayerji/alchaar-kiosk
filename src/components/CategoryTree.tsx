@@ -14,15 +14,14 @@ import { MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* -------------------------------------------------- */
-/* Memo-ised row                                      */
+/* Row (memoised)                                     */
 /* -------------------------------------------------- */
 type RowProps = {
   cat: Category;
   depth: number;
-  open: boolean;
-  loading: boolean;
-  toggle(cat: Category): void;
+  openIds: Set<number>;
   busyIds: Set<number>;
+  toggle(cat: Category): void;
   /* actions */
   create(parentId: number | null): void;
   rename(cat: Category): void;
@@ -35,16 +34,17 @@ const Row = memo(
   function Row({
     cat,
     depth,
-    open,
-    loading,
-    toggle,
+    openIds,
     busyIds,
+    toggle,
     create,
     rename,
     remove,
     openDialog,
     uploadThumb,
   }: RowProps) {
+    const isOpen = openIds.has(cat.id);
+    const isLoading = busyIds.has(cat.id);
     const hasArrow =
       cat.hasChildren !== false &&
       (cat.children === undefined || cat.children.length > 0);
@@ -64,10 +64,10 @@ const Row = memo(
           {hasArrow ? (
             <button
               className="w-4 text-xs text-gray-500"
-              disabled={loading}
+              disabled={isLoading}
               onClick={() => toggle(cat)}
             >
-              {loading ? "⏳" : open ? "▼" : "▶"}
+              {isLoading ? "⏳" : isOpen ? "▼" : "▶"}
             </button>
           ) : (
             <span className="w-4" />
@@ -112,8 +112,8 @@ const Row = memo(
         {cat.children && (
           <ul
             className={cn(
-              "pl-6 space-y-1",
-              !open && "hidden" // toggle visibility only
+              "pl-6 space-y-1 list-none",
+              !isOpen && "hidden" // toggle visibility only
             )}
           >
             {cat.children.map((ch) => (
@@ -121,10 +121,9 @@ const Row = memo(
                 key={ch.id}
                 cat={ch}
                 depth={depth + 1}
-                open={open && busyIds.has(ch.id) === false}
-                loading={busyIds.has(ch.id)}
-                toggle={toggle}
+                openIds={openIds}
                 busyIds={busyIds}
+                toggle={toggle}
                 create={create}
                 rename={rename}
                 remove={remove}
@@ -139,8 +138,8 @@ const Row = memo(
   },
   /* re-render only if these primitives change */
   (prev, next) =>
-    prev.open === next.open &&
-    prev.loading === next.loading &&
+    prev.openIds === next.openIds && // same Set instance means same open state
+    prev.busyIds === next.busyIds &&
     prev.cat === next.cat
 );
 
@@ -151,7 +150,7 @@ type Props = {
   cats: Category[];
   busy: Set<number>;
   ensure(cat: Category): Promise<void>;
-} & Omit<RowProps, "cat" | "depth" | "open" | "loading" | "toggle" | "busyIds">;
+} & Omit<RowProps, "cat" | "depth" | "openIds" | "busyIds" | "toggle">;
 
 export default function CategoryTree({
   cats,
@@ -163,35 +162,34 @@ export default function CategoryTree({
   openDialog,
   uploadThumb,
 }: Props) {
-  const [openIds, setOpen] = useState<Set<number>>(new Set());
+  const [openIds, setOpenIds] = useState<Set<number>>(new Set());
 
   const toggle = useCallback(
     async (cat: Category) => {
       if (openIds.has(cat.id)) {
-        setOpen((s) => {
+        setOpenIds((s) => {
           const cp = new Set(s);
           cp.delete(cat.id);
           return cp;
         });
       } else {
-        await ensure(cat);
-        setOpen((s) => new Set(s).add(cat.id));
+        await ensure(cat); // lazy-load children first
+        setOpenIds((s) => new Set(s).add(cat.id));
       }
     },
     [openIds, ensure]
   );
 
   return (
-    <ul className="space-y-1">
+    <ul className="space-y-1 list-none">
       {cats.map((c) => (
         <Row
           key={c.id}
           cat={c}
           depth={0}
-          open={openIds.has(c.id)}
-          loading={busy.has(c.id)}
-          toggle={toggle}
+          openIds={openIds}
           busyIds={busy}
+          toggle={toggle}
           create={create}
           rename={rename}
           remove={remove}

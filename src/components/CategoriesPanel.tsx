@@ -31,6 +31,10 @@ export default function CategoriesPanel() {
       method: "POST",
       body: fd,
     });
+
+    /* 🔄 reload tree so CatThumb gets new props (forces re-render) */
+    await loadRoot();
+
     setThumbCatId(null);
     e.target.value = "";
   }
