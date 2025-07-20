@@ -53,27 +53,31 @@ const buildColumns = (
   {
     id: "select",
     enableSorting: false,
-    size: 40,
+    size: 50,
     header: ({ table }) => {
       const allCodes = table.getRowModel().rows.map((r) => r.original.barcode);
       const allSelected = allCodes.every((c) => selected.has(c));
       return (
-        <Checkbox
-          checked={allSelected && allCodes.length > 0}
-          onCheckedChange={() => {
-            const set = new Set(selected);
-            if (allSelected) allCodes.forEach((c) => set.delete(c));
-            else allCodes.forEach((c) => set.add(c));
-            toggleSel("___bulk", set);
-          }}
-        />
+        <div className="flex justify-center p-2">
+          <Checkbox
+            checked={allSelected && allCodes.length > 0}
+            onCheckedChange={() => {
+              const set = new Set(selected);
+              if (allSelected) allCodes.forEach((c) => set.delete(c));
+              else allCodes.forEach((c) => set.add(c));
+              toggleSel("___bulk", set);
+            }}
+          />
+        </div>
       );
     },
     cell: ({ row }) => (
-      <Checkbox
-        checked={selected.has(row.original.barcode)}
-        onCheckedChange={() => toggleSel(row.original.barcode)}
-      />
+      <div className="flex justify-center p-2">
+        <Checkbox
+          checked={selected.has(row.original.barcode)}
+          onCheckedChange={() => toggleSel(row.original.barcode)}
+        />
+      </div>
     ),
   },
   /* ---- thumbnail ---- */
@@ -85,8 +89,8 @@ const buildColumns = (
     cell: ({ row }) => <Thumb code={row.original.barcode} />,
   },
   /* ---- barcode ---- */
-  { 
-    accessorKey: "barcode", 
+  {
+    accessorKey: "barcode",
     header: "Barcode",
     cell: ({ getValue }) => (
       <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
@@ -120,19 +124,17 @@ const buildColumns = (
     accessorKey: "price",
     header: "Price",
     cell: ({ getValue }) => (
-      <span className="font-medium">
-        ${Number(getValue()).toFixed(2)}
-      </span>
+      <span className="font-medium">${Number(getValue()).toFixed(2)}</span>
     ),
   },
   /* ---- stock ---- */
-  { 
-    accessorKey: "qtyInStock", 
+  {
+    accessorKey: "qtyInStock",
     header: "Stock",
     cell: ({ getValue }) => {
       const qty = getValue() as number;
       return (
-        <Badge 
+        <Badge
           variant={qty > 0 ? "default" : "destructive"}
           className="font-mono"
         >
@@ -203,31 +205,34 @@ export default function ProductTable({
   return (
     <div className="overflow-x-auto">
       <Table>
-      <TableHeader>
-        {table.getHeaderGroups().map((hg) => (
+        <TableHeader>
+          {table.getHeaderGroups().map((hg) => (
             <TableRow key={hg.id} className="bg-muted/50">
-            {hg.headers.map((h) => (
-                <TableHead key={h.id} className="whitespace-nowrap font-semibold">
-                {h.isPlaceholder
-                  ? null
-                  : flexRender(h.column.columnDef.header, h.getContext())}
-              </TableHead>
-            ))}
-          </TableRow>
-        ))}
-      </TableHeader>
+              {hg.headers.map((h) => (
+                <TableHead
+                  key={h.id}
+                  className="whitespace-nowrap font-semibold"
+                >
+                  {h.isPlaceholder
+                    ? null
+                    : flexRender(h.column.columnDef.header, h.getContext())}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
 
-      <TableBody>
-        {table.getRowModel().rows.map((row) => (
+        <TableBody>
+          {table.getRowModel().rows.map((row) => (
             <TableRow key={row.id} className="hover:bg-muted/30">
-            {row.getVisibleCells().map((cell) => (
-              <TableCell key={cell.id} className="align-middle">
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
-      </TableBody>
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id} className="align-middle">
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
       </Table>
     </div>
   );

@@ -55,9 +55,7 @@ export default function ProductsPanel() {
     <>
       <div className="mb-8">
         <h2 className="text-2xl font-bold tracking-tight">Products</h2>
-        <p className="text-muted-foreground mt-1">
-          Manage your product inventory and details
-        </p>
+        <p className="text-muted-foreground mt-1">Inventory management</p>
       </div>
 
       <ProductsToolbar
