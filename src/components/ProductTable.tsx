@@ -22,6 +22,8 @@ import {
 import RowActions from "./RowActions";
 import Thumb from "./Thumb";
 import type { Product } from "./ProductDialog";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 /* ------------------------------------------------------------------ */
 /* Props                                                               */
@@ -56,10 +58,9 @@ const buildColumns = (
       const allCodes = table.getRowModel().rows.map((r) => r.original.barcode);
       const allSelected = allCodes.every((c) => selected.has(c));
       return (
-        <input
-          type="checkbox"
+        <Checkbox
           checked={allSelected && allCodes.length > 0}
-          onChange={() => {
+          onCheckedChange={() => {
             const set = new Set(selected);
             if (allSelected) allCodes.forEach((c) => set.delete(c));
             else allCodes.forEach((c) => set.add(c));
@@ -69,10 +70,9 @@ const buildColumns = (
       );
     },
     cell: ({ row }) => (
-      <input
-        type="checkbox"
+      <Checkbox
         checked={selected.has(row.original.barcode)}
-        onChange={() => toggleSel(row.original.barcode)}
+        onCheckedChange={() => toggleSel(row.original.barcode)}
       />
     ),
   },
@@ -85,7 +85,15 @@ const buildColumns = (
     cell: ({ row }) => <Thumb code={row.original.barcode} />,
   },
   /* ---- barcode ---- */
-  { accessorKey: "barcode", header: "Barcode" },
+  { 
+    accessorKey: "barcode", 
+    header: "Barcode",
+    cell: ({ getValue }) => (
+      <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
+        {getValue() as string}
+      </code>
+    ),
+  },
   /* ---- name ---- */
   {
     accessorKey: "name",
@@ -99,18 +107,40 @@ const buildColumns = (
     accessorKey: "category",
     header: "Category",
     cell: ({ getValue }) =>
-      typeof getValue() === "string"
-        ? (getValue() as string)
-        : (getValue() as any)?.name ?? "—",
+      typeof getValue() === "string" ? (
+        <Badge variant="outline">{getValue() as string}</Badge>
+      ) : (getValue() as any)?.name ? (
+        <Badge variant="outline">{(getValue() as any).name}</Badge>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      ),
   },
   /* ---- price ---- */
   {
     accessorKey: "price",
     header: "Price",
-    cell: ({ getValue }) => Number(getValue()).toFixed(2),
+    cell: ({ getValue }) => (
+      <span className="font-medium">
+        ${Number(getValue()).toFixed(2)}
+      </span>
+    ),
   },
   /* ---- stock ---- */
-  { accessorKey: "qtyInStock", header: "Stock" },
+  { 
+    accessorKey: "qtyInStock", 
+    header: "Stock",
+    cell: ({ getValue }) => {
+      const qty = getValue() as number;
+      return (
+        <Badge 
+          variant={qty > 0 ? "default" : "destructive"}
+          className="font-mono"
+        >
+          {qty}
+        </Badge>
+      );
+    },
+  },
   /* ---- row actions ---- */
   {
     id: "actions",
@@ -171,12 +201,13 @@ export default function ProductTable({
 
   /* render */
   return (
-    <Table>
+    <div className="overflow-x-auto">
+      <Table>
       <TableHeader>
         {table.getHeaderGroups().map((hg) => (
-          <TableRow key={hg.id}>
+            <TableRow key={hg.id} className="bg-muted/50">
             {hg.headers.map((h) => (
-              <TableHead key={h.id} className="whitespace-nowrap">
+                <TableHead key={h.id} className="whitespace-nowrap font-semibold">
                 {h.isPlaceholder
                   ? null
                   : flexRender(h.column.columnDef.header, h.getContext())}
@@ -188,7 +219,7 @@ export default function ProductTable({
 
       <TableBody>
         {table.getRowModel().rows.map((row) => (
-          <TableRow key={row.id}>
+            <TableRow key={row.id} className="hover:bg-muted/30">
             {row.getVisibleCells().map((cell) => (
               <TableCell key={cell.id} className="align-middle">
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -197,6 +228,7 @@ export default function ProductTable({
           </TableRow>
         ))}
       </TableBody>
-    </Table>
+      </Table>
+    </div>
   );
 }
