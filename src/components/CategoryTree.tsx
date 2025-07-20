@@ -10,8 +10,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 /* -------------------------------------------------- */
 /* Row (memoised)                                     */
@@ -50,39 +51,51 @@ const Row = memo(
       (cat.children === undefined || cat.children.length > 0);
 
     return (
-      <li className="relative">
+      <li className="relative group">
         {/* vertical guideline */}
         {depth > 0 && (
           <>
-            <span className="absolute left-0 top-0 h-full w-px bg-border" />
-            <span className="absolute left-0 top-4 w-6 border-t border-border" />
+            <span className="absolute left-0 top-0 h-full w-px bg-border/50" />
+            <span className="absolute left-0 top-6 w-6 border-t border-border/50" />
           </>
         )}
 
-        <div className="flex items-center gap-2 pl-6">
+        <div className="flex items-center gap-3 pl-6 py-2 rounded-lg hover:bg-accent/50 transition-colors">
           {/* arrow / spinner / placeholder */}
           {hasArrow ? (
-            <button
-              className="w-4 text-xs text-gray-500"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
               disabled={isLoading}
               onClick={() => toggle(cat)}
             >
-              {isLoading ? "⏳" : isOpen ? "▼" : "▶"}
-            </button>
+              {isLoading ? (
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : isOpen ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronRight className="h-3 w-3" />
+              )}
+            </Button>
           ) : (
-            <span className="w-4" />
+            <span className="w-6" />
           )}
 
           {/* thumbnail + name */}
-          <CatThumb id={cat.id} size={28} />
-          <span>{cat.name}</span>
+          <CatThumb id={cat.id} size={32} />
+          <span className="font-medium text-foreground flex-1">{cat.name}</span>
 
           {/* actions dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="p-1 rounded hover:bg-muted/50">
-                <MoreHorizontal className="size-4" />
-              </button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => uploadThumb(cat.id)}>
@@ -112,7 +125,7 @@ const Row = memo(
         {cat.children && (
           <ul
             className={cn(
-              "pl-6 space-y-1 list-none",
+              "pl-6 space-y-1 list-none mt-1",
               !isOpen && "hidden" // toggle visibility only
             )}
           >
@@ -181,7 +194,8 @@ export default function CategoryTree({
   );
 
   return (
-    <ul className="space-y-1 list-none">
+    <div className="bg-card rounded-lg border border-border p-4">
+      <ul className="space-y-1 list-none">
       {cats.map((c) => (
         <Row
           key={c.id}
@@ -197,6 +211,7 @@ export default function CategoryTree({
           uploadThumb={uploadThumb}
         />
       ))}
-    </ul>
+      </ul>
+    </div>
   );
 }

@@ -4,6 +4,7 @@ import { Plus, Upload, FileDown, Trash2, FolderSymlink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SearchBox from "./SearchBox";
 import { useRef } from "react";
+import { Badge } from "@/components/ui/badge";
 
 type Props = {
   search: string;
@@ -31,14 +32,20 @@ export default function ProductsToolbar({
   const bulkRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-4 p-4 bg-muted/30 rounded-lg border">
       <SearchBox
         value={search}
         onChange={(e) => onSearch(e.target.value)}
-        className="w-56"
+        className="w-64"
       />
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex items-center gap-3">
+        {selectedCount > 0 && (
+          <Badge variant="secondary" className="px-3 py-1">
+            {selectedCount} selected
+          </Badge>
+        )}
+        
         {/* bulk thumbnail upload */}
         <Button
           variant="outline"
@@ -47,7 +54,7 @@ export default function ProductsToolbar({
           disabled={disabled}
         >
           <Upload className="mr-1.5 h-4 w-4" />
-          Upload&nbsp;images
+          Upload Images
         </Button>
         <input
           ref={bulkRef}
@@ -78,9 +85,10 @@ export default function ProductsToolbar({
           size="sm"
           disabled={disabled || selectedCount === 0}
           onClick={onBulkDelete}
+          className="text-destructive hover:bg-destructive/10"
         >
           <Trash2 className="mr-1.5 h-4 w-4" />
-          Delete&nbsp;selected
+          Delete Selected
         </Button>
 
         {/* bulk assign */}
@@ -91,13 +99,13 @@ export default function ProductsToolbar({
           onClick={onBulkAssignClick}
         >
           <FolderSymlink className="mr-1.5 h-4 w-4" />
-          Move&nbsp;to&nbsp;category
+          Move to Category
         </Button>
 
         {/* new product */}
         <Button size="sm" onClick={onNew}>
           <Plus className="mr-1.5 h-4 w-4" />
-          New
+          New Product
         </Button>
       </div>
     </div>

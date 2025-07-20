@@ -8,6 +8,8 @@ import CategoryTree from "./CategoryTree";
 import CategoryProductsDialog from "./CategoryProductsDialog";
 import { useCategories } from "@/hooks/useCategories";
 import { bumpThumbVersion } from "@/hooks/useThumbVersion";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 export default function CategoriesPanel() {
   const { tree, busyIds, loadRoot, ensureChildren, create, rename, remove } =
@@ -41,17 +43,22 @@ export default function CategoriesPanel() {
 
   return (
     <section>
-      <header className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-semibold">🗂️ Categories</h2>
-        <button
-          className="rounded bg-blue-600 px-3 py-1 text-sm text-white"
+      <header className="mb-8 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Categories</h2>
+          <p className="text-muted-foreground mt-1">
+            Organize your products into categories
+          </p>
+        </div>
+        <Button
           onClick={() => {
             const name = prompt("Root category name:");
             if (name?.trim()) create(null, name.trim());
           }}
         >
-          ➕ Root&nbsp;category
-        </button>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Root Category
+        </Button>
       </header>
 
       <CategoryTree

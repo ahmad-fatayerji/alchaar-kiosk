@@ -6,6 +6,7 @@ import ProductTable from "./ProductTable";
 import ProductsToolbar from "./ProductsToolbar";
 import BulkAssignDialog, { Category } from "./BulkAssignDialog";
 import { useProducts } from "@/hooks/useProducts";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function ProductsPanel() {
   const {
@@ -52,6 +53,13 @@ export default function ProductsPanel() {
 
   return (
     <>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold tracking-tight">Products</h2>
+        <p className="text-muted-foreground mt-1">
+          Manage your product inventory and details
+        </p>
+      </div>
+
       <ProductsToolbar
         search={search}
         onSearch={setSearch}
@@ -64,15 +72,19 @@ export default function ProductsPanel() {
         selectedCount={selected.size}
       />
 
-      <ProductTable
-        data={products}
-        globalFilter={search}
-        selected={selected}
-        setSelected={setSelected}
-        onEdit={setEditing}
-        onDelete={remove}
-        onUploaded={refresh}
-      />
+      <Card>
+        <CardContent className="p-0">
+          <ProductTable
+            data={products}
+            globalFilter={search}
+            selected={selected}
+            setSelected={setSelected}
+            onEdit={setEditing}
+            onDelete={remove}
+            onUploaded={refresh}
+          />
+        </CardContent>
+      </Card>
 
       {/* product edit dialog */}
       <ProductDialog
