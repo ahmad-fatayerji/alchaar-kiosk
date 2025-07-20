@@ -1,6 +1,13 @@
 "use client";
 
-import { Plus, Upload, FileDown, Trash2, FolderSymlink } from "lucide-react";
+import {
+  Plus,
+  Upload,
+  FileDown,
+  Trash2,
+  FolderSymlink,
+  Tag,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SearchBox from "./SearchBox";
 import { useRef } from "react";
@@ -14,6 +21,7 @@ type Props = {
   onExport(): void;
   onBulkDelete(): void;
   onBulkAssignClick(): void;
+  onBulkSaleClick(): void;
   disabled?: boolean;
   selectedCount: number;
 };
@@ -26,6 +34,7 @@ export default function ProductsToolbar({
   onExport,
   onBulkDelete,
   onBulkAssignClick,
+  onBulkSaleClick,
   disabled,
   selectedCount,
 }: Props) {
@@ -45,7 +54,7 @@ export default function ProductsToolbar({
             {selectedCount} selected
           </Badge>
         )}
-        
+
         {/* bulk thumbnail upload */}
         <Button
           variant="outline"
@@ -100,6 +109,18 @@ export default function ProductsToolbar({
         >
           <FolderSymlink className="mr-1.5 h-4 w-4" />
           Move to Category
+        </Button>
+
+        {/* bulk sale */}
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={disabled || selectedCount === 0}
+          onClick={onBulkSaleClick}
+          className="text-orange-600 hover:bg-orange-50"
+        >
+          <Tag className="mr-1.5 h-4 w-4" />
+          Manage Sales
         </Button>
 
         {/* new product */}

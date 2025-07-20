@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react";
 import { logout } from "@/lib/adminAuth";
-import { Package, Tags, FolderTree, LogOut } from "lucide-react";
+import { Package, Tags, FolderTree, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -11,6 +11,7 @@ const tabs = [
   { id: "categories", label: "Categories", icon: FolderTree },
   { id: "filters", label: "Filters", icon: Tags },
   { id: "products", label: "Products", icon: Package },
+  { id: "settings", label: "Settings", icon: Settings },
 ] as const;
 
 export type Tab = (typeof tabs)[number]["id"];
@@ -44,8 +45,8 @@ export default function AdminLayout({
               variant={id === tab ? "default" : "ghost"}
               className={cn(
                 "w-full justify-start gap-3 h-10 px-3",
-                id === tab 
-                  ? "bg-primary text-primary-foreground shadow-sm" 
+                id === tab
+                  ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent"
               )}
               onClick={() => onTab(id)}

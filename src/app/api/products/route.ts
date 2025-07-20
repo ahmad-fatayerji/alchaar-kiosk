@@ -20,6 +20,7 @@ export async function GET(req: Request) {
         ...p,
         barcode: p.barcode.toString(), // bigint → string
         price: p.price.toString(),   // Decimal → string
+        salePrice: p.salePrice?.toString() || null, // Decimal → string or null
     }));
 
     return NextResponse.json(safe);  // never throws “serialize BigInt”

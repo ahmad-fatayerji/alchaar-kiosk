@@ -25,11 +25,12 @@ export type Product = {
   barcode: string;
   name: string;
   price: string;
+  salePrice?: string | null;
   qtyInStock: number;
   categoryId: number | null;
 };
 
-/* sentinel for “no category” */
+/* sentinel for "no category" */
 const NONE = "_none";
 
 type Props = {
@@ -55,8 +56,9 @@ export default function ProductDialog({
     barcode: "",
     name: "",
     price: "",
+    salePrice: "",
     stock: "",
-    catId: NONE, // default to “no category”
+    catId: NONE, // default to "no category"
   });
 
   useEffect(() => {
@@ -64,6 +66,7 @@ export default function ProductDialog({
       barcode: product?.barcode ?? "",
       name: product?.name ?? "",
       price: product?.price ?? "",
+      salePrice: product?.salePrice ?? "",
       stock: product?.qtyInStock.toString() ?? "",
       catId:
         product && product.categoryId != null
@@ -214,7 +217,7 @@ export default function ProductDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>Price&nbsp;($)</Label>
               <Input
@@ -222,6 +225,16 @@ export default function ProductDialog({
                 step="0.01"
                 value={form.price}
                 onChange={(e) => upd("price", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Sale Price&nbsp;($)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={form.salePrice}
+                placeholder="Optional"
+                onChange={(e) => upd("salePrice", e.target.value)}
               />
             </div>
             <div>
@@ -263,6 +276,7 @@ export default function ProductDialog({
                   categoryId: form.catId === NONE ? null : Number(form.catId),
                   name: form.name.trim(),
                   price: form.price,
+                  salePrice: form.salePrice || null,
                   qtyInStock: Number(form.stock || 0),
                 },
                 /* keep only rows with at least one populated field */

@@ -123,9 +123,29 @@ const buildColumns = (
   {
     accessorKey: "price",
     header: "Price",
-    cell: ({ getValue }) => (
-      <span className="font-medium">${Number(getValue()).toFixed(2)}</span>
-    ),
+    cell: ({ row }) => {
+      const regularPrice = Number(row.original.price);
+      const salePrice = row.original.salePrice
+        ? Number(row.original.salePrice)
+        : null;
+
+      return (
+        <div className="flex flex-col gap-1">
+          {salePrice ? (
+            <>
+              <span className="text-sm text-muted-foreground line-through">
+                ${regularPrice.toFixed(2)}
+              </span>
+              <span className="font-medium text-green-600">
+                ${salePrice.toFixed(2)}
+              </span>
+            </>
+          ) : (
+            <span className="font-medium">${regularPrice.toFixed(2)}</span>
+          )}
+        </div>
+      );
+    },
   },
   /* ---- stock ---- */
   {

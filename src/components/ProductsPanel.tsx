@@ -5,6 +5,7 @@ import ProductDialog, { Product } from "./ProductDialog";
 import ProductTable from "./ProductTable";
 import ProductsToolbar from "./ProductsToolbar";
 import BulkAssignDialog, { Category } from "./BulkAssignDialog";
+import BulkSaleDialog from "./BulkSaleDialog";
 import { useProducts } from "@/hooks/useProducts";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -39,6 +40,7 @@ export default function ProductsPanel() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Product | null | undefined>(undefined);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [saleOpen, setSaleOpen] = useState(false);
 
   /* ---------- export ---------- */
   const exportAll = () => {
@@ -49,6 +51,12 @@ export default function ProductsPanel() {
   const assignTo = (catId: number | null) => {
     setAssignOpen(false);
     bulkAssign([...selected], catId);
+  };
+
+  /* ---------- bulk sale helper ---------- */
+  const handleSaleSuccess = () => {
+    setSelected(new Set()); // Clear selection
+    refresh(); // Refresh products
   };
 
   return (
@@ -66,6 +74,7 @@ export default function ProductsPanel() {
         onExport={exportAll}
         onBulkDelete={() => bulkDelete([...selected])}
         onBulkAssignClick={() => setAssignOpen(true)}
+        onBulkSaleClick={() => setSaleOpen(true)}
         disabled={busy}
         selectedCount={selected.size}
       />
@@ -100,6 +109,14 @@ export default function ProductsPanel() {
         cats={cats}
         onClose={() => setAssignOpen(false)}
         onAssign={assignTo}
+      />
+
+      {/* bulk-sale dialog */}
+      <BulkSaleDialog
+        open={saleOpen}
+        selectedBarcodes={[...selected]}
+        onClose={() => setSaleOpen(false)}
+        onSuccess={handleSaleSuccess}
       />
     </>
   );
