@@ -1,10 +1,10 @@
-// Global layout for every route — no locale logic.
-import type { Metadata } from "next";
+// src/app/layout.tsx
 import "@/app/global.css";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Al-Chaar Kiosk",
-  description: "Self-service kiosk app",
+  title: "Al-Chaar Pharmacy",
+  description: "Welcome kiosk screen",
 };
 
 export default function RootLayout({
@@ -14,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-white text-gray-900">{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
