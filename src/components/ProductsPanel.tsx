@@ -27,10 +27,10 @@ export default function ProductsPanel() {
     refresh();
   }, [refresh]);
 
-  /* ---------- load categories once ---------- */
+  /* ---------- load categories once (only leaf categories) ---------- */
   const [cats, setCats] = useState<Category[]>([]);
   useEffect(() => {
-    fetch("/api/categories")
+    fetch("/api/categories/leaf")
       .then((r) => r.text())
       .then((t) => setCats(t.trim() ? (JSON.parse(t) as Category[]) : []));
   }, []);

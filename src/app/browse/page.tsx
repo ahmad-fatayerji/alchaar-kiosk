@@ -87,14 +87,31 @@ export default function BrowsePage() {
 
           {/* Category Cards */}
           {categories.map((category) => (
-            <CategoryCard
-              key={category.id}
-              id={category.id}
-              name={category.name}
-              description={`Browse ${category.name.toLowerCase()} products`}
-              isViewAll={false}
-              onClick={handleCategorySelect}
-            />
+            <div key={category.id} className="relative">
+              <CategoryCard
+                id={category.id}
+                name={category.name}
+                description={
+                  category.hasChildren
+                    ? "Contains subcategories"
+                    : "Contains products"
+                }
+                isViewAll={false}
+                onClick={handleCategorySelect}
+              />
+              {/* Category type indicator */}
+              <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-lg shadow-lg">
+                {category.hasChildren ? (
+                  <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                    📁
+                  </span>
+                ) : (
+                  <span className="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                    📦
+                  </span>
+                )}
+              </div>
+            </div>
           ))}
         </div>
 

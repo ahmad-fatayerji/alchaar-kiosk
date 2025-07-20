@@ -16,6 +16,21 @@ export async function POST(req: Request) {
         remove?: (string | number)[];
     };
 
+    // If assigning to a category, validate it's a leaf category
+    if (categoryId !== null) {
+        const children = await prisma.category.findMany({
+            where: { parentId: categoryId },
+            select: { id: true },
+        });
+
+        if (children.length > 0) {
+            return NextResponse.json(
+                { error: "Products can only be assigned to leaf categories (categories without subcategories)" },
+                { status: 400 }
+            );
+        }
+    }
+
     const tx: Prisma.PrismaPromise<any>[] = [];
 
     if (add.length) {

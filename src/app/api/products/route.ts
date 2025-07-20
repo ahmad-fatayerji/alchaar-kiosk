@@ -31,6 +31,21 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     const body = await req.json();
 
+    // If assigning to a category, validate it's a leaf category
+    if (body.categoryId !== null && body.categoryId !== undefined) {
+        const children = await prisma.category.findMany({
+            where: { parentId: body.categoryId },
+            select: { id: true },
+        });
+
+        if (children.length > 0) {
+            return NextResponse.json(
+                { error: "Products can only be assigned to leaf categories (categories without subcategories)" },
+                { status: 400 }
+            );
+        }
+    }
+
     /* Cast the incoming string barcode back to BigInt for Prisma. */
     const prod = await prisma.product.create({
         data: {
