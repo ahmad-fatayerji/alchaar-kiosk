@@ -179,7 +179,7 @@ export default function BulkSaleDialog({
                 <Button
                   onClick={handleApplySale}
                   disabled={loading || !salePrice}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 text-white"
                 >
                   <TrendingDown className="h-4 w-4 mr-1" />
                   Apply Sale
@@ -203,7 +203,7 @@ export default function BulkSaleDialog({
                   <Button
                     onClick={handleApplySale}
                     disabled={loading || !percentage}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 text-white"
                   >
                     <Percent className="h-4 w-4 mr-1" />
                     Apply {percentage && `${percentage}%`} Discount
