@@ -52,7 +52,7 @@ export async function POST(req: Request) {
             const updatePromises = products.map(product => {
                 const originalPrice = Number(product.price);
                 const newSalePrice = Math.round(originalPrice * multiplier * 100) / 100; // Round to 2 decimal places
-                
+
                 return prisma.product.update({
                     where: { barcode: product.barcode },
                     data: { salePrice: newSalePrice }
@@ -78,9 +78,9 @@ export async function POST(req: Request) {
             });
         }
 
-        const action = removeSale 
-            ? `Removed sale from` 
-            : saleType === "percentage" 
+        const action = removeSale
+            ? `Removed sale from`
+            : saleType === "percentage"
                 ? `Applied ${percentage}% discount to`
                 : `Applied sale to`;
 

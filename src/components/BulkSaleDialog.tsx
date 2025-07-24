@@ -55,7 +55,8 @@ export default function BulkSaleDialog({
           barcodes: selectedBarcodes,
           saleType: saleType,
           salePrice: saleType === "fixed" ? Number(salePrice) : undefined,
-          percentage: saleType === "percentage" ? Number(percentage) : undefined,
+          percentage:
+            saleType === "percentage" ? Number(percentage) : undefined,
           removeSale: false,
         }),
       });
@@ -138,20 +139,26 @@ export default function BulkSaleDialog({
           {/* Apply Sale Section */}
           <div className="space-y-4">
             <Label className="text-base font-medium">Apply Sale</Label>
-            
+
             {/* Sale Type Selection */}
             <RadioGroup
               value={saleType}
-              onValueChange={(value) => setSaleType(value as "fixed" | "percentage")}
+              onValueChange={(value) =>
+                setSaleType(value as "fixed" | "percentage")
+              }
               className="space-y-3"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="fixed" id="fixed" />
-                <Label htmlFor="fixed" className="cursor-pointer">Fixed Price</Label>
+                <Label htmlFor="fixed" className="cursor-pointer">
+                  Fixed Price
+                </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="percentage" id="percentage" />
-                <Label htmlFor="percentage" className="cursor-pointer">Percentage Discount</Label>
+                <Label htmlFor="percentage" className="cursor-pointer">
+                  Percentage Discount
+                </Label>
               </div>
             </RadioGroup>
 
@@ -204,7 +211,9 @@ export default function BulkSaleDialog({
                 </div>
                 {percentage && (
                   <p className="text-sm text-green-700 bg-green-50 p-2 rounded">
-                    This will calculate sale prices as {100 - Number(percentage || 0)}% of the original price for each product.
+                    This will calculate sale prices as{" "}
+                    {100 - Number(percentage || 0)}% of the original price for
+                    each product.
                   </p>
                 )}
               </div>

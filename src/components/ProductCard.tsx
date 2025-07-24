@@ -29,26 +29,33 @@ export default function ProductCard({
 }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
   const [hidePrices, setHidePrices] = useState(false);
+  const [salesEnabled, setSalesEnabled] = useState(true);
   const isInStock = product.qtyInStock > 0;
   const imageSrc = `/products/${product.barcode}.avif`;
-  const hasSale = product.salePrice && Number(product.salePrice) > 0;
+  const hasSale =
+    salesEnabled && product.salePrice && Number(product.salePrice) > 0;
   const regularPrice = Number(product.price);
   const salePrice = hasSale ? Number(product.salePrice) : null;
 
-  // Load price visibility setting
+  // Load settings
   useEffect(() => {
     if (hidePricesOverride !== undefined) {
       setHidePrices(hidePricesOverride);
-      return;
     }
 
     fetch("/api/settings")
       .then((res) => res.json())
       .then((settings) => {
-        setHidePrices(settings.hide_prices === "true");
+        if (hidePricesOverride === undefined) {
+          setHidePrices(settings.hide_prices === "true");
+        }
+        setSalesEnabled(settings.sales_enabled !== "false");
       })
       .catch(() => {
-        setHidePrices(false);
+        if (hidePricesOverride === undefined) {
+          setHidePrices(false);
+        }
+        setSalesEnabled(true);
       });
   }, [hidePricesOverride]);
 
