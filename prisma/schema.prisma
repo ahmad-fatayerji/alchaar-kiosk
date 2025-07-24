@@ -71,8 +71,9 @@ model Product {
   category   Category? @relation(fields: [categoryId], references: [id])
 
   name       String // <-- single name
-  price      Decimal @db.Decimal(10, 2)
-  qtyInStock Int     @default(0)
+  price      Decimal  @db.Decimal(10, 2)
+  salePrice  Decimal? @db.Decimal(10, 2) // Sale price (optional)
+  qtyInStock Int      @default(0)
 
   filterValues ProductFilterValue[]
   OrderItem    OrderItem[]
@@ -81,6 +82,16 @@ model Product {
   updatedAt DateTime @updatedAt
 
   @@index([categoryId])
+}
+
+/**
+ * ────────── SETTINGS ───────────
+ */
+model Setting {
+  key   String @id
+  value String
+
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 /**

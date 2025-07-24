@@ -37,6 +37,7 @@ type Props = {
   onEdit(p: Product): void;
   onDelete(code: string): void;
   onUploaded(): void; // refresh after single-row thumb upload
+  salesEnabled?: boolean; // whether sales features are enabled
 };
 
 /* ------------------------------------------------------------------ */
@@ -47,7 +48,8 @@ const buildColumns = (
   onDelete: Props["onDelete"],
   onUploaded: Props["onUploaded"],
   selected: Set<string>,
-  toggleSel: (code: string, newSet?: Set<string>) => void
+  toggleSel: (code: string, newSet?: Set<string>) => void,
+  salesEnabled: boolean = true
 ): ColumnDef<Product>[] => [
   /* ---- selection checkbox ---- */
   {
@@ -122,10 +124,40 @@ const buildColumns = (
   /* ---- price ---- */
   {
     accessorKey: "price",
-    header: "Price",
-    cell: ({ getValue }) => (
-      <span className="font-medium">${Number(getValue()).toFixed(2)}</span>
+    header: () => (
+      <div className="flex items-center gap-2">
+        Price
+        {!salesEnabled && (
+          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+            Sales Disabled
+          </span>
+        )}
+      </div>
     ),
+    cell: ({ row }) => {
+      const regularPrice = Number(row.original.price);
+      const salePrice =
+        salesEnabled && row.original.salePrice
+          ? Number(row.original.salePrice)
+          : null;
+
+      return (
+        <div className="flex flex-col gap-1">
+          {salePrice ? (
+            <>
+              <span className="text-sm text-muted-foreground line-through">
+                ${regularPrice.toFixed(2)}
+              </span>
+              <span className="font-medium text-green-600">
+                ${salePrice.toFixed(2)}
+              </span>
+            </>
+          ) : (
+            <span className="font-medium">${regularPrice.toFixed(2)}</span>
+          )}
+        </div>
+      );
+    },
   },
   /* ---- stock ---- */
   {
@@ -170,6 +202,7 @@ export default function ProductTable({
   onEdit,
   onDelete,
   onUploaded,
+  salesEnabled = true,
 }: Props) {
   /* helper to toggle selection */
   const toggleSel = React.useCallback(
@@ -191,8 +224,16 @@ export default function ProductTable({
   const table = useReactTable({
     data,
     columns: React.useMemo(
-      () => buildColumns(onEdit, onDelete, onUploaded, selected, toggleSel),
-      [onEdit, onDelete, onUploaded, selected, toggleSel]
+      () =>
+        buildColumns(
+          onEdit,
+          onDelete,
+          onUploaded,
+          selected,
+          toggleSel,
+          salesEnabled
+        ),
+      [onEdit, onDelete, onUploaded, selected, toggleSel, salesEnabled]
     ),
     state: { globalFilter },
     onGlobalFilterChange: () => {},

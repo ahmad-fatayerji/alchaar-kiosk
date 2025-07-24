@@ -1,9 +1,16 @@
 "use client";
 
-import { Plus, Upload, FileDown, Trash2, FolderSymlink } from "lucide-react";
+import {
+  Plus,
+  Upload,
+  FileDown,
+  Trash2,
+  FolderSymlink,
+  Tag,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SearchBox from "./SearchBox";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 
 type Props = {
@@ -14,6 +21,7 @@ type Props = {
   onExport(): void;
   onBulkDelete(): void;
   onBulkAssignClick(): void;
+  onBulkSaleClick(): void;
   disabled?: boolean;
   selectedCount: number;
 };
@@ -26,10 +34,24 @@ export default function ProductsToolbar({
   onExport,
   onBulkDelete,
   onBulkAssignClick,
+  onBulkSaleClick,
   disabled,
   selectedCount,
 }: Props) {
   const bulkRef = useRef<HTMLInputElement>(null);
+  const [salesEnabled, setSalesEnabled] = useState(true);
+
+  // Load sales enabled setting
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((settings) => {
+        setSalesEnabled(settings.sales_enabled !== "false");
+      })
+      .catch(() => {
+        setSalesEnabled(true); // Default to enabled if can't load
+      });
+  }, []);
 
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4 p-4 bg-muted/30 rounded-lg border">
@@ -45,7 +67,7 @@ export default function ProductsToolbar({
             {selectedCount} selected
           </Badge>
         )}
-        
+
         {/* bulk thumbnail upload */}
         <Button
           variant="outline"
@@ -101,6 +123,36 @@ export default function ProductsToolbar({
           <FolderSymlink className="mr-1.5 h-4 w-4" />
           Move to Category
         </Button>
+
+        {/* bulk sale */}
+        {salesEnabled ? (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={disabled || selectedCount === 0}
+            onClick={onBulkSaleClick}
+            className="text-orange-600 hover:bg-orange-50"
+          >
+            <Tag className="mr-1.5 h-4 w-4" />
+            Manage Sales
+          </Button>
+        ) : (
+          <div className="relative group">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={true}
+              className="text-gray-400 cursor-not-allowed"
+            >
+              <Tag className="mr-1.5 h-4 w-4" />
+              Manage Sales
+            </Button>
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+              Sales features are disabled in Settings
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+            </div>
+          </div>
+        )}
 
         {/* new product */}
         <Button size="sm" onClick={onNew}>

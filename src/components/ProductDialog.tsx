@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tag } from "lucide-react";
 
 /* ─────────── Types ─────────── */
 export type Category = { id: number; name: string };
@@ -25,11 +26,12 @@ export type Product = {
   barcode: string;
   name: string;
   price: string;
+  salePrice?: string | null;
   qtyInStock: number;
   categoryId: number | null;
 };
 
-/* sentinel for “no category” */
+/* sentinel for "no category" */
 const NONE = "_none";
 
 type Props = {
@@ -50,13 +52,17 @@ export default function ProductDialog({
   onCancel,
   onSave,
 }: Props) {
+  /* ---------- sales enabled state ---------- */
+  const [salesEnabled, setSalesEnabled] = useState(true);
+
   /* ---------- static product fields ---------- */
   const [form, setForm] = useState({
     barcode: "",
     name: "",
     price: "",
+    salePrice: "",
     stock: "",
-    catId: NONE, // default to “no category”
+    catId: NONE, // default to "no category"
   });
 
   useEffect(() => {
@@ -64,6 +70,7 @@ export default function ProductDialog({
       barcode: product?.barcode ?? "",
       name: product?.name ?? "",
       price: product?.price ?? "",
+      salePrice: product?.salePrice ?? "",
       stock: product?.qtyInStock.toString() ?? "",
       catId:
         product && product.categoryId != null
@@ -71,6 +78,18 @@ export default function ProductDialog({
           : NONE,
     });
   }, [product, open]);
+
+  /* ---------- load sales enabled setting ---------- */
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((settings) => {
+        setSalesEnabled(settings.sales_enabled !== "false");
+      })
+      .catch(() => {
+        setSalesEnabled(true); // Default to enabled if can't load
+      });
+  }, []);
 
   const upd = <K extends keyof typeof form>(k: K, v: string) =>
     setForm((s) => ({ ...s, [k]: v }));
@@ -214,7 +233,11 @@ export default function ProductDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div
+            className={
+              salesEnabled ? "grid grid-cols-3 gap-4" : "grid grid-cols-2 gap-4"
+            }
+          >
             <div>
               <Label>Price&nbsp;($)</Label>
               <Input
@@ -224,6 +247,28 @@ export default function ProductDialog({
                 onChange={(e) => upd("price", e.target.value)}
               />
             </div>
+            {salesEnabled ? (
+              <div>
+                <Label>Sale Price&nbsp;($)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.salePrice}
+                  placeholder="Optional"
+                  onChange={(e) => upd("salePrice", e.target.value)}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center text-center">
+                <div className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <Tag className="h-4 w-4 mx-auto mb-2 text-gray-400" />
+                  <div className="font-medium">Sales Disabled</div>
+                  <div className="text-xs">
+                    Enable in Settings to use sale prices
+                  </div>
+                </div>
+              </div>
+            )}
             <div>
               <Label>Stock</Label>
               <Input
@@ -263,6 +308,7 @@ export default function ProductDialog({
                   categoryId: form.catId === NONE ? null : Number(form.catId),
                   name: form.name.trim(),
                   price: form.price,
+                  salePrice: salesEnabled ? form.salePrice || null : null,
                   qtyInStock: Number(form.stock || 0),
                 },
                 /* keep only rows with at least one populated field */

@@ -3,13 +3,14 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Package } from "lucide-react";
 
 type Product = {
   barcode: string;
   name: string;
   price: string;
+  salePrice?: string | null;
   qtyInStock: number;
   categoryId: number | null;
   category?: { id: number; name: string } | null;
@@ -18,12 +19,45 @@ type Product = {
 type ProductCardProps = {
   product: Product;
   onClick?: (product: Product) => void;
+  hidePrices?: boolean; // For admin override
 };
 
-export default function ProductCard({ product, onClick }: ProductCardProps) {
+export default function ProductCard({
+  product,
+  onClick,
+  hidePrices: hidePricesOverride,
+}: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
+  const [hidePrices, setHidePrices] = useState(false);
+  const [salesEnabled, setSalesEnabled] = useState(true);
   const isInStock = product.qtyInStock > 0;
   const imageSrc = `/products/${product.barcode}.avif`;
+  const hasSale =
+    salesEnabled && product.salePrice && Number(product.salePrice) > 0;
+  const regularPrice = Number(product.price);
+  const salePrice = hasSale ? Number(product.salePrice) : null;
+
+  // Load settings
+  useEffect(() => {
+    if (hidePricesOverride !== undefined) {
+      setHidePrices(hidePricesOverride);
+    }
+
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((settings) => {
+        if (hidePricesOverride === undefined) {
+          setHidePrices(settings.hide_prices === "true");
+        }
+        setSalesEnabled(settings.sales_enabled !== "false");
+      })
+      .catch(() => {
+        if (hidePricesOverride === undefined) {
+          setHidePrices(false);
+        }
+        setSalesEnabled(true);
+      });
+  }, [hidePricesOverride]);
 
   const handleClick = () => {
     onClick?.(product);
@@ -53,6 +87,15 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
             </div>
           )}
 
+          {/* Sale badge */}
+          {hasSale && (
+            <div className="absolute top-2 left-2">
+              <Badge className="bg-red-500 text-white font-bold text-xs">
+                SALE
+              </Badge>
+            </div>
+          )}
+
           {/* Out of stock overlay */}
           {!isInStock && (
             <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
@@ -70,11 +113,33 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
             {product.name}
           </h3>
 
-          {/* Price */}
+          {/* Price Section */}
           <div className="flex items-center justify-between mt-1">
-            <div className="text-lg font-bold text-[#3da874]">
-              ${Number(product.price).toFixed(2)}
-            </div>
+            {!hidePrices ? (
+              <div className="flex items-center gap-2">
+                {hasSale ? (
+                  /* Sale pricing */
+                  <div className="flex items-center gap-2">
+                    <div className="text-lg font-bold text-red-600">
+                      ${salePrice!.toFixed(2)}
+                    </div>
+                    <div className="text-sm text-gray-500 line-through">
+                      ${regularPrice.toFixed(2)}
+                    </div>
+                  </div>
+                ) : (
+                  /* Regular pricing */
+                  <div className="text-lg font-bold text-[#3da874]">
+                    ${regularPrice.toFixed(2)}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Prices hidden */
+              <div className="text-sm text-gray-500 font-medium">
+                Contact staff for pricing
+              </div>
+            )}
 
             {/* Stock indicator for in-stock items */}
             {isInStock && (
