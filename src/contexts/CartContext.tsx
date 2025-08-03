@@ -122,21 +122,29 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
-  const addingRef = useRef<Set<string>>(new Set());
+  const processingRef = useRef<Map<string, number>>(new Map());
 
   const addItem = (item: Omit<CartItem, "quantity">) => {
-    // Simple duplicate protection using a ref
-    if (addingRef.current.has(item.barcode)) {
+    const now = Date.now();
+    const lastProcessed = processingRef.current.get(item.barcode) || 0;
+
+    // Prevent duplicate calls within 200ms (production-ready debouncing)
+    if (now - lastProcessed < 200) {
       return;
     }
 
-    addingRef.current.add(item.barcode);
+    processingRef.current.set(item.barcode, now);
     dispatch({ type: "ADD_ITEM", payload: item });
 
-    // Clear the protection after a short delay
+    // Clean up old entries to prevent memory leaks
     setTimeout(() => {
-      addingRef.current.delete(item.barcode);
-    }, 100);
+      const cutoff = Date.now() - 1000; // Keep entries for 1 second
+      for (const [key, timestamp] of processingRef.current.entries()) {
+        if (timestamp < cutoff) {
+          processingRef.current.delete(key);
+        }
+      }
+    }, 1000);
   };
 
   const removeItem = (barcode: string) => {

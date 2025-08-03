@@ -58,6 +58,7 @@ function getInt(
  * Supported params
  *  ────────────────
  *  q        Full-text search (name, insensitive)
+ *  search   Full-text search (name, insensitive) - alias for 'q'
  *  cat      Category id          (number)
  *  min      Minimum price        (decimal)
  *  max      Maximum price        (decimal)
@@ -69,7 +70,7 @@ export function buildProductWhere(
     const where: Prisma.ProductWhereInput = {};
 
     /* 1️⃣  Full-text search */
-    const q = getStr(params, 'q');
+    const q = getStr(params, 'q') || getStr(params, 'search');
     if (q) {
         where.OR = [{ name: { contains: q, mode: 'insensitive' } }];
     }

@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, Calendar, Search } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Calendar,
+  Search,
+  Edit,
+} from "lucide-react";
+import OrderEditDialog from "@/components/OrderEditDialog";
+import { useOrderUpdates } from "@/hooks/useOrderUpdates";
 
 type OrderItem = {
   barcode: string;
@@ -32,10 +40,66 @@ export default function OrdersPage() {
     return today.toISOString().slice(0, 10);
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [newOrderIds, setNewOrderIds] = useState<Set<number>>(new Set());
+
+  const { isConnected, handleOrderUpdate } = useOrderUpdates(dateFilter);
 
   useEffect(() => {
     fetchOrdersByDate();
   }, [dateFilter]);
+
+  // Set up real-time order updates
+  useEffect(() => {
+    const cleanup = handleOrderUpdate((update) => {
+      if (update.type === "new_order") {
+        // Only add the order if it's for the currently filtered date
+        if (update.date === dateFilter) {
+          setOrders((prevOrders) => {
+            // Check if order already exists to avoid duplicates
+            const exists = prevOrders.some(
+              (order) => order.id === update.order.id
+            );
+            if (!exists) {
+              // Mark this as a new order for visual highlighting
+              setNewOrderIds((prev) => new Set(prev).add(update.order.id));
+
+              // Remove the highlight after 5 seconds
+              setTimeout(() => {
+                setNewOrderIds((prev) => {
+                  const newSet = new Set(prev);
+                  newSet.delete(update.order.id);
+                  return newSet;
+                });
+              }, 5000);
+
+              return [update.order, ...prevOrders]; // Add new order at the beginning
+            }
+            return prevOrders;
+          });
+        }
+      } else if (update.type === "order_updated") {
+        // Update existing order
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === update.order.id ? update.order : order
+          )
+        );
+      } else if (update.type === "order_fulfilled") {
+        // Update order fulfillment status
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === update.orderId
+              ? { ...order, isFulfilled: true }
+              : order
+          )
+        );
+      }
+    });
+
+    return cleanup;
+  }, [dateFilter, handleOrderUpdate]);
 
   const fetchOrdersByDate = async () => {
     setLoading(true);
@@ -70,6 +134,19 @@ export default function OrdersPage() {
     } catch (error) {
       console.error("Error fulfilling order:", error);
     }
+  };
+
+  const handleEditOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setEditDialogOpen(true);
+  };
+
+  const handleOrderUpdated = (updatedOrder: Order) => {
+    setOrders((prevOrders) =>
+      prevOrders.map((order) =>
+        order.id === updatedOrder.id ? updatedOrder : order
+      )
+    );
   };
 
   const toggleOrderExpansion = (orderId: number) => {
@@ -116,9 +193,23 @@ export default function OrdersPage() {
     <div className="min-h-screen bg-gray-50 p-4">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#3da874] mb-4">
-          Orders Management
-        </h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-[#3da874]">
+            Orders Management
+          </h1>
+
+          {/* Real-time Status Indicator */}
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-3 h-3 rounded-full ${
+                isConnected ? "bg-green-500" : "bg-red-500"
+              }`}
+            ></div>
+            <span className="text-sm text-gray-600">
+              {isConnected ? "Live Updates" : "Disconnected"}
+            </span>
+          </div>
+        </div>
 
         {/* Simple Filters */}
         <div className="flex gap-4 items-center mb-4">
@@ -169,13 +260,23 @@ export default function OrdersPage() {
           {filteredOrders.map((order) => {
             const { prefix, suffix } = formatOrderNumber(order.orderNumber);
             const isExpanded = expandedOrders.has(order.id);
+            const isNewOrder = newOrderIds.has(order.id);
 
             return (
-              <Card key={order.id} className="overflow-hidden">
+              <Card
+                key={order.id}
+                className={`overflow-hidden transition-all duration-500 ${
+                  isNewOrder
+                    ? "ring-2 ring-green-500 bg-green-50 animate-pulse"
+                    : ""
+                }`}
+              >
                 <CardContent className="p-0">
                   {/* Order Header - Always Visible */}
                   <div
-                    className="p-4 cursor-pointer hover:bg-gray-50 flex items-center justify-between"
+                    className={`p-4 cursor-pointer hover:bg-gray-50 flex items-center justify-between ${
+                      isNewOrder ? "bg-green-50" : ""
+                    }`}
                     onClick={() => toggleOrderExpansion(order.id)}
                   >
                     <div className="flex items-center gap-4">
@@ -278,18 +379,35 @@ export default function OrdersPage() {
                             Total: ${getTotalPrice(order).toFixed(2)}
                           </div>
 
-                          {!order.isFulfilled && (
-                            <Button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleFulfillOrder(order.id);
-                              }}
-                              size="sm"
-                              className="bg-green-500 hover:bg-green-600"
-                            >
-                              Mark Fulfilled
-                            </Button>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {!order.isFulfilled && (
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditOrder(order);
+                                }}
+                                size="sm"
+                                variant="outline"
+                                className="flex items-center gap-1"
+                              >
+                                <Edit className="h-3 w-3" />
+                                Edit
+                              </Button>
+                            )}
+
+                            {!order.isFulfilled && (
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleFulfillOrder(order.id);
+                                }}
+                                size="sm"
+                                className="bg-green-500 hover:bg-green-600"
+                              >
+                                Mark Fulfilled
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -300,6 +418,16 @@ export default function OrdersPage() {
           })}
         </div>
       )}
+
+      <OrderEditDialog
+        isOpen={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setSelectedOrder(null);
+        }}
+        order={selectedOrder}
+        onOrderUpdated={handleOrderUpdated}
+      />
     </div>
   );
 }

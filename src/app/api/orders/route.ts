@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { broadcastOrderUpdate } from "@/lib/orderSSE";
 
 export async function POST(request: NextRequest) {
     try {
@@ -69,6 +70,28 @@ export async function POST(request: NextRequest) {
                     },
                 },
             },
+        });
+
+        // Format order data for broadcasting
+        const formattedOrder = {
+            id: Number(order.id),
+            orderNumber: order.orderNumber || order.id.toString().padStart(4, '0'),
+            createdAt: order.createdAt.toISOString(),
+            isFulfilled: order.isFulfilled,
+            items: order.items.map((item: any) => ({
+                barcode: item.product.barcode.toString(),
+                name: item.product.name,
+                quantity: item.qty,
+                price: item.product.price.toString(),
+                salePrice: item.product.salePrice?.toString() || null,
+            })),
+        };
+
+        // Broadcast the new order to all connected clients
+        broadcastOrderUpdate({
+            type: 'new_order',
+            order: formattedOrder,
+            date: new Date().toISOString().slice(0, 10) // Today's date for filtering
         });
 
         return NextResponse.json({
