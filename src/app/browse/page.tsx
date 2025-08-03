@@ -47,6 +47,12 @@ export default function BrowsePage() {
     }
   };
 
+  const handleCheckout = (orderNum: string) => {
+    // Handle successful checkout - you could show a success message or redirect
+    console.log("Order created:", orderNum);
+    // Optionally redirect to order confirmation or stay on page
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center">
@@ -161,7 +167,7 @@ export default function BrowsePage() {
       </div>
 
       {/* Cart Component */}
-      <Cart />
+      <Cart onCheckout={handleCheckout} />
     </div>
   );
 }

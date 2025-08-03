@@ -97,6 +97,81 @@ export default function ProductFilters({
           />
         </div>
 
+        {/* Active Filter Badges */}
+        {hasActiveFilters && (
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
+            <span className="text-sm font-medium text-gray-600">Active filters:</span>
+            
+            {filters.search && (
+              <Badge 
+                variant="secondary" 
+                className="bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer flex items-center gap-1"
+                onClick={() => updateFilter("search", "")}
+              >
+                Search: {filters.search}
+                <X className="h-3 w-3" />
+              </Badge>
+            )}
+            
+            {filters.priceMin > 0 && (
+              <Badge 
+                variant="secondary" 
+                className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer flex items-center gap-1"
+                onClick={() => updateFilter("priceMin", 0)}
+              >
+                Min: ${filters.priceMin}
+                <X className="h-3 w-3" />
+              </Badge>
+            )}
+            
+            {filters.priceMax < maxPrice && (
+              <Badge 
+                variant="secondary" 
+                className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer flex items-center gap-1"
+                onClick={() => updateFilter("priceMax", maxPrice)}
+              >
+                Max: ${filters.priceMax}
+                <X className="h-3 w-3" />
+              </Badge>
+            )}
+            
+            {filters.availability !== "all" && (
+              <Badge 
+                variant="secondary" 
+                className="bg-purple-100 text-purple-800 hover:bg-purple-200 cursor-pointer flex items-center gap-1"
+                onClick={() => updateFilter("availability", "all")}
+              >
+                {filters.availability === "in-stock" ? "In Stock Only" : "Out of Stock Only"}
+                <X className="h-3 w-3" />
+              </Badge>
+            )}
+            
+            {filters.sortBy !== "name" && (
+              <Badge 
+                variant="secondary" 
+                className="bg-orange-100 text-orange-800 hover:bg-orange-200 cursor-pointer flex items-center gap-1"
+                onClick={() => updateFilter("sortBy", "name")}
+              >
+                Sort: {
+                  filters.sortBy === "price-low" ? "Price: Low to High" :
+                  filters.sortBy === "price-high" ? "Price: High to Low" :
+                  filters.sortBy === "stock" ? "Stock Level" : filters.sortBy
+                }
+                <X className="h-3 w-3" />
+              </Badge>
+            )}
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              Clear all
+            </Button>
+          </div>
+        )}
+
         {/* Expandable filters */}
         {isExpanded && (
           <div className="space-y-6 border-t pt-4">

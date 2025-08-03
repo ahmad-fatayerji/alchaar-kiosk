@@ -10,12 +10,14 @@ import { Settings, Eye, EyeOff, Tag, Save } from "lucide-react";
 type Settings = {
   hide_prices: string;
   sales_enabled: string;
+  show_quantities: string;
 };
 
 export default function SettingsPanel() {
   const [settings, setSettings] = useState<Settings>({
     hide_prices: "false",
     sales_enabled: "true",
+    show_quantities: "false",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -28,6 +30,7 @@ export default function SettingsPanel() {
         setSettings({
           hide_prices: data.hide_prices || "false",
           sales_enabled: data.sales_enabled || "true",
+          show_quantities: data.show_quantities || "false",
         });
         setLoading(false);
       })
@@ -168,6 +171,48 @@ export default function SettingsPanel() {
                 "Disable"
               ) : (
                 "Enable"
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Show Quantities Setting */}
+        <div className="flex items-center justify-between p-4 border rounded-lg">
+          <div className="flex items-center gap-3">
+            <Tag
+              className={`h-5 w-5 ${
+                settings.show_quantities === "true"
+                  ? "text-green-500"
+                  : "text-gray-400"
+              }`}
+            />
+            <div>
+              <Label className="text-base font-medium">Show Product Quantities</Label>
+              <p className="text-sm text-muted-foreground">
+                Display remaining stock quantities on product cards
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge
+              variant={
+                settings.show_quantities === "true" ? "default" : "secondary"
+              }
+            >
+              {settings.show_quantities === "true" ? "Shown" : "Hidden"}
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => toggleSetting("show_quantities")}
+              disabled={saving === "show_quantities"}
+            >
+              {saving === "show_quantities" ? (
+                <Save className="h-4 w-4 animate-spin" />
+              ) : settings.show_quantities === "true" ? (
+                "Hide"
+              ) : (
+                "Show"
               )}
             </Button>
           </div>
