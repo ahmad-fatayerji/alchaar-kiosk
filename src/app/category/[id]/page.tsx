@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import ProductFilters, { FilterState } from "@/components/ProductFilters";
 import CategoryCard from "@/components/CategoryCard";
+import Cart from "@/components/Cart";
+import OrderSuccess from "@/components/OrderSuccess";
 
 type Category = {
   id: number;
@@ -50,6 +52,7 @@ export default function CategoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLeafCategory, setIsLeafCategory] = useState(false);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [parentPath, setParentPath] = useState<{ id: number; name: string }[]>(
     []
   );
@@ -206,6 +209,14 @@ export default function CategoryPage() {
   const handleProductClick = (product: Product) => {
     // Handle product selection - could open a detail view, add to cart, etc.
     console.log("Product clicked:", product);
+  };
+
+  const handleCheckout = (orderNum: string) => {
+    setOrderNumber(orderNum);
+  };
+
+  const handleReturnHome = () => {
+    window.location.href = "/";
   };
 
   const handleSubcategoryClick = (subcategoryId: number | null) => {
@@ -382,6 +393,14 @@ export default function CategoryPage() {
           </>
         )}
       </div>
+
+      {/* Cart Component */}
+      <Cart onCheckout={handleCheckout} />
+
+      {/* Order Success Modal */}
+      {orderNumber && (
+        <OrderSuccess orderNumber={orderNumber} onReturn={handleReturnHome} />
+      )}
     </div>
   );
 }

@@ -118,11 +118,13 @@ model ProductFilterValue {
  */
 model Order {
   id          Int         @id @default(autoincrement())
+  orderNumber String?     @unique // Daily reset format: MMDD (nullable for migration)
   createdAt   DateTime    @default(now())
   isFulfilled Boolean     @default(false)
   items       OrderItem[]
 
   @@index([isFulfilled])
+  @@index([orderNumber])
 }
 
 model OrderItem {
