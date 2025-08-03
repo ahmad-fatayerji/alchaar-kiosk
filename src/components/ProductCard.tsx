@@ -119,17 +119,19 @@ export default function ProductCard({
               <Badge variant="destructive" className="text-xs font-bold">
                 Out of Stock
               </Badge>
-            ) : showQuantities && (
-              <Badge 
-                variant="secondary" 
-                className={`text-xs font-medium ${
-                  product.qtyInStock <= 5 
-                    ? 'bg-orange-100 text-orange-800' 
-                    : 'bg-green-100 text-green-800'
-                }`}
-              >
-                {product.qtyInStock} left
-              </Badge>
+            ) : (
+              showQuantities && (
+                <Badge
+                  variant="secondary"
+                  className={`text-xs font-medium ${
+                    product.qtyInStock <= 5
+                      ? "bg-orange-100 text-orange-800"
+                      : "bg-green-100 text-green-800"
+                  }`}
+                >
+                  {product.qtyInStock} left
+                </Badge>
+              )
             )}
           </div>
         </div>
@@ -139,7 +141,7 @@ export default function ProductCard({
           <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-[#3da874] transition-colors duration-200 line-clamp-2">
             {product.name}
           </h3>
-          
+
           {/* Price Section */}
           {!hidePrices && (
             <div className="mb-3">
@@ -178,12 +180,7 @@ export default function ProductCard({
                 Add to Cart
               </Button>
             ) : (
-              <Button
-                disabled
-                className="w-full"
-                size="sm"
-                variant="secondary"
-              >
+              <Button disabled className="w-full" size="sm" variant="secondary">
                 Out of Stock
               </Button>
             )}

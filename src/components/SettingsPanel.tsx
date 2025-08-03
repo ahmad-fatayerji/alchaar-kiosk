@@ -187,7 +187,9 @@ export default function SettingsPanel() {
               }`}
             />
             <div>
-              <Label className="text-base font-medium">Show Product Quantities</Label>
+              <Label className="text-base font-medium">
+                Show Product Quantities
+              </Label>
               <p className="text-sm text-muted-foreground">
                 Display remaining stock quantities on product cards
               </p>
