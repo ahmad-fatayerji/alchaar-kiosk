@@ -30,63 +30,56 @@ export default function CategoryCard({
   const imageSrc = isViewAll ? null : `/categories/${id}.avif`;
 
   return (
-    <div
-      className="flex flex-col items-center group cursor-pointer"
+    <Card
+      className="group cursor-pointer w-full aspect-[3/4] max-w-[280px] mx-auto overflow-hidden bg-white hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-gray-300 rounded-xl mb-16"
       onClick={handleClick}
     >
-      {/* Square Card */}
-      <div className="relative w-48 h-48 bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-lg border-4 border-white group-hover:border-[#3da874] transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute top-4 right-4 w-8 h-8 bg-[#3da874]/10 rounded-full"></div>
-        <div className="absolute bottom-4 left-4 w-6 h-6 bg-[#3da874]/20 rounded-full"></div>
-
-        {/* Image/Icon Section */}
-        <div className="absolute inset-4 rounded-2xl bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center overflow-hidden">
+      <CardContent className="p-0 h-full flex flex-col">
+        {/* Image Section */}
+        <div className="relative flex-1 bg-gray-100 overflow-hidden">
           {isViewAll ? (
-            // View All icon
-            <div className="flex items-center justify-center">
-              <div className="bg-white/90 rounded-full p-6 shadow-lg">
-                <ShoppingBag className="h-16 w-16 text-[#3da874]" />
+            // View All Design
+            <div className="absolute inset-0 bg-gradient-to-br from-[#3da874] to-[#2d7a5f] flex items-center justify-center">
+              <div className="text-center text-white">
+                <ShoppingBag className="h-12 w-12 mx-auto mb-2" />
+                <div className="text-lg font-semibold">All Products</div>
               </div>
             </div>
           ) : (
-            // Category image or fallback
+            // Category Image
             <>
               {!imageError && imageSrc ? (
                 <Image
                   src={imageSrc}
                   alt={name}
                   fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-300 rounded-2xl"
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
                   onError={() => setImageError(true)}
                 />
               ) : (
-                <div className="flex items-center justify-center">
-                  <div className="bg-white/90 rounded-full p-6 shadow-lg">
-                    <Package className="h-16 w-16 text-[#3da874]" />
-                  </div>
+                <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+                  <Package className="h-12 w-12 text-gray-400" />
                 </div>
               )}
             </>
           )}
-
-          {/* Subtle gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent rounded-2xl" />
         </div>
 
-        {/* Floating action indicator */}
-        <div className="absolute bottom-2 right-2 w-10 h-10 bg-[#3da874] rounded-full flex items-center justify-center text-white group-hover:bg-[#2d7a5f] transition-all duration-300 group-hover:scale-110 shadow-lg">
-          <span className="text-lg font-bold">→</span>
-        </div>
-      </div>
+        {/* Content Section */}
+        <div className="p-4 flex-shrink-0">
+          <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-[#3da874] transition-colors duration-200 line-clamp-2">
+            {name}
+          </h3>
+          <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+            {description}
+          </p>
 
-      {/* Category Name */}
-      <div className="mt-6 text-center">
-        <h3 className="text-xl font-bold text-gray-900 group-hover:text-[#3da874] transition-colors duration-300 leading-tight">
-          {name}
-        </h3>
-        <div className="mt-2 h-1 w-12 bg-[#3da874]/30 rounded-full mx-auto group-hover:bg-[#3da874] transition-all duration-300"></div>
-      </div>
-    </div>
+          {/* Action indicator */}
+          <div className="mt-3 text-xs text-[#3da874] font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            Browse →
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

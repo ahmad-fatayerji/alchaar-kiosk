@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import CategoryCard from "../../components/CategoryCard";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Category = {
@@ -53,76 +53,108 @@ export default function BrowsePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
       {/* Header */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-green-100 sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10 shadow-sm">
+        <div className="container mx-auto px-6 py-6 flex items-center justify-between">
           <Button
             variant="ghost"
             size="lg"
             onClick={handleBack}
-            className="text-[#3da874] hover:bg-green-50"
+            className="text-[#3da874] hover:bg-green-50 hover:text-[#2d7a5f] transition-all duration-300"
           >
             <ArrowLeft className="mr-2 h-6 w-6" />
             Back to Home
           </Button>
-          <h1 className="text-3xl font-bold text-[#3da874]">
-            Browse Categories
-          </h1>
+          <div className="text-center">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#3da874] to-[#2d7a5f] bg-clip-text text-transparent">
+              Browse Categories
+            </h1>
+            <p className="text-gray-500 mt-1">
+              Discover products organized by category
+            </p>
+          </div>
           <div className="w-32" /> {/* Spacer for centering */}
         </div>
       </div>
 
+      {/* Hero Section */}
+      <div className="container mx-auto px-6 py-12 text-center">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+            Find exactly what you're looking for
+          </h2>
+          <p className="text-gray-600 leading-relaxed">
+            Browse through our carefully organized categories or view all
+            products at once. Each category contains handpicked items to make
+            your shopping experience seamless.
+          </p>
+        </div>
+      </div>
+
       {/* Categories Grid */}
-      <div className="container mx-auto px-12 py-16">
-        <div className="grid grid-cols-3 gap-12 max-w-5xl mx-auto justify-items-center">
+      <div className="container mx-auto px-6 pb-16">
+        <div className="grid grid-cols-3 gap-x-8 gap-y-32 max-w-5xl mx-auto">
           {/* View All Card - Always first */}
           <CategoryCard
             id={null}
-            name="View All Products"
-            description="Browse all available products"
+            name="All Products"
+            description="Browse our complete catalog of items across all categories"
             isViewAll={true}
             onClick={handleCategorySelect}
           />
 
           {/* Category Cards */}
           {categories.map((category) => (
-            <div key={category.id} className="relative">
-              <CategoryCard
-                id={category.id}
-                name={category.name}
-                description={
-                  category.hasChildren
-                    ? "Contains subcategories"
-                    : "Contains products"
-                }
-                isViewAll={false}
-                onClick={handleCategorySelect}
-              />
-              {/* Category type indicator */}
-              <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-lg shadow-lg">
-                {category.hasChildren ? (
-                  <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                    📁
-                  </span>
-                ) : (
-                  <span className="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                    📦
-                  </span>
-                )}
-              </div>
-            </div>
+            <CategoryCard
+              key={category.id}
+              id={category.id}
+              name={category.name}
+              description={
+                category.hasChildren
+                  ? "Contains multiple subcategories to explore"
+                  : "Browse products in this category"
+              }
+              isViewAll={false}
+              onClick={handleCategorySelect}
+            />
           ))}
         </div>
 
         {/* Empty state */}
         {categories.length === 0 && (
           <div className="text-center py-16">
-            <div className="text-xl text-gray-500">
-              No categories available yet
+            <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto">
+              <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                No categories yet
+              </h3>
+              <p className="text-gray-500">
+                Categories will appear here once they're added to the system.
+              </p>
             </div>
           </div>
         )}
+      </div>
+
+      {/* Footer CTA */}
+      <div className="bg-gradient-to-r from-[#3da874] to-[#2d7a5f] text-white py-12">
+        <div className="container mx-auto px-6 text-center">
+          <h3 className="text-2xl font-bold mb-4">
+            Need help finding something?
+          </h3>
+          <p className="text-green-100 mb-6 max-w-2xl mx-auto">
+            Our intuitive category system makes it easy to find exactly what you
+            need. Start with a category or browse all products to discover
+            something new.
+          </p>
+          <Button
+            onClick={() => handleCategorySelect(null)}
+            className="bg-white text-[#3da874] hover:bg-gray-50 transition-all duration-300 px-8 py-3 text-lg font-semibold"
+          >
+            View All Products
+          </Button>
+        </div>
       </div>
     </div>
   );

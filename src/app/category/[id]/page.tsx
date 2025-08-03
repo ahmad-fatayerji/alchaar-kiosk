@@ -317,32 +317,19 @@ export default function CategoryPage() {
             </div>
 
             {subcategories.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
+              <div className="grid grid-cols-3 gap-x-8 gap-y-32 max-w-5xl mx-auto">
                 {subcategories.map((subcategory) => (
-                  <div key={subcategory.id} className="relative">
-                    <CategoryCard
-                      id={subcategory.id}
-                      name={subcategory.name}
-                      description={
-                        subcategory.hasChildren
-                          ? "Contains subcategories"
-                          : "Contains products"
-                      }
-                      onClick={handleSubcategoryClick}
-                    />
-                    {/* Category type indicator */}
-                    <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-lg shadow-lg">
-                      {subcategory.hasChildren ? (
-                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                          📁
-                        </span>
-                      ) : (
-                        <span className="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                          📦
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                  <CategoryCard
+                    key={subcategory.id}
+                    id={subcategory.id}
+                    name={subcategory.name}
+                    description={
+                      subcategory.hasChildren
+                        ? "Contains subcategories"
+                        : "Contains products"
+                    }
+                    onClick={handleSubcategoryClick}
+                  />
                 ))}
               </div>
             ) : (
