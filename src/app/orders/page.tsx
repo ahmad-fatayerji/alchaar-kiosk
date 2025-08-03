@@ -296,23 +296,33 @@ export default function OrdersPage() {
                       </div>
 
                       <Badge
-                        variant={order.isFulfilled ? "default" : "secondary"}
+                        variant="secondary"
                         className={
-                          order.isFulfilled ? "bg-green-500" : "bg-yellow-500"
+                          order.isFulfilled
+                            ? "bg-green-600 text-white hover:bg-green-700"
+                            : "bg-yellow-500 text-white hover:bg-yellow-600"
                         }
                       >
                         {order.isFulfilled ? "Fulfilled" : "Pending"}
                       </Badge>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span>{getTotalItems(order)} items</span>
-                      <span className="font-semibold">
+                    <div className="flex items-center gap-8 text-sm">
+                      <div className="text-gray-600 min-w-[80px]">
+                        <span className="font-medium">
+                          {getTotalItems(order)}{" "}
+                          {getTotalItems(order) === 1 ? "item" : "items"}
+                        </span>
+                      </div>
+                      <div className="font-semibold text-[#3da874] text-base min-w-[80px] text-right">
                         ${getTotalPrice(order).toFixed(2)}
-                      </span>
-                      <span>
-                        {new Date(order.createdAt).toLocaleTimeString()}
-                      </span>
+                      </div>
+                      <div className="text-gray-500 min-w-[80px] text-right">
+                        {new Date(order.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
                     </div>
                   </div>
 
@@ -331,22 +341,32 @@ export default function OrdersPage() {
                           return (
                             <div
                               key={index}
-                              className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
+                              className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0"
                             >
-                              <div className="flex-1">
-                                <div className="font-medium">{item.name}</div>
-                                <div className="text-xs text-gray-500">
-                                  {item.barcode}
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-gray-900 truncate">
+                                  {item.name}
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  #{item.barcode}
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-4 text-sm">
-                                <span className="text-gray-600">
-                                  ×{item.quantity}
-                                </span>
-                                <div className="text-right">
+                              <div className="flex items-center gap-6 text-sm ml-4">
+                                <div className="text-center min-w-[60px]">
+                                  <div className="text-xs text-gray-500">
+                                    Qty
+                                  </div>
+                                  <div className="font-medium">
+                                    ×{item.quantity}
+                                  </div>
+                                </div>
+                                <div className="text-center min-w-[80px]">
+                                  <div className="text-xs text-gray-500">
+                                    Unit Price
+                                  </div>
                                   {hasSale ? (
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex flex-col items-center">
                                       <span className="text-red-600 font-medium">
                                         ${price.toFixed(2)}
                                       </span>
@@ -360,8 +380,13 @@ export default function OrdersPage() {
                                     </span>
                                   )}
                                 </div>
-                                <div className="text-[#3da874] font-semibold w-16 text-right">
-                                  ${(price * item.quantity).toFixed(2)}
+                                <div className="text-center min-w-[80px]">
+                                  <div className="text-xs text-gray-500">
+                                    Total
+                                  </div>
+                                  <div className="text-[#3da874] font-semibold">
+                                    ${(price * item.quantity).toFixed(2)}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -371,15 +396,22 @@ export default function OrdersPage() {
 
                       <div className="flex items-center justify-between mt-4 pt-4 border-t">
                         <div className="text-sm text-gray-600">
-                          Ordered: {new Date(order.createdAt).toLocaleString()}
+                          Ordered:{" "}
+                          {new Date(order.createdAt).toLocaleString([], {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </div>
 
                         <div className="flex items-center gap-4">
-                          <div className="text-lg font-bold text-[#3da874]">
+                          <div className="text-xl font-bold text-[#3da874]">
                             Total: ${getTotalPrice(order).toFixed(2)}
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-3">
                             {!order.isFulfilled && (
                               <Button
                                 onClick={(e) => {
@@ -388,7 +420,7 @@ export default function OrdersPage() {
                                 }}
                                 size="sm"
                                 variant="outline"
-                                className="flex items-center gap-1"
+                                className="flex items-center gap-1 border-blue-200 text-blue-600 hover:bg-blue-50"
                               >
                                 <Edit className="h-3 w-3" />
                                 Edit
@@ -402,7 +434,7 @@ export default function OrdersPage() {
                                   handleFulfillOrder(order.id);
                                 }}
                                 size="sm"
-                                className="bg-green-500 hover:bg-green-600"
+                                className="bg-green-500 hover:bg-green-600 text-white font-medium"
                               >
                                 Mark Fulfilled
                               </Button>
