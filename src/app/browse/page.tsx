@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import CategoryCard from "../../components/CategoryCard";
+import Cart from "../../components/Cart";
 import { ArrowLeft, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -15,6 +17,7 @@ type Category = {
 export default function BrowsePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     // Fetch root categories
@@ -31,16 +34,16 @@ export default function BrowsePage() {
   }, []);
 
   const handleBack = () => {
-    window.location.href = "/";
+    router.push("/");
   };
 
   const handleCategorySelect = (categoryId: number | null) => {
     if (categoryId === null) {
       // View All Products
-      window.location.href = "/products";
+      router.push("/products");
     } else {
       // View specific category
-      window.location.href = `/category/${categoryId}`;
+      router.push(`/category/${categoryId}`);
     }
   };
 
@@ -94,7 +97,7 @@ export default function BrowsePage() {
 
       {/* Categories Grid */}
       <div className="container mx-auto px-6 pb-16">
-        <div className="grid grid-cols-3 gap-x-8 gap-y-32 max-w-5xl mx-auto">
+        <div className="grid grid-cols-3 gap-x-6 gap-y-16 max-w-5xl mx-auto">
           {/* View All Card - Always first */}
           <CategoryCard
             id={null}
@@ -156,6 +159,9 @@ export default function BrowsePage() {
           </Button>
         </div>
       </div>
+
+      {/* Cart Component */}
+      <Cart />
     </div>
   );
 }

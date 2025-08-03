@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
@@ -46,6 +46,7 @@ function findCategoryById(
 
 export default function CategoryPage() {
   const params = useParams();
+  const router = useRouter();
   const categoryId = params.id as string;
   const [category, setCategory] = useState<Category | null>(null);
   const [subcategories, setSubcategories] = useState<Category[]>([]);
@@ -317,7 +318,7 @@ export default function CategoryPage() {
             </div>
 
             {subcategories.length > 0 ? (
-              <div className="grid grid-cols-3 gap-x-8 gap-y-32 max-w-5xl mx-auto">
+              <div className="grid grid-cols-3 gap-x-6 gap-y-16 max-w-5xl mx-auto">
                 {subcategories.map((subcategory) => (
                   <CategoryCard
                     key={subcategory.id}

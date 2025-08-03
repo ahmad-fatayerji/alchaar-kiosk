@@ -31,7 +31,7 @@ export default function CategoryCard({
 
   return (
     <Card
-      className="group cursor-pointer w-full aspect-[3/4] max-w-[280px] mx-auto overflow-hidden bg-white hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-gray-300 rounded-xl mb-16"
+      className="group cursor-pointer w-full aspect-[3/4] max-w-[280px] mx-auto overflow-hidden bg-white hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-gray-300 rounded-xl"
       onClick={handleClick}
     >
       <CardContent className="p-0 h-full flex flex-col">

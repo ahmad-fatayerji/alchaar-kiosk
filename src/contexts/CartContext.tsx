@@ -6,6 +6,7 @@ import {
   useReducer,
   ReactNode,
   useRef,
+  useEffect,
 } from "react";
 
 type CartItem = {
@@ -27,7 +28,8 @@ type CartAction =
   | { type: "UPDATE_QUANTITY"; payload: { barcode: string; quantity: number } }
   | { type: "CLEAR_CART" }
   | { type: "TOGGLE_CART" }
-  | { type: "SET_CART_OPEN"; payload: boolean };
+  | { type: "SET_CART_OPEN"; payload: boolean }
+  | { type: "LOAD_CART"; payload: CartState };
 
 const initialState: CartState = {
   items: [],
@@ -36,6 +38,9 @@ const initialState: CartState = {
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
+    case "LOAD_CART":
+      return action.payload;
+
     case "ADD_ITEM": {
       const existingItemIndex = state.items.findIndex(
         (item) => item.barcode === action.payload.barcode
@@ -123,6 +128,24 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
   const processingRef = useRef<Map<string, number>>(new Map());
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    const savedCart = localStorage.getItem("kiosk-cart");
+    if (savedCart) {
+      try {
+        const parsedCart = JSON.parse(savedCart);
+        dispatch({ type: "LOAD_CART", payload: parsedCart });
+      } catch (error) {
+        console.error("Error loading cart from localStorage:", error);
+      }
+    }
+  }, []);
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("kiosk-cart", JSON.stringify(state));
+  }, [state]);
 
   const addItem = (item: Omit<CartItem, "quantity">) => {
     const now = Date.now();
