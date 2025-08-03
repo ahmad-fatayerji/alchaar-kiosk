@@ -5,6 +5,8 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import ProductFilters, { FilterState } from "@/components/ProductFilters";
+import Cart from "@/components/Cart";
+import OrderSuccess from "@/components/OrderSuccess";
 
 type Product = {
   barcode: string;
@@ -18,6 +20,7 @@ type Product = {
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     priceMin: 0,
@@ -109,6 +112,14 @@ export default function ProductsPage() {
     console.log("Product clicked:", product);
   };
 
+  const handleCheckout = (orderNum: string) => {
+    setOrderNumber(orderNum);
+  };
+
+  const handleReturnHome = () => {
+    window.location.href = "/";
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center">
@@ -168,6 +179,14 @@ export default function ProductsPage() {
           </div>
         )}
       </div>
+
+      {/* Cart Component */}
+      <Cart onCheckout={handleCheckout} />
+
+      {/* Order Success Modal */}
+      {orderNumber && (
+        <OrderSuccess orderNumber={orderNumber} onReturn={handleReturnHome} />
+      )}
     </div>
   );
 }
