@@ -5,10 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, X, Plus, Minus, Trash2, CreditCard } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type CartProps = {
   onCheckout?: (orderNumber: string) => void;
+};
+
+type ProductStock = {
+  barcode: string;
+  qtyInStock: number;
 };
 
 export default function Cart({ onCheckout }: CartProps) {
@@ -22,6 +27,50 @@ export default function Cart({ onCheckout }: CartProps) {
     getTotalPrice,
   } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showQuantities, setShowQuantities] = useState(false);
+  const [productStocks, setProductStocks] = useState<Record<string, number>>(
+    {}
+  );
+
+  // Load settings and fetch stock information when cart opens
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await fetch("/api/settings");
+        const settings = await response.json();
+        const shouldShowQuantities = settings.show_quantities === "true";
+        setShowQuantities(shouldShowQuantities);
+
+        // If quantities are shown and cart is open with items, fetch stock info
+        if (shouldShowQuantities && state.isOpen && state.items.length > 0) {
+          const barcodes = state.items.map((item) => item.barcode).join(",");
+          const stockResponse = await fetch(
+            `/api/products?barcodes=${barcodes}`
+          );
+
+          if (stockResponse.ok) {
+            const products: ProductStock[] = await stockResponse.json();
+            const stockMap: Record<string, number> = {};
+            products.forEach((product) => {
+              stockMap[product.barcode] = product.qtyInStock;
+            });
+            setProductStocks(stockMap);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading settings or stock data:", error);
+        setShowQuantities(false);
+        setProductStocks({});
+      }
+    };
+
+    loadSettings();
+  }, [state.isOpen, state.items.length]);
+
+  const handleQuantityUpdate = (barcode: string, newQuantity: number) => {
+    const stockQty = productStocks[barcode];
+    updateQuantity(barcode, newQuantity, stockQty, showQuantities);
+  };
 
   const handleCheckout = async () => {
     if (state.items.length === 0) return;
@@ -46,8 +95,20 @@ export default function Cart({ onCheckout }: CartProps) {
         onCheckout?.(result.orderNumber);
         clearCart();
       } else {
-        console.error("Failed to create order");
-        alert("Failed to create order. Please try again.");
+        const error = await response.json();
+        if (error.error === "Insufficient stock for some items") {
+          alert(
+            `Cannot place order:\n\n${error.message}\n\nPlease adjust quantities and try again.`
+          );
+        } else if (error.error === "Some products do not exist") {
+          alert(
+            `Some products in your cart no longer exist:\nBarcodes: ${error.missingBarcodes.join(
+              ", "
+            )}\n\nPlease remove these items and try again.`
+          );
+        } else {
+          alert(`Failed to create order: ${error.error || "Unknown error"}`);
+        }
       }
     } catch (error) {
       console.error("Error creating order:", error);
@@ -115,6 +176,11 @@ export default function Cart({ onCheckout }: CartProps) {
                       : Number(item.price);
                   const totalPrice = price * item.quantity;
                   const hasSale = item.salePrice && Number(item.salePrice) > 0;
+                  const stockQty = productStocks[item.barcode];
+                  const isAtStockLimit =
+                    showQuantities &&
+                    stockQty !== undefined &&
+                    item.quantity >= stockQty;
 
                   return (
                     <div
@@ -129,6 +195,17 @@ export default function Cart({ onCheckout }: CartProps) {
                         <div className="text-sm text-gray-600">
                           Barcode: {item.barcode}
                         </div>
+                        {showQuantities && stockQty !== undefined && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {stockQty} available in stock
+                            {isAtStockLimit && (
+                              <span className="text-orange-600 font-medium">
+                                {" "}
+                                • At limit
+                              </span>
+                            )}
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 mt-1">
                           {hasSale ? (
                             <>
@@ -156,7 +233,10 @@ export default function Cart({ onCheckout }: CartProps) {
                           variant="outline"
                           size="sm"
                           onClick={() =>
-                            updateQuantity(item.barcode, item.quantity - 1)
+                            handleQuantityUpdate(
+                              item.barcode,
+                              item.quantity - 1
+                            )
                           }
                           className="h-8 w-8 p-0"
                         >
@@ -169,9 +249,18 @@ export default function Cart({ onCheckout }: CartProps) {
                           variant="outline"
                           size="sm"
                           onClick={() =>
-                            updateQuantity(item.barcode, item.quantity + 1)
+                            handleQuantityUpdate(
+                              item.barcode,
+                              item.quantity + 1
+                            )
                           }
                           className="h-8 w-8 p-0"
+                          disabled={isAtStockLimit}
+                          title={
+                            isAtStockLimit
+                              ? "Maximum stock quantity reached"
+                              : undefined
+                          }
                         >
                           <Plus className="h-4 w-4" />
                         </Button>

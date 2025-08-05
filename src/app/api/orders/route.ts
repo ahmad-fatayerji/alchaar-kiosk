@@ -24,6 +24,59 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        // Check stock availability for all items before creating the order
+        const stockValidation = await prisma.product.findMany({
+            where: {
+                barcode: {
+                    in: items.map((item: { barcode: string; quantity: number }) =>
+                        BigInt(item.barcode)
+                    ),
+                },
+            },
+            select: {
+                barcode: true,
+                name: true,
+                qtyInStock: true,
+            },
+        });
+
+        // Check for insufficient stock
+        const insufficientStock: string[] = [];
+        const missingProducts: string[] = [];
+
+        for (const item of items) {
+            const product = stockValidation.find(p => p.barcode.toString() === item.barcode);
+
+            if (!product) {
+                missingProducts.push(item.barcode);
+            } else if (product.qtyInStock < item.quantity) {
+                insufficientStock.push(
+                    `${product.name} (Available: ${product.qtyInStock}, Requested: ${item.quantity})`
+                );
+            }
+        }
+
+        if (missingProducts.length > 0) {
+            return NextResponse.json(
+                {
+                    error: "Some products do not exist",
+                    missingBarcodes: missingProducts,
+                },
+                { status: 400 }
+            );
+        }
+
+        if (insufficientStock.length > 0) {
+            return NextResponse.json(
+                {
+                    error: "Insufficient stock for some items",
+                    details: insufficientStock,
+                    message: `Cannot create order due to insufficient stock:\n${insufficientStock.join('\n')}`
+                },
+                { status: 400 }
+            );
+        }
+
         // Generate daily order number before creating the order
         const today = new Date();
 

@@ -124,15 +124,43 @@ export default function OrdersPage() {
       const response = await fetch(`/api/orders/${orderId}/fulfill`, {
         method: "PATCH",
       });
+
       if (response.ok) {
+        const result = await response.json();
         setOrders(
           orders.map((order) =>
             order.id === orderId ? { ...order, isFulfilled: true } : order
           )
         );
+
+        // Show confirmation with quantity updates
+        if (result.quantitiesUpdated && result.quantitiesUpdated.length > 0) {
+          const updateSummary = result.quantitiesUpdated
+            .map(
+              (update: any) =>
+                `${update.productName}: -${update.quantityDeducted} (${update.newStock} remaining)`
+            )
+            .join("\n");
+
+          alert(
+            `Order fulfilled successfully!\n\nStock updates:\n${updateSummary}`
+          );
+        } else {
+          alert("Order fulfilled successfully!");
+        }
+      } else {
+        const error = await response.json();
+        if (error.error === "Insufficient stock") {
+          alert(
+            `Cannot fulfill order:\n\n${error.message}\n\nPlease check inventory and try again.`
+          );
+        } else {
+          alert(`Error fulfilling order: ${error.error || "Unknown error"}`);
+        }
       }
     } catch (error) {
       console.error("Error fulfilling order:", error);
+      alert("Failed to fulfill order. Please try again.");
     }
   };
 

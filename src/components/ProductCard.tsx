@@ -74,12 +74,16 @@ export default function ProductCard({
       return;
     }
 
-    addItem({
-      barcode: product.barcode,
-      name: product.name,
-      price: product.price,
-      salePrice: product.salePrice,
-    });
+    addItem(
+      {
+        barcode: product.barcode,
+        name: product.name,
+        price: product.price,
+        salePrice: product.salePrice,
+      },
+      product.qtyInStock,
+      showQuantities
+    );
   };
 
   return (

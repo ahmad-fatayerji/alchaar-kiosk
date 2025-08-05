@@ -75,9 +75,38 @@ export default function OrderPage() {
       });
 
       if (response.ok) {
+        const result = await response.json();
         setOrder({ ...order, isFulfilled: true });
+
+        // Show confirmation with quantity updates
+        if (result.quantitiesUpdated && result.quantitiesUpdated.length > 0) {
+          const updateSummary = result.quantitiesUpdated
+            .map(
+              (update: any) =>
+                `${update.productName}: -${update.quantityDeducted} (${update.newStock} remaining)`
+            )
+            .join("\n");
+
+          alert(
+            `Order fulfilled successfully!\n\nStock updates:\n${updateSummary}`
+          );
+        } else {
+          alert("Order fulfilled successfully!");
+        }
       } else {
-        setError("Failed to mark order as fulfilled");
+        const error = await response.json();
+        if (error.error === "Insufficient stock") {
+          setError(`Cannot fulfill order:\n${error.message}`);
+          alert(
+            `Cannot fulfill order:\n\n${error.message}\n\nPlease check inventory and try again.`
+          );
+        } else {
+          setError(
+            `Failed to mark order as fulfilled: ${
+              error.error || "Unknown error"
+            }`
+          );
+        }
       }
     } catch (error) {
       console.error("Error fulfilling order:", error);

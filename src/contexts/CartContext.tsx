@@ -113,9 +113,18 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 
 type CartContextType = {
   state: CartState;
-  addItem: (item: Omit<CartItem, "quantity">) => void;
+  addItem: (
+    item: Omit<CartItem, "quantity">,
+    stockQty?: number,
+    enforceStock?: boolean
+  ) => void;
   removeItem: (barcode: string) => void;
-  updateQuantity: (barcode: string, quantity: number) => void;
+  updateQuantity: (
+    barcode: string,
+    quantity: number,
+    stockQty?: number,
+    enforceStock?: boolean
+  ) => void;
   clearCart: () => void;
   toggleCart: () => void;
   setCartOpen: (open: boolean) => void;
@@ -147,13 +156,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("kiosk-cart", JSON.stringify(state));
   }, [state]);
 
-  const addItem = (item: Omit<CartItem, "quantity">) => {
+  const addItem = (
+    item: Omit<CartItem, "quantity">,
+    stockQty?: number,
+    enforceStock?: boolean
+  ) => {
     const now = Date.now();
     const lastProcessed = processingRef.current.get(item.barcode) || 0;
 
     // Prevent duplicate calls within 200ms (production-ready debouncing)
     if (now - lastProcessed < 200) {
       return;
+    }
+
+    // Check stock validation if enforceStock is true
+    if (enforceStock && stockQty !== undefined) {
+      const existingItem = state.items.find((i) => i.barcode === item.barcode);
+      const currentQuantity = existingItem ? existingItem.quantity : 0;
+
+      if (currentQuantity >= stockQty) {
+        // Cannot add more - already at stock limit
+        return;
+      }
     }
 
     processingRef.current.set(item.barcode, now);
@@ -174,7 +198,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "REMOVE_ITEM", payload: barcode });
   };
 
-  const updateQuantity = (barcode: string, quantity: number) => {
+  const updateQuantity = (
+    barcode: string,
+    quantity: number,
+    stockQty?: number,
+    enforceStock?: boolean
+  ) => {
+    // Check stock validation if enforceStock is true
+    if (enforceStock && stockQty !== undefined && quantity > stockQty) {
+      // Cannot set quantity higher than stock
+      return;
+    }
+
     dispatch({ type: "UPDATE_QUANTITY", payload: { barcode, quantity } });
   };
 
