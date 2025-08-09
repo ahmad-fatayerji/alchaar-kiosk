@@ -51,7 +51,34 @@ export async function DELETE(
     ctx: { params: Promise<{ id: string }> },
 ) {
     const id = await catId(ctx);
-    await prisma.category.delete({ where: { id } });
+
+    // Ensure no descendant categories block deletion. We'll perform a small recursive cleanup:
+    // - Set categoryId = null for products under this category or its descendants
+    // - Delete categoryFilter links for this category and descendants
+    // - Then delete descendants and finally this category
+
+    // Gather descendants (simple BFS in SQL)
+    const toVisit: number[] = [id];
+    const allIds: number[] = [];
+    while (toVisit.length) {
+        const batch = toVisit.splice(0, 50);
+        allIds.push(...batch);
+        const children = await prisma.category.findMany({
+            where: { parentId: { in: batch } },
+            select: { id: true },
+        });
+        toVisit.push(...children.map((c) => c.id));
+    }
+
+    await prisma.$transaction([
+        // Detach products
+        prisma.product.updateMany({ where: { categoryId: { in: allIds } }, data: { categoryId: null } }),
+        // Remove category-filter links
+        prisma.categoryFilter.deleteMany({ where: { categoryId: { in: allIds } } }),
+        // Delete categories bottom-up (children first)
+        prisma.category.deleteMany({ where: { id: { in: allIds.filter((x) => x !== id) } } }),
+        prisma.category.delete({ where: { id } }),
+    ]);
     return NextResponse.json({ ok: true });
 }
 

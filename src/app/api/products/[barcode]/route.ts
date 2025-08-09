@@ -51,8 +51,29 @@ export async function DELETE(
     _req: Request,
     ctx: { params: Promise<{ barcode: string }> },
 ) {
-    await prisma.product.delete({ where: { barcode: await code(ctx) } });
-    return NextResponse.json({ ok: true });
+    const barcode = await code(ctx);
+    // If product is referenced by orders, archive instead of hard-deleting
+    try {
+        const hasOrders = await prisma.orderItem.findFirst({ where: { productId: barcode }, select: { orderId: true } });
+        if (hasOrders) {
+            const updated = await prisma.product.update({
+                where: { barcode },
+                data: { archived: true, qtyInStock: 0 },
+            });
+            return NextResponse.json({ ok: true, action: "archived", barcode: updated.barcode.toString() });
+        }
+
+        await prisma.$transaction([
+            prisma.productFilterValue.deleteMany({ where: { productId: barcode } }),
+            prisma.product.delete({ where: { barcode } }),
+        ]);
+        return NextResponse.json({ ok: true, action: "deleted" });
+    } catch (err: any) {
+        if (err?.code === "P2025") {
+            return NextResponse.json({ error: "not-found" }, { status: 404 });
+        }
+        throw err;
+    }
 }
 
 /* Prisma & fs need the Node runtime */

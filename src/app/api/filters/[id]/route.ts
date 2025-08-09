@@ -41,7 +41,11 @@ export async function DELETE(
     ctx: { params: Promise<{ id: string }> },
 ) {
     const id = await filterId(ctx);
-    await prisma.filterDef.delete({ where: { id } });
+    await prisma.$transaction([
+        prisma.categoryFilter.deleteMany({ where: { filterId: id } }),
+        prisma.productFilterValue.deleteMany({ where: { filterId: id } }),
+        prisma.filterDef.delete({ where: { id } }),
+    ]);
     return NextResponse.json({ ok: true });
 }
 

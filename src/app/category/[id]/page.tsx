@@ -125,7 +125,9 @@ export default function CategoryPage() {
 
           // Only fetch products if this is a leaf category (no children)
           if (!hasChildren) {
-            fetch(`/api/products?categoryId=${categoryId}`)
+            fetch(
+              `/api/products?categoryId=${categoryId}&includeArchived=false`
+            )
               .then((res) => res.json())
               .then((productsData) => {
                 setProducts(productsData);

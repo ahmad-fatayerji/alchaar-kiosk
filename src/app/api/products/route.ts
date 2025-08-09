@@ -47,15 +47,45 @@ export async function POST(req: Request) {
         }
     }
 
-    /* Cast the incoming string barcode back to BigInt for Prisma. */
+    const barcode = BigInt(body.barcode);
+    const existing = await prisma.product.findUnique({ where: { barcode } });
+
+    // If a product exists and is archived → unarchive & update; if active → 409
+    if (existing) {
+        if (existing.archived) {
+            const updated = await prisma.product.update({
+                where: { barcode },
+                data: {
+                    name: body.name,
+                    price: body.price,
+                    salePrice: body.salePrice ?? null,
+                    qtyInStock: body.qtyInStock ?? 0,
+                    categoryId: body.categoryId ?? null,
+                    archived: false,
+                },
+            });
+            return NextResponse.json({
+                ...updated,
+                barcode: updated.barcode.toString(),
+                price: updated.price.toString(),
+                unarchived: true,
+            });
+        }
+        return NextResponse.json(
+            { error: "A product with this barcode already exists." },
+            { status: 409 }
+        );
+    }
+
+    // Create new product
     const prod = await prisma.product.create({
         data: {
             ...body,
-            barcode: BigInt(body.barcode),
+            barcode,
+            archived: false,
         },
     });
 
-    /* Same JSON-safe cast for the response    ↓ */
     return NextResponse.json(
         {
             ...prod,

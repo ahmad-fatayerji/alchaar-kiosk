@@ -25,9 +25,9 @@ export default function ProductsPanel() {
     bulkAssign,
   } = useProducts();
 
-  /* ---------- load products on mount ---------- */
+  /* ---------- data loading ---------- */
   useEffect(() => {
-    refresh();
+    refresh(false);
   }, [refresh]);
 
   /* ---------- load categories once (only leaf categories) ---------- */
@@ -44,6 +44,12 @@ export default function ProductsPanel() {
   const [assignOpen, setAssignOpen] = useState(false);
   const [saleOpen, setSaleOpen] = useState(false);
   const [salesEnabled, setSalesEnabled] = useState(true);
+  const [showArchived, setShowArchived] = useState(false);
+
+  // Refresh when toggling archived view
+  useEffect(() => {
+    refresh(showArchived);
+  }, [showArchived, refresh]);
 
   /* ---------- load sales enabled setting ---------- */
   useEffect(() => {
@@ -121,6 +127,8 @@ export default function ProductsPanel() {
         onBulkSaleClick={() => setSaleOpen(true)}
         disabled={busy}
         selectedCount={selected.size}
+        showArchived={showArchived}
+        onToggleArchived={setShowArchived}
       />
 
       <Card>
@@ -132,12 +140,11 @@ export default function ProductsPanel() {
             setSelected={setSelected}
             onEdit={setEditing}
             onDelete={remove}
-            onUploaded={refresh}
+            onUploaded={() => refresh(showArchived)}
             salesEnabled={salesEnabled}
           />
         </CardContent>
       </Card>
-
       {/* product edit dialog */}
       <ProductDialog
         open={editing !== undefined}
@@ -145,7 +152,10 @@ export default function ProductsPanel() {
         cats={cats}
         busy={busy}
         onCancel={() => setEditing(undefined)}
-        onSave={upsert}
+        onSave={async (p, values) => {
+          await upsert(p, values);
+          setEditing(undefined);
+        }}
       />
 
       {/* bulk-assign dialog */}

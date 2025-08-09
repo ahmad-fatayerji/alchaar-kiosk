@@ -24,6 +24,8 @@ type Props = {
   onBulkSaleClick(): void;
   disabled?: boolean;
   selectedCount: number;
+  showArchived: boolean;
+  onToggleArchived(v: boolean): void;
 };
 
 export default function ProductsToolbar({
@@ -37,6 +39,8 @@ export default function ProductsToolbar({
   onBulkSaleClick,
   disabled,
   selectedCount,
+  showArchived,
+  onToggleArchived,
 }: Props) {
   const bulkRef = useRef<HTMLInputElement>(null);
   const [salesEnabled, setSalesEnabled] = useState(true);
@@ -62,6 +66,15 @@ export default function ProductsToolbar({
       />
 
       <div className="flex items-center gap-3">
+        {/* show archived toggle */}
+        <label className="flex items-center gap-2 text-sm text-gray-700 mr-2">
+          <input
+            type="checkbox"
+            checked={showArchived}
+            onChange={(e) => onToggleArchived(e.target.checked)}
+          />
+          Show archived
+        </label>
         {selectedCount > 0 && (
           <Badge variant="secondary" className="px-3 py-1">
             {selectedCount} selected

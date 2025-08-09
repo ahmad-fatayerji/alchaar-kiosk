@@ -74,6 +74,7 @@ model Product {
   price      Decimal  @db.Decimal(10, 2)
   salePrice  Decimal? @db.Decimal(10, 2) // Sale price (optional)
   qtyInStock Int      @default(0)
+  archived   Boolean  @default(false)
 
   filterValues ProductFilterValue[]
   OrderItem    OrderItem[]

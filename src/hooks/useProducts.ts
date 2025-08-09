@@ -21,8 +21,9 @@ export function useProducts() {
     const [selected, setSelected] = useState<Set<string>>(new Set());
 
     /* ---- list loader ---------------------------------------------- */
-    const refresh = useCallback(async () => {
-        const res = await fetch("/api/products");
+    const refresh = useCallback(async (showArchived?: boolean) => {
+        const url = showArchived ? "/api/products?includeArchived=true" : "/api/products";
+        const res = await fetch(url);
         const txt = await res.text();
         setProducts(txt.trim() ? (JSON.parse(txt) as Product[]) : []);
     }, []);
@@ -64,7 +65,28 @@ export function useProducts() {
     /* ---- single delete -------------------------------------------- */
     const remove = useCallback(
         async (barcode: string) => {
-            await fetch(`/api/products/${barcode}`, { method: "DELETE" });
+            const res = await fetch(`/api/products/${barcode}`, { method: "DELETE" });
+            if (res.ok) {
+                try {
+                    const info = await res.json();
+                    if (info?.action === "archived") {
+                        alert(`Product ${barcode} was archived because it has order history.`);
+                    }
+                } catch { }
+            } else {
+                try {
+                    const info = await res.json();
+                    if (res.status === 404) {
+                        alert(`Product ${barcode} was not found (already deleted).`);
+                    } else if (res.status === 409) {
+                        alert(`Cannot delete product ${barcode}: it is referenced by existing orders.`);
+                    } else {
+                        alert(`Delete failed (${res.status}): ${info?.error || 'unknown error'}`);
+                    }
+                } catch {
+                    alert(`Delete failed with status ${res.status}.`);
+                }
+            }
             refresh();
         },
         [refresh]
@@ -77,11 +99,35 @@ export function useProducts() {
             if (!confirm(`Delete ${codes.length} products?`)) return;
 
             setBusy(true);
-            await fetch("/api/products/bulk", {
+            const res = await fetch("/api/products/bulk", {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ codes }),
             });
+            if (res.ok) {
+                const summary = (await res.json()) as {
+                    deleted: string[];
+                    archived: string[];
+                    conflicts: string[];
+                    notFound: string[];
+                    invalid: string[];
+                };
+                const parts: string[] = [];
+                if (summary.deleted?.length) parts.push(`Deleted: ${summary.deleted.length}`);
+                if (summary.archived?.length) parts.push(`Archived: ${summary.archived.length}`);
+                if (summary.conflicts?.length)
+                    parts.push(`Conflicts: ${summary.conflicts.length} (referenced by orders)`);
+                if (summary.notFound?.length) parts.push(`Not found: ${summary.notFound.length}`);
+                if (summary.invalid?.length) parts.push(`Invalid codes: ${summary.invalid.length}`);
+                if (parts.length > 1) alert(parts.join("\n"));
+            } else {
+                try {
+                    const j = await res.json();
+                    alert(`Bulk delete failed (${res.status}): ${j?.error || 'unknown error'}`);
+                } catch {
+                    alert(`Bulk delete failed with status ${res.status}.`);
+                }
+            }
             setSelected(new Set());
             await refresh();
             setBusy(false);

@@ -68,6 +68,14 @@ export function buildProductWhere(
     params: URLSearchParams | Record<string, string | string[]>
 ): Prisma.ProductWhereInput {
     const where: Prisma.ProductWhereInput = {};
+    // Exclude archived by default unless explicitly included
+    const incArchived =
+        typeof (params as URLSearchParams).get === 'function'
+            ? (params as URLSearchParams).get('includeArchived')
+            : (params as Record<string, any>)['includeArchived'];
+    if (!incArchived || !['1', 'true', 'yes'].includes(String(incArchived).toLowerCase())) {
+        where.archived = false;
+    }
 
     /* 1️⃣  Full-text search */
     const q = getStr(params, 'q') || getStr(params, 'search');

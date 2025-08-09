@@ -29,6 +29,7 @@ export type Product = {
   salePrice?: string | null;
   qtyInStock: number;
   categoryId: number | null;
+  archived?: boolean;
 };
 
 /* sentinel for "no category" */
@@ -190,14 +191,16 @@ export default function ProductDialog({
   /* ---------- render ---------- */
   return (
     <Dialog open={open} onOpenChange={open ? onCancel : undefined}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-xl md:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{product ? "Edit product" : "New product"}</DialogTitle>
+          <DialogTitle className="text-xl">
+            {product ? "Edit product" : "New product"}
+          </DialogTitle>
         </DialogHeader>
 
         {/* ---- form fields ---- */}
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Barcode</Label>
               <Input
@@ -235,7 +238,9 @@ export default function ProductDialog({
 
           <div
             className={
-              salesEnabled ? "grid grid-cols-3 gap-4" : "grid grid-cols-2 gap-4"
+              salesEnabled
+                ? "grid grid-cols-1 md:grid-cols-3 gap-4"
+                : "grid grid-cols-1 md:grid-cols-2 gap-4"
             }
           >
             <div>
@@ -284,18 +289,42 @@ export default function ProductDialog({
           {defs.length > 0 && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Filters</h3>
-              {defs.map((d) => (
-                <div key={d.id} className="grid gap-2">
-                  <Label>{d.name}</Label>
-                  {render(d)}
-                </div>
-              ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {defs.map((d) => (
+                  <div key={d.id} className="grid gap-2">
+                    <Label>{d.name}</Label>
+                    {render(d)}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
 
         {/* ---- actions ---- */}
         <DialogFooter>
+          {product?.archived && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() =>
+                onSave(
+                  {
+                    barcode: form.barcode,
+                    name: form.name.trim(),
+                    price: form.price,
+                    salePrice: salesEnabled ? form.salePrice || null : null,
+                    qtyInStock: Number(form.stock || 0),
+                    categoryId: form.catId === NONE ? null : Number(form.catId),
+                    archived: false,
+                  } as any,
+                  []
+                )
+              }
+            >
+              Unarchive
+            </Button>
+          )}
           <Button variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
