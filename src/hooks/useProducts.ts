@@ -169,6 +169,27 @@ export function useProducts() {
         [refresh]
     );
 
+    /* ---- quick stock adjust (+/-) --------------------------------- */
+    const adjustStock = useCallback(
+        async (barcode: string, delta: number) => {
+            const p = products.find((pr) => String(pr.barcode) === String(barcode));
+            const current = Number(p?.qtyInStock ?? 0);
+            const next = Math.max(0, current + Number(delta || 0));
+            try {
+                setBusy(true);
+                await fetch(`/api/products/${barcode}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ qtyInStock: next }),
+                });
+                await refresh();
+            } finally {
+                setBusy(false);
+            }
+        },
+        [products, refresh]
+    );
+
     return {
         /* data */
         products,
@@ -183,5 +204,6 @@ export function useProducts() {
         bulkDelete,
         bulkAssign,
         bulkUpload,
+        adjustStock,
     };
 }

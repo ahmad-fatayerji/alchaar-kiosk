@@ -38,6 +38,7 @@ type Props = {
   onDelete(code: string): void;
   onUploaded(): void; // refresh after single-row thumb upload
   salesEnabled?: boolean; // whether sales features are enabled
+  onAdjustStock?: (barcode: string, delta: number) => void;
 };
 
 /* ------------------------------------------------------------------ */
@@ -49,7 +50,8 @@ const buildColumns = (
   onUploaded: Props["onUploaded"],
   selected: Set<string>,
   toggleSel: (code: string, newSet?: Set<string>) => void,
-  salesEnabled: boolean = true
+  salesEnabled: boolean = true,
+  onAdjustStock?: Props["onAdjustStock"]
 ): ColumnDef<Product>[] => [
   /* ---- selection checkbox ---- */
   {
@@ -198,13 +200,40 @@ const buildColumns = (
     cell: ({ row, getValue }) => {
       const qty = getValue() as number;
       const archived = (row.original as any).archived;
+      const code = String(row.original.barcode);
       return (
-        <Badge
-          variant={archived ? "secondary" : qty > 0 ? "default" : "destructive"}
-          className={"font-mono " + (archived ? "opacity-70" : "")}
-        >
-          {qty}
-        </Badge>
+        <div className="flex items-center gap-1">
+          {onAdjustStock && !archived && (
+            <button
+              type="button"
+              onClick={() => onAdjustStock(code, -1)}
+              className="size-6 rounded border border-input text-xs leading-none flex items-center justify-center hover:bg-accent"
+              aria-label="Decrease stock"
+            >
+              −
+            </button>
+          )}
+          <Badge
+            variant={
+              archived ? "secondary" : qty > 0 ? "default" : "destructive"
+            }
+            className={
+              "font-mono min-w-6 text-center " + (archived ? "opacity-70" : "")
+            }
+          >
+            {qty}
+          </Badge>
+          {onAdjustStock && !archived && (
+            <button
+              type="button"
+              onClick={() => onAdjustStock(code, +1)}
+              className="size-6 rounded border border-input text-xs leading-none flex items-center justify-center hover:bg-accent"
+              aria-label="Increase stock"
+            >
+              +
+            </button>
+          )}
+        </div>
       );
     },
   },
@@ -236,6 +265,7 @@ export default function ProductTable({
   onDelete,
   onUploaded,
   salesEnabled = true,
+  onAdjustStock,
 }: Props) {
   /* helper to toggle selection */
   const toggleSel = React.useCallback(
@@ -264,9 +294,18 @@ export default function ProductTable({
           onUploaded,
           selected,
           toggleSel,
-          salesEnabled
+          salesEnabled,
+          onAdjustStock
         ),
-      [onEdit, onDelete, onUploaded, selected, toggleSel, salesEnabled]
+      [
+        onEdit,
+        onDelete,
+        onUploaded,
+        selected,
+        toggleSel,
+        salesEnabled,
+        onAdjustStock,
+      ]
     ),
     state: { globalFilter },
     onGlobalFilterChange: () => {},

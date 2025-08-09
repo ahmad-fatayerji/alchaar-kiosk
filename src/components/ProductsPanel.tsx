@@ -23,6 +23,7 @@ export default function ProductsPanel() {
     bulkUpload,
     bulkDelete,
     bulkAssign,
+    adjustStock,
   } = useProducts();
 
   /* ---------- data loading ---------- */
@@ -142,6 +143,7 @@ export default function ProductsPanel() {
             onDelete={remove}
             onUploaded={() => refresh(showArchived)}
             salesEnabled={salesEnabled}
+            onAdjustStock={adjustStock}
           />
         </CardContent>
       </Card>
