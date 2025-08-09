@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SearchBox from "./SearchBox";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useRef, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 
@@ -67,14 +68,19 @@ export default function ProductsToolbar({
 
       <div className="flex items-center gap-3">
         {/* show archived toggle */}
-        <label className="flex items-center gap-2 text-sm text-gray-700 mr-2">
-          <input
-            type="checkbox"
+        <div className="flex items-center gap-2 mr-2">
+          <Checkbox
+            id="show-archived"
             checked={showArchived}
-            onChange={(e) => onToggleArchived(e.target.checked)}
+            onCheckedChange={(v) => onToggleArchived(Boolean(v))}
           />
-          Show archived
-        </label>
+          <label
+            htmlFor="show-archived"
+            className="text-sm text-muted-foreground select-none"
+          >
+            Show archived
+          </label>
+        </div>
         {selectedCount > 0 && (
           <Badge variant="secondary" className="px-3 py-1">
             {selectedCount} selected

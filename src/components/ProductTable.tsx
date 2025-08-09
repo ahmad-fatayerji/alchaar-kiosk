@@ -104,9 +104,41 @@ const buildColumns = (
   {
     accessorKey: "name",
     header: "Name",
-    cell: ({ getValue }) => (
-      <span className="font-medium">{getValue() as string}</span>
-    ),
+    cell: ({ row, getValue }) => {
+      const archived = (row.original as any).archived;
+      return (
+        <div className="flex items-center gap-3 overflow-hidden">
+          <span
+            className={
+              "font-medium truncate min-w-0 mr-3 " +
+              (archived ? "text-gray-500" : "")
+            }
+          >
+            {getValue() as string}
+          </span>
+          {archived && (
+            <span
+              style={{
+                backgroundColor: "#dc2626",
+                color: "#ffffff",
+                borderRadius: "0.375rem",
+                padding: "0.125rem 0.5rem",
+                fontSize: "0.75rem",
+                lineHeight: "1rem",
+                fontWeight: 500,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.25rem",
+                marginLeft: "12px",
+                flex: "none",
+              }}
+            >
+              Archived
+            </span>
+          )}
+        </div>
+      );
+    },
   },
   /* ---- category ---- */
   {
@@ -163,12 +195,13 @@ const buildColumns = (
   {
     accessorKey: "qtyInStock",
     header: "Stock",
-    cell: ({ getValue }) => {
+    cell: ({ row, getValue }) => {
       const qty = getValue() as number;
+      const archived = (row.original as any).archived;
       return (
         <Badge
-          variant={qty > 0 ? "default" : "destructive"}
-          className="font-mono"
+          variant={archived ? "secondary" : qty > 0 ? "default" : "destructive"}
+          className={"font-mono " + (archived ? "opacity-70" : "")}
         >
           {qty}
         </Badge>
@@ -264,15 +297,23 @@ export default function ProductTable({
         </TableHeader>
 
         <TableBody>
-          {table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id} className="hover:bg-muted/30">
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id} className="align-middle">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
+          {table.getRowModel().rows.map((row) => {
+            const archived = (row.original as any).archived;
+            return (
+              <TableRow
+                key={row.id}
+                className={
+                  "hover:bg-muted/30 " + (archived ? "bg-gray-50/70" : "")
+                }
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id} className="align-middle">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
