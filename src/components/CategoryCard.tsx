@@ -2,8 +2,8 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Package, ShoppingBag } from "lucide-react";
-import Image from "next/image";
 import { useState } from "react";
+import { useThumbVersion } from "@/hooks/useThumbVersion";
 
 type CategoryCardProps = {
   id: number | null;
@@ -21,13 +21,27 @@ export default function CategoryCard({
   onClick,
 }: CategoryCardProps) {
   const [imageError, setImageError] = useState(false);
+  const v = useThumbVersion();
 
   const handleClick = () => {
     onClick(id);
   };
 
-  // Determine image source
-  const imageSrc = isViewAll ? null : `/categories/${id}.avif`;
+  // Base for multi-extension fallback via /files route
+  const base = isViewAll ? null : `/files/categories/${id}`;
+  const exts = [".webp", ".jpg", ".jpeg", ".png", ".avif"];
+
+  function fallback(img: HTMLImageElement) {
+    // rotate through extensions until one exists; show placeholder if none
+    const tried = img.src.split("?")[0];
+    const ext = tried.slice(tried.lastIndexOf("."));
+    const next = exts[exts.indexOf(ext) + 1];
+    if (next) {
+      img.src = `${base}${next}?v=${v}`;
+    } else {
+      setImageError(true);
+    }
+  }
 
   return (
     <Card
@@ -46,15 +60,15 @@ export default function CategoryCard({
               </div>
             </div>
           ) : (
-            // Category Image
+            // Category Image with multi-extension fallback (no Next/Image)
             <>
-              {!imageError && imageSrc ? (
-                <Image
-                  src={imageSrc}
+              {!imageError && base ? (
+                <img
+                  src={`${base}${exts[0]}?v=${v}`}
                   alt={name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={() => setImageError(true)}
+                  onError={(e) => fallback(e.currentTarget)}
+                  className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  draggable={false}
                 />
               ) : (
                 <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">

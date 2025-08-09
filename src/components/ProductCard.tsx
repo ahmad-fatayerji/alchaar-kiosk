@@ -2,11 +2,11 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Package, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
+import { useThumbVersion } from "@/hooks/useThumbVersion";
 
 type Product = {
   barcode: string;
@@ -35,11 +35,24 @@ export default function ProductCard({
   const [showQuantities, setShowQuantities] = useState(false);
   const { addItem } = useCart();
   const isInStock = product.qtyInStock > 0;
-  const imageSrc = `/products/${product.barcode}.avif`;
+  const v = useThumbVersion();
+  const base = `/files/products/${product.barcode}`;
+  const exts = [".webp", ".jpg", ".jpeg", ".png", ".avif"];
   const hasSale =
     salesEnabled && product.salePrice && Number(product.salePrice) > 0;
   const regularPrice = Number(product.price);
   const salePrice = hasSale ? Number(product.salePrice) : null;
+
+  function fallback(img: HTMLImageElement) {
+    const tried = img.src.split("?")[0];
+    const ext = tried.slice(tried.lastIndexOf("."));
+    const next = exts[exts.indexOf(ext) + 1];
+    if (next) {
+      img.src = `${base}${next}?v=${v}`;
+    } else {
+      setImageError(true);
+    }
+  }
 
   // Load settings
   useEffect(() => {
@@ -94,13 +107,13 @@ export default function ProductCard({
       <CardContent className="p-0 h-full flex flex-col">
         {/* Image Section */}
         <div className="relative flex-1 bg-gray-100 overflow-hidden">
-          {!imageError && imageSrc ? (
-            <Image
-              src={imageSrc}
+          {!imageError ? (
+            <img
+              src={`${base}${exts[0]}?v=${v}`}
               alt={product.name}
-              fill
-              className="object-contain p-3 group-hover:scale-105 transition-transform duration-300"
-              onError={() => setImageError(true)}
+              onError={(e) => fallback(e.currentTarget)}
+              className="absolute inset-0 h-full w-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
+              draggable={false}
             />
           ) : (
             <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
