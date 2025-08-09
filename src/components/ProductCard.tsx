@@ -42,6 +42,7 @@ export default function ProductCard({
     salesEnabled && product.salePrice && Number(product.salePrice) > 0;
   const regularPrice = Number(product.price);
   const salePrice = hasSale ? Number(product.salePrice) : null;
+  const showNA = !hasSale && !hidePrices && salesEnabled && regularPrice === 0;
 
   function fallback(img: HTMLImageElement) {
     const tried = img.src.split("?")[0];
@@ -171,6 +172,8 @@ export default function ProductCard({
                     ${regularPrice.toFixed(2)}
                   </span>
                 </div>
+              ) : showNA ? (
+                <span className="text-lg font-semibold text-gray-500">N/A</span>
               ) : (
                 <span className="text-lg font-bold text-[#3da874]">
                   ${regularPrice.toFixed(2)}

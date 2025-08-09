@@ -170,22 +170,26 @@ const buildColumns = (
     ),
     cell: ({ row }) => {
       const regularPrice = Number(row.original.price);
-      const salePrice =
-        salesEnabled && row.original.salePrice
-          ? Number(row.original.salePrice)
-          : null;
+      const hasSale =
+        salesEnabled &&
+        row.original.salePrice &&
+        Number(row.original.salePrice) > 0;
+      const salePrice = hasSale ? Number(row.original.salePrice) : null;
+      const isNA = !hasSale && regularPrice === 0;
 
       return (
         <div className="flex flex-col gap-1">
-          {salePrice ? (
+          {hasSale ? (
             <>
               <span className="text-sm text-muted-foreground line-through">
                 ${regularPrice.toFixed(2)}
               </span>
               <span className="font-medium text-green-600">
-                ${salePrice.toFixed(2)}
+                ${salePrice!.toFixed(2)}
               </span>
             </>
+          ) : isNA ? (
+            <span className="font-medium text-muted-foreground">N/A</span>
           ) : (
             <span className="font-medium">${regularPrice.toFixed(2)}</span>
           )}
