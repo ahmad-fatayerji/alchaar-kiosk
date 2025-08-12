@@ -320,7 +320,7 @@ export default function CategoryPage() {
             </div>
 
             {subcategories.length > 0 ? (
-              <div className="grid grid-cols-3 gap-x-6 gap-y-16 max-w-5xl mx-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10 max-w-6xl mx-auto">
                 {subcategories.map((subcategory) => (
                   <CategoryCard
                     key={subcategory.id}
@@ -359,7 +359,7 @@ export default function CategoryPage() {
 
             {/* Products Grid */}
             {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-3 gap-x-6 gap-y-16 max-w-5xl mx-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10 max-w-6xl mx-auto">
                 {filteredProducts.map((product) => (
                   <ProductCard
                     key={product.barcode}

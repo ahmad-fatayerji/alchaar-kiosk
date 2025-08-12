@@ -102,9 +102,7 @@ export default function Cart({ onCheckout }: CartProps) {
           );
         } else if (error.error === "Some products do not exist") {
           alert(
-            `Some products in your cart no longer exist:\nBarcodes: ${error.missingBarcodes.join(
-              ", "
-            )}\n\nPlease remove these items and try again.`
+            `Some products in your cart are no longer available. Please remove unavailable items and try again.`
           );
         } else {
           alert(`Failed to create order: ${error.error || "Unknown error"}`);
@@ -192,9 +190,7 @@ export default function Cart({ onCheckout }: CartProps) {
                         <h4 className="font-semibold text-gray-900 mb-1">
                           {item.name}
                         </h4>
-                        <div className="text-sm text-gray-600">
-                          Barcode: {item.barcode}
-                        </div>
+                        {/* Barcode intentionally hidden from customers */}
                         {showQuantities && stockQty !== undefined && (
                           <div className="text-xs text-gray-500 mt-1">
                             {stockQty} available in stock

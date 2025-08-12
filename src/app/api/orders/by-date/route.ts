@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/prisma";
+import { lebanonDayToUtcRange } from "@/lib/time";
 
 export async function GET(request: NextRequest) {
     try {
@@ -10,10 +11,8 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "Date parameter is required" }, { status: 400 });
         }
 
-        // Parse the date and get start/end of day
-        const date = new Date(dateStr);
-        const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
-        const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+        // Interpret the given YYYY-MM-DD as Lebanon local date and convert to UTC range
+        const { start: startOfDay, end: endOfDay } = lebanonDayToUtcRange(dateStr);
 
         const orders = await db.order.findMany({
             where: {

@@ -29,7 +29,8 @@ export default function CategoryCard({
 
   // Base for multi-extension fallback via /files route
   const base = isViewAll ? null : `/files/categories/${id}`;
-  const exts = [".webp", ".jpg", ".jpeg", ".png", ".avif"];
+  // Prefer modern formats first
+  const exts = [".avif", ".webp", ".jpg", ".jpeg", ".png"];
 
   function fallback(img: HTMLImageElement) {
     // rotate through extensions until one exists; show placeholder if none
@@ -45,7 +46,7 @@ export default function CategoryCard({
 
   return (
     <Card
-      className="group cursor-pointer w-full aspect-[3/4] max-w-[280px] mx-auto overflow-hidden bg-white hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-gray-300 rounded-xl"
+      className="group cursor-pointer w-full aspect-[3/4] max-w-[320px] mx-auto overflow-hidden bg-white hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-gray-300 rounded-3xl"
       onClick={handleClick}
     >
       <CardContent className="p-0 h-full flex flex-col">
@@ -75,6 +76,8 @@ export default function CategoryCard({
                   <Package className="h-12 w-12 text-gray-400" />
                 </div>
               )}
+              {/* Soft gradient overlay for text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
             </>
           )}
         </div>

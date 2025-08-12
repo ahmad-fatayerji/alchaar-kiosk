@@ -75,7 +75,7 @@ export default function ProductFilters({
             </span>
             <Button
               variant="ghost"
-              size="sm"
+              size="lg"
               onClick={() => setIsExpanded(!isExpanded)}
               className="text-[#3da874]"
             >
@@ -88,12 +88,18 @@ export default function ProductFilters({
       <CardContent className="pt-0">
         {/* Search - always visible */}
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <Input
+            type="search"
+            inputMode="search"
+            enterKeyHint="search"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             placeholder="Search products..."
             value={filters.search}
             onChange={(e) => updateFilter("search", e.target.value)}
-            className="pl-10 text-base h-12"
+            className="pl-10 text-lg h-14"
           />
         </div>
 
@@ -187,7 +193,7 @@ export default function ProductFilters({
               <Label className="text-base font-semibold mb-3 block">
                 Sort By
               </Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 {[
                   { value: "name", label: "Name A-Z" },
                   { value: "price-low", label: "Price: Low to High" },
@@ -199,9 +205,9 @@ export default function ProductFilters({
                     variant={
                       filters.sortBy === option.value ? "default" : "outline"
                     }
-                    size="sm"
+                    size="lg"
                     onClick={() => updateFilter("sortBy", option.value)}
-                    className="justify-start"
+                    className="justify-start h-12 text-base active:scale-[0.99]"
                   >
                     {option.label}
                   </Button>
@@ -214,35 +220,79 @@ export default function ProductFilters({
               <Label className="text-base font-semibold mb-3 block">
                 Price Range: ${filters.priceMin} - ${filters.priceMax}
               </Label>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm">Min Price</Label>
-                    <Input
-                      type="number"
-                      value={filters.priceMin}
-                      onChange={(e) =>
-                        updateFilter("priceMin", Number(e.target.value) || 0)
-                      }
-                      min={0}
-                      max={maxPrice}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm">Max Price</Label>
-                    <Input
-                      type="number"
-                      value={filters.priceMax}
-                      onChange={(e) =>
-                        updateFilter(
-                          "priceMax",
-                          Number(e.target.value) || maxPrice
-                        )
-                      }
-                      min={0}
-                      max={maxPrice}
-                    />
-                  </div>
+              <div className="space-y-4 px-2">
+                {/* dual-thumb slider with filled range */}
+                <div className="relative h-10 flex items-center">
+                  <div className="absolute inset-x-0 h-2 bg-gray-200 rounded-full" />
+                  <div
+                    className="absolute h-2 bg-[#3da874] rounded-full"
+                    style={{
+                      left: `${
+                        (Math.min(filters.priceMin, filters.priceMax) /
+                          maxPrice) *
+                        100
+                      }%`,
+                      right: `${
+                        100 -
+                        (Math.max(filters.priceMin, filters.priceMax) /
+                          maxPrice) *
+                          100
+                      }%`,
+                    }}
+                  />
+                  <input
+                    type="range"
+                    min={0}
+                    max={maxPrice}
+                    value={Math.min(filters.priceMin, filters.priceMax)}
+                    onChange={(e) =>
+                      updateFilter(
+                        "priceMin",
+                        Math.min(Number(e.target.value), filters.priceMax)
+                      )
+                    }
+                    className="absolute inset-x-0 w-full appearance-none bg-transparent pointer-events-auto"
+                    style={{ WebkitAppearance: "none" as any }}
+                  />
+                  <input
+                    type="range"
+                    min={0}
+                    max={maxPrice}
+                    value={Math.max(filters.priceMin, filters.priceMax)}
+                    onChange={(e) =>
+                      updateFilter(
+                        "priceMax",
+                        Math.max(Number(e.target.value), filters.priceMin)
+                      )
+                    }
+                    className="absolute inset-x-0 w-full appearance-none bg-transparent pointer-events-auto"
+                    style={{ WebkitAppearance: "none" as any }}
+                  />
+                </div>
+                <style jsx>{`
+                  input[type="range"]::-webkit-slider-thumb {
+                    -webkit-appearance: none;
+                    appearance: none;
+                    height: 28px;
+                    width: 28px;
+                    background: white;
+                    border: 2px solid #3da874;
+                    border-radius: 9999px;
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+                    margin-top: -13px; /* centers on 2px track */
+                  }
+                  input[type="range"]::-moz-range-thumb {
+                    height: 28px;
+                    width: 28px;
+                    background: white;
+                    border: 2px solid #3da874;
+                    border-radius: 9999px;
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+                  }
+                `}</style>
+                <div className="flex justify-between text-base text-gray-700 font-medium">
+                  <span>${filters.priceMin}</span>
+                  <span>${filters.priceMax}</span>
                 </div>
               </div>
             </div>
@@ -252,7 +302,7 @@ export default function ProductFilters({
               <Label className="text-base font-semibold mb-3 block">
                 Availability
               </Label>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {[
                   { value: "all", label: "All Products" },
                   { value: "in-stock", label: "In Stock Only" },
@@ -260,15 +310,16 @@ export default function ProductFilters({
                 ].map((option) => (
                   <div
                     key={option.value}
-                    className="flex items-center space-x-2"
+                    className="flex items-center space-x-3"
                   >
                     <Checkbox
                       checked={filters.availability === option.value}
                       onCheckedChange={() =>
                         updateFilter("availability", option.value)
                       }
+                      className="h-6 w-6"
                     />
-                    <Label className="text-sm font-normal cursor-pointer">
+                    <Label className="text-base font-normal cursor-pointer">
                       {option.label}
                     </Label>
                   </div>

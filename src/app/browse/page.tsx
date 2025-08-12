@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import CategoryCard from "../../components/CategoryCard";
 import Cart from "../../components/Cart";
-import { ArrowLeft, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Category = {
@@ -32,10 +32,6 @@ export default function BrowsePage() {
         setLoading(false);
       });
   }, []);
-
-  const handleBack = () => {
-    router.push("/");
-  };
 
   const handleCategorySelect = (categoryId: number | null) => {
     if (categoryId === null) {
@@ -65,16 +61,7 @@ export default function BrowsePage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
       {/* Header */}
       <div className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-6 py-6 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="lg"
-            onClick={handleBack}
-            className="text-[#3da874] hover:bg-green-50 hover:text-[#2d7a5f] transition-all duration-300"
-          >
-            <ArrowLeft className="mr-2 h-6 w-6" />
-            Back to Home
-          </Button>
+        <div className="container mx-auto px-6 py-6">
           <div className="text-center">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-[#3da874] to-[#2d7a5f] bg-clip-text text-transparent">
               Browse Categories
@@ -83,7 +70,6 @@ export default function BrowsePage() {
               Discover products organized by category
             </p>
           </div>
-          <div className="w-32" /> {/* Spacer for centering */}
         </div>
       </div>
 
@@ -103,7 +89,7 @@ export default function BrowsePage() {
 
       {/* Categories Grid */}
       <div className="container mx-auto px-6 pb-16">
-        <div className="grid grid-cols-3 gap-x-6 gap-y-16 max-w-5xl mx-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10 max-w-6xl mx-auto">
           {/* View All Card - Always first */}
           <CategoryCard
             id={null}

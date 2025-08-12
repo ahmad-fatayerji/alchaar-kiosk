@@ -118,6 +118,12 @@
   body {
     @apply bg-background text-foreground;
   }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
 }
 
 /* Custom animations */

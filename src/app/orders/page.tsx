@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import OrderEditDialog from "@/components/OrderEditDialog";
 import { useOrderUpdates } from "@/hooks/useOrderUpdates";
+import { todayInLebanonYMD, formatLebanon } from "@/lib/time";
 
 type OrderItem = {
   barcode: string;
@@ -35,10 +36,9 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [expandedOrders, setExpandedOrders] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [dateFilter, setDateFilter] = useState<string>(() => {
-    const today = new Date();
-    return today.toISOString().slice(0, 10);
-  });
+  const [dateFilter, setDateFilter] = useState<string>(() =>
+    todayInLebanonYMD()
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -264,8 +264,7 @@ export default function OrdersPage() {
 
           <Button
             onClick={() => {
-              const today = new Date();
-              setDateFilter(today.toISOString().slice(0, 10));
+              setDateFilter(todayInLebanonYMD());
               setSearchTerm("");
             }}
             variant="outline"
@@ -281,7 +280,12 @@ export default function OrdersPage() {
         <div className="text-center py-8 text-gray-500">Loading orders...</div>
       ) : filteredOrders.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          No orders found for {new Date(dateFilter).toLocaleDateString()}
+          No orders found for{" "}
+          {formatLebanon(`${dateFilter}T00:00:00`, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
         </div>
       ) : (
         <div className="space-y-2">
@@ -346,7 +350,7 @@ export default function OrdersPage() {
                         ${getTotalPrice(order).toFixed(2)}
                       </div>
                       <div className="text-gray-500 min-w-[80px] text-right">
-                        {new Date(order.createdAt).toLocaleTimeString([], {
+                        {formatLebanon(order.createdAt, {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
@@ -425,7 +429,7 @@ export default function OrdersPage() {
                       <div className="flex items-center justify-between mt-4 pt-4 border-t">
                         <div className="text-sm text-gray-600">
                           Ordered:{" "}
-                          {new Date(order.createdAt).toLocaleString([], {
+                          {formatLebanon(order.createdAt, {
                             year: "numeric",
                             month: "short",
                             day: "numeric",
