@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
         // Parse the date and get start/end of day
         const date = new Date(dateStr);
         const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
-        const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59);
+        const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
 
         const orders = await db.order.findMany({
             where: {
