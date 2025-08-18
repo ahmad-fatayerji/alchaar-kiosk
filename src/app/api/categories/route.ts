@@ -43,8 +43,9 @@ function flagLeafs(cat: any): any {
    body: { name: string, parentId?: number }
 -------------------------------------------------------------------*/
 export async function POST(req: Request) {
-    const { name, parentId } = (await req.json()) as {
+    const { name, parentId, arabicName } = (await req.json()) as {
         name?: string;
+        arabicName?: string | null;
         parentId?: number;
     };
 
@@ -52,12 +53,25 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "name required" }, { status: 400 });
     }
 
-    const created = await prisma.category.create({
-        data: {
-            name,
-            slug: slugify(name),
-            parentId: parentId ?? null
+    // Create category; if it's a subcategory, ensure the parent no longer holds products
+    const created = await prisma.$transaction(async (tx) => {
+        const cat = await tx.category.create({
+            data: {
+                name,
+                slug: slugify(name),
+                parentId: parentId ?? null,
+                arabicName: arabicName?.trim() || null,
+            },
+        });
+
+        if (parentId != null) {
+            await tx.product.updateMany({
+                where: { categoryId: parentId },
+                data: { categoryId: null },
+            });
         }
+
+        return cat;
     });
 
     return NextResponse.json(created, { status: 201 });

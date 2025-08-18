@@ -9,6 +9,7 @@ import ProductFilters, { FilterState } from "@/components/ProductFilters";
 import CategoryCard from "@/components/CategoryCard";
 import Cart from "@/components/Cart";
 import OrderSuccess from "@/components/OrderSuccess";
+import { useI18n } from "@/contexts/LangContext";
 import { useKioskSettings } from "@/hooks/useKioskSettings";
 
 type Category = {
@@ -66,6 +67,7 @@ export default function CategoryPage() {
     sortBy: "name",
   });
   const { hidePrices, showQuantities } = useKioskSettings();
+  const { t, lang } = useI18n();
 
   // Calculate max price from products
   const maxPrice = useMemo(() => {
@@ -128,7 +130,7 @@ export default function CategoryPage() {
           // Only fetch products if this is a leaf category (no children)
           if (!hasChildren) {
             fetch(
-              `/api/products?categoryId=${categoryId}&includeArchived=false`
+              `/api/products?cat=${categoryId}&includeArchived=false&excludeUncategorized=1`
             )
               .then((res) => res.json())
               .then((productsData) => {
@@ -292,7 +294,7 @@ export default function CategoryPage() {
                   onClick={() => handleBreadcrumbClick(null)}
                   className="hover:text-[#3da874] transition-colors"
                 >
-                  Browse
+                  {t("browse")}
                 </button>
                 {parentPath.map((parent, index) => (
                   <span key={parent.id} className="flex items-center">
@@ -314,7 +316,9 @@ export default function CategoryPage() {
 
             {/* Category Title */}
             <h1 className="text-3xl font-bold text-[#3da874]">
-              {category?.name || `Category ${categoryId}`}
+              {lang === "ar" && (category as any)?.arabicName
+                ? (category as any).arabicName
+                : category?.name || `Category ${categoryId}`}
             </h1>
 
             {/* Category Type Badge removed for cleaner kiosk UI */}
@@ -329,11 +333,9 @@ export default function CategoryPage() {
           <>
             <div className="text-center mb-8">
               <h2 className="text-2xl font-semibold text-gray-700 mb-2">
-                Browse Subcategories
+                {t("browse_subcategories")}
               </h2>
-              <p className="text-gray-500">
-                Select a category to view products
-              </p>
+              <p className="text-gray-500">{t("select_category")}</p>
             </div>
 
             {subcategories.length > 0 ? (
@@ -342,7 +344,11 @@ export default function CategoryPage() {
                   <CategoryCard
                     key={subcategory.id}
                     id={subcategory.id}
-                    name={subcategory.name}
+                    name={
+                      lang === "ar" && (subcategory as any).arabicName
+                        ? (subcategory as any).arabicName
+                        : subcategory.name
+                    }
                     description={
                       subcategory.hasChildren
                         ? "Contains subcategories"

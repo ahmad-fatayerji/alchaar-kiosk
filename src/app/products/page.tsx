@@ -8,6 +8,7 @@ import ProductFilters, { FilterState } from "@/components/ProductFilters";
 import Cart from "@/components/Cart";
 import OrderSuccess from "@/components/OrderSuccess";
 import { useKioskSettings } from "@/hooks/useKioskSettings";
+import { useI18n } from "@/contexts/LangContext";
 
 type Product = {
   barcode: string;
@@ -31,6 +32,7 @@ export default function ProductsPage() {
   });
 
   const { hidePrices, showQuantities } = useKioskSettings();
+  const { t } = useI18n();
 
   // Calculate max price from products
   const maxPrice = useMemo(() => {
@@ -46,8 +48,8 @@ export default function ProductsPage() {
   }, [maxPrice, filters.priceMax]);
 
   useEffect(() => {
-    // Fetch all products
-    fetch("/api/products")
+    // Fetch all products (exclude uncategorized so kiosk only shows assigned items)
+    fetch("/api/products?excludeUncategorized=1")
       .then((res) => res.json())
       .then((data) => {
         setProducts(data);
@@ -169,9 +171,11 @@ export default function ProductsPage() {
             className="text-[#3da874] hover:bg-green-50"
           >
             <ArrowLeft className="mr-2 h-6 w-6" />
-            Back to Categories
+            {t("back_to_categories")}
           </Button>
-          <h1 className="text-3xl font-bold text-[#3da874]">All Products</h1>
+          <h1 className="text-3xl font-bold text-[#3da874]">
+            {t("all_products")}
+          </h1>
           <div className="w-32" /> {/* Spacer for centering */}
         </div>
       </div>

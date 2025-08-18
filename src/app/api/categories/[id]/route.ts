@@ -32,15 +32,18 @@ export async function PATCH(
     ctx: { params: Promise<{ id: string }> },
 ) {
     const id = await catId(ctx);
-    const { name } = (await req.json()) as { name?: string };
+    const { name, arabicName } = (await req.json()) as { name?: string; arabicName?: string | null };
 
     if (!name?.trim()) {
         return NextResponse.json({ error: "name required" }, { status: 400 });
     }
 
+    const data: any = { name, slug: slugify(name) };
+    if (arabicName !== undefined) data.arabicName = arabicName?.trim() || null;
+
     const updated = await prisma.category.update({
         where: { id },
-        data: { name, slug: slugify(name) },
+        data,
     });
     return NextResponse.json(updated);
 }

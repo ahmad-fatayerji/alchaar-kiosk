@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, X, Plus, Minus, Trash2, CreditCard } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useI18n } from "@/contexts/LangContext";
 
 type CartProps = {
   onCheckout?: (orderNumber: string) => void;
@@ -32,6 +33,7 @@ export default function Cart({ onCheckout }: CartProps) {
   const [productStocks, setProductStocks] = useState<Record<string, number>>(
     {}
   );
+  const { t } = useI18n();
 
   // Load settings and fetch stock information when cart opens
   useEffect(() => {
@@ -144,7 +146,7 @@ export default function Cart({ onCheckout }: CartProps) {
       <Card className="w-full max-w-2xl max-h-[80vh] flex flex-col bg-white">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="text-2xl font-bold text-[#3da874]">
-            Shopping Cart
+            {t("shopping_cart")}
           </CardTitle>
           <Button
             variant="ghost"
@@ -161,9 +163,9 @@ export default function Cart({ onCheckout }: CartProps) {
             <div className="flex-1 flex items-center justify-center text-center">
               <div>
                 <ShoppingCart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-lg text-gray-500">Your cart is empty</p>
+                <p className="text-lg text-gray-500">{t("cart_empty")}</p>
                 <p className="text-sm text-gray-400 mt-2">
-                  Add some products to get started
+                  {t("cart_add_products_hint")}
                 </p>
               </div>
             </div>
@@ -198,11 +200,11 @@ export default function Cart({ onCheckout }: CartProps) {
                         {/* Barcode intentionally hidden from customers */}
                         {showQuantities && stockQty !== undefined && (
                           <div className="text-xs text-gray-500 mt-1">
-                            {stockQty} available in stock
+                            {t("available_in_stock", { count: stockQty })}
                             {isAtStockLimit && (
                               <span className="text-orange-600 font-medium">
                                 {" "}
-                                • At limit
+                                • {t("at_limit")}
                               </span>
                             )}
                           </div>
@@ -262,9 +264,7 @@ export default function Cart({ onCheckout }: CartProps) {
                           className="h-8 w-8 p-0"
                           disabled={isAtStockLimit}
                           title={
-                            isAtStockLimit
-                              ? "Maximum stock quantity reached"
-                              : undefined
+                            isAtStockLimit ? t("max_stock_reached") : undefined
                           }
                         >
                           <Plus className="h-4 w-4" />
@@ -294,7 +294,7 @@ export default function Cart({ onCheckout }: CartProps) {
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center justify-between mb-4">
                   <div className="text-lg font-semibold">
-                    Total Items: {getTotalItems()}
+                    {t("total_items")}: {getTotalItems()}
                   </div>
                   <div className="text-2xl font-bold text-[#3da874]">
                     ${getTotalPrice().toFixed(2)}
@@ -309,7 +309,7 @@ export default function Cart({ onCheckout }: CartProps) {
                     className="flex-1"
                     disabled={isProcessing}
                   >
-                    Clear Cart
+                    {t("clear_cart")}
                   </Button>
                   <Button
                     onClick={handleCheckout}
@@ -317,11 +317,11 @@ export default function Cart({ onCheckout }: CartProps) {
                     disabled={isProcessing}
                   >
                     {isProcessing ? (
-                      "Processing..."
+                      t("processing")
                     ) : (
                       <>
                         <CreditCard className="h-4 w-4 mr-2" />
-                        Checkout
+                        {t("checkout")}
                       </>
                     )}
                   </Button>

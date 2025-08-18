@@ -25,6 +25,25 @@ export async function PATCH(
 ) {
     const data = await req.json();
 
+    // Enforce: products can only be assigned to leaf categories
+    if (Object.prototype.hasOwnProperty.call(data, "categoryId")) {
+        const cid = data.categoryId;
+        if (cid !== null && cid !== undefined) {
+            const catId = Number(cid);
+            if (!Number.isFinite(catId)) {
+                return NextResponse.json({ error: "invalid categoryId" }, { status: 400 });
+            }
+            const hasChildren = await prisma.category.count({ where: { parentId: catId } });
+            if (hasChildren > 0) {
+                return NextResponse.json(
+                    { error: "Products can only be assigned to leaf categories (categories without subcategories)" },
+                    { status: 400 }
+                );
+            }
+            data.categoryId = catId; // normalize potential string → number
+        }
+    }
+
     try {
         const updated = await prisma.product.update({
             where: { barcode: await code(ctx) },

@@ -85,7 +85,15 @@ export function buildProductWhere(
 
     /* 2️⃣  Category filter */
     const catId = getInt(params, 'cat');
-    if (catId !== undefined) where.categoryId = catId;
+    if (catId !== undefined) {
+        where.categoryId = catId;
+    } else {
+        // Optional: exclude uncategorized (categoryId null) when requested
+        const excludeUncategorized = getBool(params, 'excludeUncategorized');
+        if (excludeUncategorized) {
+            where.categoryId = { not: null } as any;
+        }
+    }
 
     /* 3️⃣  Price range */
     const min = getNum(params, 'min');

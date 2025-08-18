@@ -9,6 +9,7 @@ import { useCallback, useState } from "react";
 export type Category = {
     id: number;
     name: string;
+    arabicName?: string | null;
     slug: string;
     parentId: number | null;
     hasChildren?: boolean;
@@ -57,11 +58,11 @@ export function useCategories() {
 
     /* ---- CRUD helpers ---------------------------------------------- */
     const create = useCallback(
-        async (parentId: number | null, name: string) => {
+        async (parentId: number | null, name: string, arabicName?: string | null) => {
             const res = await fetch("/api/categories", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ parentId, name }),
+                body: JSON.stringify({ parentId, name, arabicName }),
             });
             if (!res.ok) return alert("Create category failed");
 
@@ -71,11 +72,11 @@ export function useCategories() {
     );
 
     const rename = useCallback(
-        async (cat: Category, name: string) => {
+        async (cat: Category, name: string, arabicName?: string | null) => {
             await fetch(`/api/categories/${cat.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name }),
+                body: JSON.stringify({ name, arabicName }),
             });
             await loadRoot();                     // ⬅️  re-fetch for consistency
         },

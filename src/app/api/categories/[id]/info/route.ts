@@ -20,12 +20,7 @@ export async function GET(
 
     const category = await prisma.category.findUnique({
         where: { id },
-        select: {
-            id: true,
-            name: true,
-            slug: true,
-            parentId: true,
-        },
+        select: { id: true, name: true, arabicName: true, slug: true, parentId: true },
     });
 
     if (!category) {

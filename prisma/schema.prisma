@@ -22,9 +22,10 @@ enum FilterType {
  * ───────── CATEGORIES ─────────
  */
 model Category {
-  id   Int    @id @default(autoincrement())
-  slug String @unique
-  name String
+  id         Int     @id @default(autoincrement())
+  slug       String  @unique
+  name       String
+  arabicName String?
 
   parentId Int?
   parent   Category?  @relation("CatParent", fields: [parentId], references: [id])

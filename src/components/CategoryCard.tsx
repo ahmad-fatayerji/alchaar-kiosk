@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Package, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import { useThumbVersion } from "@/hooks/useThumbVersion";
+import { useI18n } from "@/contexts/LangContext";
 
 type CategoryCardProps = {
   id: number | null;
@@ -22,6 +23,7 @@ export default function CategoryCard({
 }: CategoryCardProps) {
   const [imageError, setImageError] = useState(false);
   const v = useThumbVersion();
+  const { t } = useI18n();
 
   const handleClick = () => {
     onClick(id);
@@ -57,7 +59,9 @@ export default function CategoryCard({
             <div className="absolute inset-0 bg-gradient-to-br from-[#3da874] to-[#2d7a5f] flex items-center justify-center">
               <div className="text-center text-white">
                 <ShoppingBag className="h-12 w-12 mx-auto mb-2" />
-                <div className="text-lg font-semibold">All Products</div>
+                <div className="text-lg font-semibold">
+                  {t("all_products_label")}
+                </div>
               </div>
             </div>
           ) : (
@@ -93,7 +97,7 @@ export default function CategoryCard({
 
           {/* Action indicator */}
           <div className="mt-3 text-xs text-[#2d7a5f] font-medium">
-            Browse →
+            {t("browse")} →
           </div>
         </div>
       </CardContent>

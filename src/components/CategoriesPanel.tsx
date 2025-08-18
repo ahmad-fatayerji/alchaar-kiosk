@@ -10,6 +10,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { bumpThumbVersion } from "@/hooks/useThumbVersion";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import AdminCategoryDialog from "./AdminCategoryDialog";
 
 export default function CategoriesPanel() {
   const { tree, busyIds, loadRoot, ensureChildren, create, rename, remove } =
@@ -18,6 +19,12 @@ export default function CategoriesPanel() {
   const [dialogCatId, setDialogCatId] = useState<number | null>(null);
   const [thumbCatId, setThumbCatId] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [catModal, setCatModal] = useState<{
+    open: boolean;
+    mode: "create" | "rename";
+    parentId: number | null;
+    targetCat: any | null;
+  }>({ open: false, mode: "create", parentId: null, targetCat: null });
 
   /* initial load */
   useEffect(() => {
@@ -51,10 +58,14 @@ export default function CategoriesPanel() {
           </p>
         </div>
         <Button
-          onClick={() => {
-            const name = prompt("Root category name:");
-            if (name?.trim()) create(null, name.trim());
-          }}
+          onClick={() =>
+            setCatModal({
+              open: true,
+              mode: "create",
+              parentId: null,
+              targetCat: null,
+            })
+          }
         >
           <Plus className="mr-2 h-4 w-4" />
           Add Root Category
@@ -65,14 +76,22 @@ export default function CategoriesPanel() {
         cats={tree}
         busy={busyIds}
         ensure={ensureChildren}
-        create={(pid) => {
-          const name = prompt("New category name:");
-          if (name?.trim()) create(pid, name.trim());
-        }}
-        rename={(cat) => {
-          const name = prompt("Rename category:", cat.name);
-          if (name?.trim() && name !== cat.name) rename(cat, name.trim());
-        }}
+        create={(pid) =>
+          setCatModal({
+            open: true,
+            mode: "create",
+            parentId: pid,
+            targetCat: null,
+          })
+        }
+        rename={(cat) =>
+          setCatModal({
+            open: true,
+            mode: "rename",
+            parentId: cat.parentId,
+            targetCat: cat,
+          })
+        }
         remove={(cat) => {
           if (confirm(`Delete “${cat.name}” and all its children?`))
             remove(cat);
@@ -99,6 +118,27 @@ export default function CategoriesPanel() {
         catId={dialogCatId ?? 0}
         onClose={() => setDialogCatId(null)}
         onSaved={() => {}}
+      />
+
+      {/* Create/Rename Category Dialog */}
+      <AdminCategoryDialog
+        open={catModal.open}
+        mode={catModal.mode}
+        initialName={catModal.targetCat?.name}
+        initialArabicName={(catModal.targetCat as any)?.arabicName}
+        parentLabel={(() => {
+          if (catModal.parentId === null) return undefined;
+          const parent = tree.find((c) => c.id === catModal.parentId);
+          return parent?.name;
+        })()}
+        onClose={() => setCatModal((s) => ({ ...s, open: false }))}
+        onSave={async ({ name, arabicName }) => {
+          if (catModal.mode === "create") {
+            await create(catModal.parentId, name, arabicName);
+          } else if (catModal.targetCat) {
+            await rename(catModal.targetCat, name, arabicName);
+          }
+        }}
       />
     </section>
   );

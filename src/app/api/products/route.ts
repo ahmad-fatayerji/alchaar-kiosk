@@ -7,6 +7,15 @@ import { buildProductWhere } from "@/lib/filters"; // already in your repo
    ────────────────────────────────────────────────────────── */
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
+    // Enforce: only leaf categories return products
+    const catParam = searchParams.get("cat");
+    if (catParam && /^\d+$/.test(catParam)) {
+        const catId = Number(catParam);
+        const hasChildren = await prisma.category.count({ where: { parentId: catId } });
+        if (hasChildren > 0) {
+            return NextResponse.json([]);
+        }
+    }
     const where = buildProductWhere(searchParams);
 
     const list = await prisma.product.findMany({

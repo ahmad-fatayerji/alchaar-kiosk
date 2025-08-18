@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useI18n } from "@/contexts/LangContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ export default function ProductFilters({
 }: ProductFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const { hidePrices, showQuantities } = useKioskSettings();
+  const { t, lang } = useI18n();
 
   // When prices are hidden, disable price+price-sort filters; when quantities are hidden, disable stock filters
   const priceFiltersDisabled = hidePrices;
@@ -82,16 +84,16 @@ export default function ProductFilters({
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl font-bold text-[#3da874] flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filters
+            {t("filters")}
             {hasActiveFilters && (
               <Badge variant="secondary" className="ml-2">
-                Active
+                {t("active")}
               </Badge>
             )}
           </CardTitle>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-600">
-              {productCount} products found
+              {t("products_found", { count: productCount })}
             </span>
             <Button
               variant="ghost"
@@ -99,7 +101,8 @@ export default function ProductFilters({
               onClick={() => setIsExpanded(!isExpanded)}
               className="text-[#3da874]"
             >
-              {isExpanded ? "Hide" : "Show"} Filters
+              {isExpanded ? t("hide_filters") : t("show_filters")}{" "}
+              {t("filters")}
             </Button>
           </div>
         </div>
@@ -116,7 +119,7 @@ export default function ProductFilters({
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
-            placeholder="Search products..."
+            placeholder={t("search_products_placeholder")}
             value={filters.search}
             onChange={(e) => updateFilter("search", e.target.value)}
             className="pl-10 text-lg h-14"
@@ -127,7 +130,7 @@ export default function ProductFilters({
         {hasActiveFilters && (
           <div className="flex items-center gap-2 mb-4 flex-wrap">
             <span className="text-sm font-medium text-gray-600">
-              Active filters:
+              {t("active")} {t("filters")}:
             </span>
 
             {filters.search && (
@@ -136,7 +139,7 @@ export default function ProductFilters({
                 className="bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer flex items-center gap-1"
                 onClick={() => updateFilter("search", "")}
               >
-                Search: {filters.search}
+                {t("browse")}: {filters.search}
                 <X className="h-3 w-3" />
               </Badge>
             )}
@@ -147,7 +150,11 @@ export default function ProductFilters({
                 className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer flex items-center gap-1"
                 onClick={() => updateFilter("priceMin", 0)}
               >
-                Min: ${filters.priceMin}
+                $
+                {t("price_range", {
+                  min: filters.priceMin,
+                  max: filters.priceMin,
+                })}
                 <X className="h-3 w-3" />
               </Badge>
             )}
@@ -158,7 +165,11 @@ export default function ProductFilters({
                 className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer flex items-center gap-1"
                 onClick={() => updateFilter("priceMax", maxPrice)}
               >
-                Max: ${filters.priceMax}
+                $
+                {t("price_range", {
+                  min: filters.priceMax,
+                  max: filters.priceMax,
+                })}
                 <X className="h-3 w-3" />
               </Badge>
             )}
@@ -170,8 +181,8 @@ export default function ProductFilters({
                 onClick={() => updateFilter("availability", "all")}
               >
                 {filters.availability === "in-stock"
-                  ? "In Stock Only"
-                  : "Out of Stock Only"}
+                  ? t("in_stock_only")
+                  : t("out_of_stock")}
                 <X className="h-3 w-3" />
               </Badge>
             )}
@@ -193,13 +204,13 @@ export default function ProductFilters({
                 className="bg-orange-100 text-orange-800 hover:bg-orange-200 cursor-pointer flex items-center gap-1"
                 onClick={() => updateFilter("sortBy", "name")}
               >
-                Sort:{" "}
+                {t("sort_by")}:{" "}
                 {filters.sortBy === "price-low"
-                  ? "Price: Low to High"
+                  ? t("price_low_to_high")
                   : filters.sortBy === "price-high"
-                  ? "Price: High to Low"
+                  ? t("price_high_to_low")
                   : filters.sortBy === "stock"
-                  ? "Stock Level"
+                  ? t("stock_level")
                   : filters.sortBy}
                 <X className="h-3 w-3" />
               </Badge>
@@ -211,7 +222,7 @@ export default function ProductFilters({
               onClick={clearFilters}
               className="text-gray-600 hover:text-gray-800"
             >
-              Clear all
+              {t("clear_all")}
             </Button>
           </div>
         )}
@@ -222,24 +233,24 @@ export default function ProductFilters({
             {/* Sort */}
             <div>
               <Label className="text-base font-semibold mb-3 block">
-                Sort By
+                {t("sort_by")}
               </Label>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { value: "name", label: "Name A-Z", disabled: false },
+                  { value: "name", label: t("name_az"), disabled: false },
                   {
                     value: "price-low",
-                    label: "Price: Low to High",
+                    label: t("price_low_to_high"),
                     disabled: priceFiltersDisabled,
                   },
                   {
                     value: "price-high",
-                    label: "Price: High to Low",
+                    label: t("price_high_to_low"),
                     disabled: priceFiltersDisabled,
                   },
                   {
                     value: "stock",
-                    label: "Stock Level",
+                    label: t("stock_level"),
                     disabled: stockFiltersDisabled,
                   },
                 ].map((option) => (
@@ -271,7 +282,10 @@ export default function ProductFilters({
               }
             >
               <Label className="text-base font-semibold mb-3 block">
-                Price Range: ${filters.priceMin} - ${filters.priceMax}
+                {t("price_range", {
+                  min: filters.priceMin,
+                  max: filters.priceMax,
+                })}
               </Label>
               <div className="space-y-4 px-2">
                 {/* dual-thumb slider with filled range */}
@@ -360,13 +374,13 @@ export default function ProductFilters({
               }
             >
               <Label className="text-base font-semibold mb-3 block">
-                Availability
+                {t("availability")}
               </Label>
               <div className="space-y-3">
                 {[
-                  { value: "all", label: "All Products" },
-                  { value: "in-stock", label: "In Stock Only" },
-                  { value: "out-of-stock", label: "Out of Stock" },
+                  { value: "all", label: t("all_products") },
+                  { value: "in-stock", label: t("in_stock_only") },
+                  { value: "out-of-stock", label: t("out_of_stock") },
                 ].map((option) => (
                   <div
                     key={option.value}
@@ -398,7 +412,7 @@ export default function ProductFilters({
                   className="w-full text-red-600 border-red-200 hover:bg-red-50"
                 >
                   <X className="h-4 w-4 mr-2" />
-                  Clear All Filters
+                  {t("clear_all")} {t("filters")}
                 </Button>
               </div>
             )}

@@ -7,6 +7,7 @@ import { Package, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useThumbVersion } from "@/hooks/useThumbVersion";
+import { useI18n } from "@/contexts/LangContext";
 
 type Product = {
   barcode: string;
@@ -36,6 +37,7 @@ export default function ProductCard({
   const { addItem } = useCart();
   const isInStock = product.qtyInStock > 0;
   const v = useThumbVersion();
+  const { t } = useI18n();
   const base = `/files/products/${product.barcode}`;
   const exts = [".webp", ".jpg", ".jpeg", ".png", ".avif"];
   const hasSale =
@@ -140,19 +142,19 @@ export default function ProductCard({
           <div className="absolute top-2 right-2">
             {!isInStock ? (
               <Badge variant="destructive" className="text-xs font-bold">
-                Out of Stock
+                {t("out_of_stock")}
               </Badge>
             ) : (
               showQuantities && (
                 <Badge
                   variant="secondary"
-                  className={`text-xs font-medium rounded-full ${
+                  className={`text-[11px] leading-none font-semibold rounded-full h-6 px-2 inline-flex items-center justify-center ${
                     product.qtyInStock <= 5
                       ? "bg-orange-100 text-orange-800"
                       : "bg-emerald-100 text-emerald-800"
                   }`}
                 >
-                  {product.qtyInStock} left
+                  {t("stock_left_short", { count: product.qtyInStock })}
                 </Badge>
               )
             )}
@@ -189,7 +191,7 @@ export default function ProductCard({
 
           {hidePrices && (
             <p className="text-sm text-gray-500 mb-3">
-              Contact staff for pricing
+              {t("contact_for_pricing")}
             </p>
           )}
 
@@ -202,11 +204,11 @@ export default function ProductCard({
                 size="sm"
               >
                 <ShoppingCart className="h-4 w-4 mr-2" />
-                Add to Cart
+                {t("add_to_cart")}
               </Button>
             ) : (
               <Button disabled className="w-full" size="sm" variant="secondary">
-                Out of Stock
+                {t("out_of_stock_btn")}
               </Button>
             )}
           </div>
