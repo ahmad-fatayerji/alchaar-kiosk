@@ -289,18 +289,7 @@ export default function CategoryPage() {
               {category?.name || `Category ${categoryId}`}
             </h1>
 
-            {/* Category Type Badge */}
-            <div className="mt-2 flex justify-center">
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  isLeafCategory
-                    ? "bg-green-100 text-green-800"
-                    : "bg-blue-100 text-blue-800"
-                }`}
-              >
-                {isLeafCategory ? "📦 Product Category" : "📁 Category Group"}
-              </span>
-            </div>
+            {/* Category Type Badge removed for cleaner kiosk UI */}
           </div>
         </div>
       </div>

@@ -59,20 +59,6 @@ export default function BrowsePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
-      {/* Header */}
-      <div className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-6 py-6">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#3da874] to-[#2d7a5f] bg-clip-text text-transparent">
-              Browse Categories
-            </h1>
-            <p className="text-gray-500 mt-1">
-              Discover products organized by category
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Hero Section */}
       <div className="container mx-auto px-6 py-12 text-center">
         <div className="max-w-2xl mx-auto">
