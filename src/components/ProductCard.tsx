@@ -102,18 +102,18 @@ export default function ProductCard({
 
   return (
     <Card
-      className="group cursor-pointer w-full aspect-[3/4] max-w-[280px] mx-auto overflow-hidden bg-white hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-gray-300 rounded-xl"
+      className="group cursor-pointer w-full aspect-[3/4] max-w-[280px] mx-auto overflow-hidden bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition duration-200"
       onClick={handleClick}
     >
       <CardContent className="p-0 h-full flex flex-col">
         {/* Image Section */}
-        <div className="relative flex-1 bg-gray-100 overflow-hidden">
+        <div className="relative flex-1 bg-gray-50 overflow-hidden">
           {!imageError ? (
             <img
               src={`${base}${exts[0]}?v=${v}`}
               alt={product.name}
               onError={(e) => fallback(e.currentTarget)}
-              className="absolute inset-0 h-full w-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
+              className="absolute inset-0 h-full w-full object-contain p-4 select-none"
               draggable={false}
             />
           ) : (
@@ -125,7 +125,7 @@ export default function ProductCard({
           {/* Sale badge */}
           {hasSale && (
             <div className="absolute top-2 left-2">
-              <Badge className="bg-red-500 text-white font-bold text-xs">
+              <Badge className="bg-red-500 text-white font-semibold text-[10px] rounded-full px-2 py-0.5 shadow-sm">
                 SALE
               </Badge>
             </div>
@@ -141,10 +141,10 @@ export default function ProductCard({
               showQuantities && (
                 <Badge
                   variant="secondary"
-                  className={`text-xs font-medium ${
+                  className={`text-xs font-medium rounded-full ${
                     product.qtyInStock <= 5
                       ? "bg-orange-100 text-orange-800"
-                      : "bg-green-100 text-green-800"
+                      : "bg-emerald-100 text-emerald-800"
                   }`}
                 >
                   {product.qtyInStock} left
@@ -155,14 +155,14 @@ export default function ProductCard({
         </div>
 
         {/* Content Section */}
-        <div className="p-4 flex-shrink-0">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-[#3da874] transition-colors duration-200 line-clamp-2">
+        <div className="p-3 sm:p-4 flex-shrink-0">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
             {product.name}
           </h3>
 
           {/* Price Section */}
           {!hidePrices && (
-            <div className="mb-3">
+            <div className="mt-1">
               {hasSale ? (
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold text-red-600">
@@ -175,7 +175,7 @@ export default function ProductCard({
               ) : showNA ? (
                 <span className="text-lg font-semibold text-gray-500">N/A</span>
               ) : (
-                <span className="text-lg font-bold text-[#3da874]">
+                <span className="text-lg font-bold text-gray-900">
                   ${regularPrice.toFixed(2)}
                 </span>
               )}
@@ -193,7 +193,7 @@ export default function ProductCard({
             {isInStock ? (
               <Button
                 onClick={handleAddToCart}
-                className="w-full bg-[#3da874] hover:bg-[#2d7a56] text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm"
                 size="sm"
               >
                 <ShoppingCart className="h-4 w-4 mr-2" />
@@ -204,11 +204,6 @@ export default function ProductCard({
                 Out of Stock
               </Button>
             )}
-          </div>
-
-          {/* Action indicator */}
-          <div className="mt-2 text-xs text-[#3da874] font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            {isInStock ? "Click to add →" : "Contact staff"}
           </div>
         </div>
       </CardContent>

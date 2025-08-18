@@ -46,12 +46,12 @@ export default function CategoryCard({
 
   return (
     <Card
-      className="group cursor-pointer w-full aspect-[3/4] max-w-[320px] mx-auto overflow-hidden bg-white hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-gray-300 rounded-3xl"
+      className="group cursor-pointer w-full aspect-[3/4] max-w-[320px] mx-auto overflow-hidden bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition duration-200"
       onClick={handleClick}
     >
       <CardContent className="p-0 h-full flex flex-col">
         {/* Image Section */}
-        <div className="relative flex-1 bg-gray-100 overflow-hidden">
+        <div className="relative flex-1 bg-gray-50 overflow-hidden">
           {isViewAll ? (
             // View All Design
             <div className="absolute inset-0 bg-gradient-to-br from-[#3da874] to-[#2d7a5f] flex items-center justify-center">
@@ -68,7 +68,7 @@ export default function CategoryCard({
                   src={`${base}${exts[0]}?v=${v}`}
                   alt={name}
                   onError={(e) => fallback(e.currentTarget)}
-                  className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="absolute inset-0 h-full w-full object-cover select-none"
                   draggable={false}
                 />
               ) : (
@@ -83,8 +83,8 @@ export default function CategoryCard({
         </div>
 
         {/* Content Section */}
-        <div className="p-4 flex-shrink-0">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-[#3da874] transition-colors duration-200 line-clamp-2">
+        <div className="p-3 sm:p-4 flex-shrink-0">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
             {name}
           </h3>
           <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
@@ -92,7 +92,7 @@ export default function CategoryCard({
           </p>
 
           {/* Action indicator */}
-          <div className="mt-3 text-xs text-[#3da874] font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="mt-3 text-xs text-[#2d7a5f] font-medium">
             Browse →
           </div>
         </div>
