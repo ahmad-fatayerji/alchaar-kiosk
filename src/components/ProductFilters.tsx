@@ -34,7 +34,7 @@ export default function ProductFilters({
 }: ProductFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const { hidePrices, showQuantities } = useKioskSettings();
-  const { t, lang } = useI18n();
+  const { t, lang, formatDigits } = useI18n();
 
   // When prices are hidden, disable price+price-sort filters; when quantities are hidden, disable stock filters
   const priceFiltersDisabled = hidePrices;
@@ -144,32 +144,24 @@ export default function ProductFilters({
               </Badge>
             )}
 
-            {!priceFiltersDisabled && filters.priceMin > 0 && (
+      {!priceFiltersDisabled && filters.priceMin > 0 && (
               <Badge
                 variant="secondary"
                 className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer flex items-center gap-1"
                 onClick={() => updateFilter("priceMin", 0)}
               >
-                $
-                {t("price_range", {
-                  min: filters.priceMin,
-                  max: filters.priceMin,
-                })}
+        {t("min_label")}: ${formatDigits(filters.priceMin)}
                 <X className="h-3 w-3" />
               </Badge>
             )}
 
-            {!priceFiltersDisabled && filters.priceMax < maxPrice && (
+      {!priceFiltersDisabled && filters.priceMax < maxPrice && (
               <Badge
                 variant="secondary"
                 className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer flex items-center gap-1"
                 onClick={() => updateFilter("priceMax", maxPrice)}
               >
-                $
-                {t("price_range", {
-                  min: filters.priceMax,
-                  max: filters.priceMax,
-                })}
+        {t("max_label")}: ${formatDigits(filters.priceMax)}
                 <X className="h-3 w-3" />
               </Badge>
             )}
@@ -360,8 +352,8 @@ export default function ProductFilters({
                   }
                 `}</style>
                 <div className="flex justify-between text-base text-gray-700 font-medium">
-                  <span>${filters.priceMin}</span>
-                  <span>${filters.priceMax}</span>
+                  <span>${formatDigits(filters.priceMin)}</span>
+                  <span>${formatDigits(filters.priceMax)}</span>
                 </div>
               </div>
             </div>

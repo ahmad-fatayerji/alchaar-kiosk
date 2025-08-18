@@ -37,7 +37,7 @@ export default function ProductCard({
   const { addItem } = useCart();
   const isInStock = product.qtyInStock > 0;
   const v = useThumbVersion();
-  const { t } = useI18n();
+  const { t, formatPrice } = useI18n();
   const base = `/files/products/${product.barcode}`;
   const exts = [".webp", ".jpg", ".jpeg", ".png", ".avif"];
   const hasSale =
@@ -172,19 +172,15 @@ export default function ProductCard({
             <div className="mt-1">
               {hasSale ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-red-600">
-                    ${salePrice!.toFixed(2)}
-                  </span>
+                  <span className="text-lg font-bold text-red-600">{formatPrice(salePrice!)}</span>
                   <span className="text-sm text-gray-500 line-through">
-                    ${regularPrice.toFixed(2)}
+                    {formatPrice(regularPrice)}
                   </span>
                 </div>
               ) : showNA ? (
                 <span className="text-lg font-semibold text-gray-500">N/A</span>
               ) : (
-                <span className="text-lg font-bold text-gray-900">
-                  ${regularPrice.toFixed(2)}
-                </span>
+                <span className="text-lg font-bold text-gray-900">{formatPrice(regularPrice)}</span>
               )}
             </div>
           )}

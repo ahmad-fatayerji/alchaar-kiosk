@@ -97,8 +97,8 @@ export default function BrowsePage() {
               }
               description={
                 category.hasChildren
-                  ? "Contains multiple subcategories to explore"
-                  : "Browse products in this category"
+                  ? t("category_has_children_desc")
+                  : t("category_browse_desc")
               }
               isViewAll={false}
               onClick={handleCategorySelect}

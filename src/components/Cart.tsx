@@ -33,7 +33,7 @@ export default function Cart({ onCheckout }: CartProps) {
   const [productStocks, setProductStocks] = useState<Record<string, number>>(
     {}
   );
-  const { t } = useI18n();
+  const { t, formatDigits, formatPrice } = useI18n();
 
   // Load settings and fetch stock information when cart opens
   useEffect(() => {
@@ -131,9 +131,9 @@ export default function Cart({ onCheckout }: CartProps) {
           className="bg-[#3da874] hover:bg-[#2d7a56] text-white rounded-full shadow-lg relative"
         >
           <ShoppingCart className="h-6 w-6" />
-          {getTotalItems() > 0 && (
+      {getTotalItems() > 0 && (
             <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[1.5rem] h-6 rounded-full flex items-center justify-center">
-              {getTotalItems()}
+        {formatDigits(getTotalItems())}
             </Badge>
           )}
         </Button>
@@ -250,7 +250,7 @@ export default function Cart({ onCheckout }: CartProps) {
                           <Minus className="h-4 w-4" />
                         </Button>
                         <span className="w-8 text-center font-semibold">
-                          {item.quantity}
+                          {formatDigits(item.quantity)}
                         </span>
                         <Button
                           variant="outline"
@@ -272,9 +272,7 @@ export default function Cart({ onCheckout }: CartProps) {
                       </div>
 
                       {/* Item Total */}
-                      <div className="text-lg font-bold text-[#3da874] w-20 text-right">
-                        ${totalPrice.toFixed(2)}
-                      </div>
+                      <div className="text-lg font-bold text-[#3da874] w-20 text-right">{formatPrice(totalPrice)}</div>
 
                       {/* Remove Button */}
                       <Button
@@ -293,12 +291,8 @@ export default function Cart({ onCheckout }: CartProps) {
               {/* Cart Summary */}
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="text-lg font-semibold">
-                    {t("total_items")}: {getTotalItems()}
-                  </div>
-                  <div className="text-2xl font-bold text-[#3da874]">
-                    ${getTotalPrice().toFixed(2)}
-                  </div>
+                  <div className="text-lg font-semibold">{t("total_items")}: {formatDigits(getTotalItems())}</div>
+                  <div className="text-2xl font-bold text-[#3da874]">{formatPrice(getTotalPrice())}</div>
                 </div>
 
                 {/* Action Buttons */}

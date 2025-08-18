@@ -19,6 +19,8 @@ type LangContextValue = {
     key: keyof typeof dict.en,
     vars?: Record<string, string | number>
   ) => string;
+  formatDigits: (value: string | number) => string;
+  formatPrice: (value: number) => string;
 };
 
 const LangContext = createContext<LangContextValue | undefined>(undefined);
@@ -63,20 +65,54 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, [lang, pathname]);
 
   const t = useMemo(() => {
+    // Map western digits to Arabic-Indic digits
+    const toArabicDigits = (str: string) =>
+      str.replace(/[0-9]/g, (d) =>
+        "٠١٢٣٤٥٦٧٨٩"[parseInt(d as string, 10)]
+      );
+
+    const interpolate = (
+      template: string,
+      vars?: Record<string, string | number>
+    ) => {
+      if (!vars) return template;
+      return Object.keys(vars).reduce((acc, k) => {
+        return acc.replaceAll(`{${k}}`, String(vars[k]!));
+      }, template);
+    };
+
     return (
       key: keyof typeof dict.en,
       vars?: Record<string, string | number>
     ) => {
-      const value = (dict as any)[lang]?.[key] ?? dict.en[key] ?? key;
-      if (!vars) return value as string;
-      return Object.keys(vars).reduce(
-        (acc, k) => acc.replaceAll(`{${k}}`, String(vars[k]!)),
-        value as string
-      );
+      const raw = (dict as any)[lang]?.[key] ?? dict.en[key] ?? (key as any);
+      const withVars = interpolate(raw as string, vars);
+      return lang === "ar" ? toArabicDigits(withVars) : withVars;
     };
   }, [lang]);
 
-  const value = useMemo(() => ({ lang, setLang, t }), [lang, t]);
+  const toArabicDigits = (str: string) =>
+    str.replace(/[0-9]/g, (d) => "٠١٢٣٤٥٦٧٨٩"[parseInt(d as string, 10)]);
+
+  const formatDigits = useMemo(() => {
+    return (value: string | number) => {
+      const s = String(value);
+      return lang === "ar" ? toArabicDigits(s) : s;
+    };
+  }, [lang]);
+
+  const formatPrice = useMemo(() => {
+    return (value: number) => {
+      const fixed = value.toFixed(2);
+      const digits = lang === "ar" ? toArabicDigits(fixed) : fixed;
+      return `$${digits}`;
+    };
+  }, [lang]);
+
+  const value = useMemo(
+    () => ({ lang, setLang, t, formatDigits, formatPrice }),
+    [lang, t, formatDigits, formatPrice]
+  );
 
   return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
 }
