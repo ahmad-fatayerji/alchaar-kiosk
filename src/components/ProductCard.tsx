@@ -118,7 +118,7 @@ export default function ProductCard({
               src={`${base}${exts[0]}?v=${v}`}
               alt={product.name}
               onError={(e) => fallback(e.currentTarget)}
-              className="absolute inset-0 h-full w-full object-contain p-4 select-none"
+              className="absolute inset-0 h-full w-full object-cover select-none"
               draggable={false}
             />
           ) : (
