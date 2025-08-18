@@ -28,6 +28,7 @@ export default function Cart({ onCheckout }: CartProps) {
   } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
   const [showQuantities, setShowQuantities] = useState(false);
+  const [hidePrices, setHidePrices] = useState(false);
   const [productStocks, setProductStocks] = useState<Record<string, number>>(
     {}
   );
@@ -39,7 +40,9 @@ export default function Cart({ onCheckout }: CartProps) {
         const response = await fetch("/api/settings");
         const settings = await response.json();
         const shouldShowQuantities = settings.show_quantities === "true";
+        const shouldHidePrices = settings.hide_prices === "true";
         setShowQuantities(shouldShowQuantities);
+        setHidePrices(shouldHidePrices);
 
         // If quantities are shown and cart is open with items, fetch stock info
         if (shouldShowQuantities && state.isOpen && state.items.length > 0) {
@@ -60,6 +63,7 @@ export default function Cart({ onCheckout }: CartProps) {
       } catch (error) {
         console.error("Error loading settings or stock data:", error);
         setShowQuantities(false);
+        setHidePrices(false);
         setProductStocks({});
       }
     };
@@ -173,7 +177,8 @@ export default function Cart({ onCheckout }: CartProps) {
                       ? Number(item.salePrice)
                       : Number(item.price);
                   const totalPrice = price * item.quantity;
-                  const hasSale = item.salePrice && Number(item.salePrice) > 0;
+                  const hasSale =
+                    !hidePrices && item.salePrice && Number(item.salePrice) > 0;
                   const stockQty = productStocks[item.barcode];
                   const isAtStockLimit =
                     showQuantities &&
@@ -208,12 +213,16 @@ export default function Cart({ onCheckout }: CartProps) {
                               <span className="font-bold text-red-600">
                                 ${price.toFixed(2)}
                               </span>
-                              <span className="text-sm text-gray-500 line-through">
-                                ${Number(item.price).toFixed(2)}
-                              </span>
-                              <Badge className="bg-red-500 text-white text-xs">
-                                SALE
-                              </Badge>
+                              {!hidePrices && (
+                                <span className="text-sm text-gray-500 line-through">
+                                  ${Number(item.price).toFixed(2)}
+                                </span>
+                              )}
+                              {!hidePrices && (
+                                <Badge className="bg-red-500 text-white text-xs">
+                                  SALE
+                                </Badge>
+                              )}
                             </>
                           ) : (
                             <span className="font-bold text-[#3da874]">

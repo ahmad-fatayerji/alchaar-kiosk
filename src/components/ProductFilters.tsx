@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Filter, X } from "lucide-react";
+import { useKioskSettings } from "@/hooks/useKioskSettings";
 
 export type FilterState = {
   search: string;
@@ -31,6 +32,11 @@ export default function ProductFilters({
   maxPrice = 100,
 }: ProductFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { hidePrices, showQuantities } = useKioskSettings();
+
+  // When prices are hidden, disable price+price-sort filters; when quantities are hidden, disable stock filters
+  const priceFiltersDisabled = hidePrices;
+  const stockFiltersDisabled = !showQuantities;
 
   const updateFilter = (key: keyof FilterState, value: any) => {
     onFiltersChange({
@@ -49,12 +55,26 @@ export default function ProductFilters({
     });
   };
 
-  const hasActiveFilters =
-    filters.search !== "" ||
-    filters.priceMin > 0 ||
-    filters.priceMax < maxPrice ||
-    filters.availability !== "all" ||
-    filters.sortBy !== "name";
+  const hasActiveFilters = useMemo(() => {
+    const searchActive = filters.search !== "";
+    const priceActive =
+      !priceFiltersDisabled &&
+      (filters.priceMin > 0 || filters.priceMax < maxPrice);
+    const availabilityActive =
+      !stockFiltersDisabled && filters.availability !== "all";
+    const sortActive =
+      !priceFiltersDisabled &&
+      filters.sortBy !== "name" &&
+      ["price-low", "price-high"].includes(filters.sortBy)
+        ? true
+        : filters.sortBy !== "name" &&
+          filters.sortBy === "stock" &&
+          !stockFiltersDisabled
+        ? true
+        : filters.sortBy !== "name" &&
+          !["price-low", "price-high", "stock"].includes(filters.sortBy);
+    return searchActive || priceActive || availabilityActive || sortActive;
+  }, [filters, maxPrice, priceFiltersDisabled, stockFiltersDisabled]);
 
   return (
     <Card className="mb-6 bg-white/95 backdrop-blur-sm border-2">
@@ -121,7 +141,7 @@ export default function ProductFilters({
               </Badge>
             )}
 
-            {filters.priceMin > 0 && (
+            {!priceFiltersDisabled && filters.priceMin > 0 && (
               <Badge
                 variant="secondary"
                 className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer flex items-center gap-1"
@@ -132,7 +152,7 @@ export default function ProductFilters({
               </Badge>
             )}
 
-            {filters.priceMax < maxPrice && (
+            {!priceFiltersDisabled && filters.priceMax < maxPrice && (
               <Badge
                 variant="secondary"
                 className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer flex items-center gap-1"
@@ -143,7 +163,7 @@ export default function ProductFilters({
               </Badge>
             )}
 
-            {filters.availability !== "all" && (
+            {!stockFiltersDisabled && filters.availability !== "all" && (
               <Badge
                 variant="secondary"
                 className="bg-purple-100 text-purple-800 hover:bg-purple-200 cursor-pointer flex items-center gap-1"
@@ -156,7 +176,18 @@ export default function ProductFilters({
               </Badge>
             )}
 
-            {filters.sortBy !== "name" && (
+            {(() => {
+              if (filters.sortBy === "name") return false;
+              if (
+                priceFiltersDisabled &&
+                (filters.sortBy === "price-low" ||
+                  filters.sortBy === "price-high")
+              )
+                return false;
+              if (stockFiltersDisabled && filters.sortBy === "stock")
+                return false;
+              return true;
+            })() && (
               <Badge
                 variant="secondary"
                 className="bg-orange-100 text-orange-800 hover:bg-orange-200 cursor-pointer flex items-center gap-1"
@@ -195,10 +226,22 @@ export default function ProductFilters({
               </Label>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { value: "name", label: "Name A-Z" },
-                  { value: "price-low", label: "Price: Low to High" },
-                  { value: "price-high", label: "Price: High to Low" },
-                  { value: "stock", label: "Stock Level" },
+                  { value: "name", label: "Name A-Z", disabled: false },
+                  {
+                    value: "price-low",
+                    label: "Price: Low to High",
+                    disabled: priceFiltersDisabled,
+                  },
+                  {
+                    value: "price-high",
+                    label: "Price: High to Low",
+                    disabled: priceFiltersDisabled,
+                  },
+                  {
+                    value: "stock",
+                    label: "Stock Level",
+                    disabled: stockFiltersDisabled,
+                  },
                 ].map((option) => (
                   <Button
                     key={option.value}
@@ -206,8 +249,13 @@ export default function ProductFilters({
                       filters.sortBy === option.value ? "default" : "outline"
                     }
                     size="lg"
-                    onClick={() => updateFilter("sortBy", option.value)}
-                    className="justify-start h-12 text-base active:scale-[0.99]"
+                    onClick={() =>
+                      !option.disabled && updateFilter("sortBy", option.value)
+                    }
+                    className={`justify-start h-12 text-base active:scale-[0.99] ${
+                      option.disabled ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                    disabled={option.disabled}
                   >
                     {option.label}
                   </Button>
@@ -216,7 +264,12 @@ export default function ProductFilters({
             </div>
 
             {/* Price Range */}
-            <div>
+            <div
+              aria-disabled={priceFiltersDisabled}
+              className={
+                priceFiltersDisabled ? "opacity-50 pointer-events-none" : ""
+              }
+            >
               <Label className="text-base font-semibold mb-3 block">
                 Price Range: ${filters.priceMin} - ${filters.priceMax}
               </Label>
@@ -253,6 +306,7 @@ export default function ProductFilters({
                     }
                     className="absolute inset-x-0 w-full appearance-none bg-transparent pointer-events-auto"
                     style={{ WebkitAppearance: "none" as any }}
+                    disabled={priceFiltersDisabled}
                   />
                   <input
                     type="range"
@@ -267,6 +321,7 @@ export default function ProductFilters({
                     }
                     className="absolute inset-x-0 w-full appearance-none bg-transparent pointer-events-auto"
                     style={{ WebkitAppearance: "none" as any }}
+                    disabled={priceFiltersDisabled}
                   />
                 </div>
                 <style jsx>{`
@@ -298,7 +353,12 @@ export default function ProductFilters({
             </div>
 
             {/* Availability */}
-            <div>
+            <div
+              aria-disabled={stockFiltersDisabled}
+              className={
+                stockFiltersDisabled ? "opacity-50 pointer-events-none" : ""
+              }
+            >
               <Label className="text-base font-semibold mb-3 block">
                 Availability
               </Label>
@@ -315,9 +375,11 @@ export default function ProductFilters({
                     <Checkbox
                       checked={filters.availability === option.value}
                       onCheckedChange={() =>
+                        !stockFiltersDisabled &&
                         updateFilter("availability", option.value)
                       }
                       className="h-6 w-6"
+                      disabled={stockFiltersDisabled}
                     />
                     <Label className="text-base font-normal cursor-pointer">
                       {option.label}

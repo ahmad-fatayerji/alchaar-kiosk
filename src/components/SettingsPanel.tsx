@@ -40,6 +40,19 @@ export default function SettingsPanel() {
       });
   }, []);
 
+  // If prices are hidden from a previous session, ensure sales are disabled too
+  useEffect(() => {
+    if (
+      settings.hide_prices === "true" &&
+      settings.sales_enabled !== "false" &&
+      !saving
+    ) {
+      updateSetting("sales_enabled", "false");
+    }
+    // Only react to the values, not the function identity
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.hide_prices, settings.sales_enabled, saving]);
+
   const updateSetting = async (key: string, value: string) => {
     setSaving(key);
     try {
@@ -58,10 +71,14 @@ export default function SettingsPanel() {
     }
   };
 
-  const toggleSetting = (key: string) => {
+  const toggleSetting = async (key: string) => {
     const currentValue = settings[key as keyof Settings];
     const newValue = currentValue === "true" ? "false" : "true";
-    updateSetting(key, newValue);
+    await updateSetting(key, newValue);
+    // If prices are hidden, force sales off as well
+    if (key === "hide_prices" && newValue === "true") {
+      await updateSetting("sales_enabled", "false");
+    }
   };
 
   if (loading) {
@@ -149,6 +166,11 @@ export default function SettingsPanel() {
               <p className="text-sm text-muted-foreground">
                 Enable sales functionality and discount features
               </p>
+              {settings.hide_prices === "true" && (
+                <p className="text-xs text-orange-600 mt-1">
+                  Disabled while prices are hidden
+                </p>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -163,7 +185,9 @@ export default function SettingsPanel() {
               variant="outline"
               size="sm"
               onClick={() => toggleSetting("sales_enabled")}
-              disabled={saving === "sales_enabled"}
+              disabled={
+                saving === "sales_enabled" || settings.hide_prices === "true"
+              }
             >
               {saving === "sales_enabled" ? (
                 <Save className="h-4 w-4 animate-spin" />

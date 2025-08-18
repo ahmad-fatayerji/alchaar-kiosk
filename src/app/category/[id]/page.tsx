@@ -9,6 +9,7 @@ import ProductFilters, { FilterState } from "@/components/ProductFilters";
 import CategoryCard from "@/components/CategoryCard";
 import Cart from "@/components/Cart";
 import OrderSuccess from "@/components/OrderSuccess";
+import { useKioskSettings } from "@/hooks/useKioskSettings";
 
 type Category = {
   id: number;
@@ -64,6 +65,7 @@ export default function CategoryPage() {
     availability: "all",
     sortBy: "name",
   });
+  const { hidePrices, showQuantities } = useKioskSettings();
 
   // Calculate max price from products
   const maxPrice = useMemo(() => {
@@ -144,6 +146,25 @@ export default function CategoryPage() {
     }
   }, [categoryId]);
 
+  // Normalize filters if certain controls are disabled by settings
+  useEffect(() => {
+    setFilters((prev) => {
+      let next = { ...prev };
+      if (hidePrices) {
+        next.priceMin = 0;
+        next.priceMax = Math.max(next.priceMax, maxPrice);
+        if (next.sortBy === "price-low" || next.sortBy === "price-high") {
+          next.sortBy = "name";
+        }
+      }
+      if (!showQuantities) {
+        if (next.availability !== "all") next.availability = "all";
+        if (next.sortBy === "stock") next.sortBy = "name";
+      }
+      return next;
+    });
+  }, [hidePrices, showQuantities, maxPrice]);
+
   // Filter and sort products
   const filteredProducts = useMemo(() => {
     let filtered = products.filter((product) => {
@@ -156,17 +177,21 @@ export default function CategoryPage() {
       }
 
       // Price filter
-      const price = Number(product.price);
-      if (price < filters.priceMin || price > filters.priceMax) {
-        return false;
+      if (!hidePrices) {
+        const price = Number(product.price);
+        if (price < filters.priceMin || price > filters.priceMax) {
+          return false;
+        }
       }
 
       // Availability filter
-      if (filters.availability === "in-stock" && product.qtyInStock <= 0) {
-        return false;
-      }
-      if (filters.availability === "out-of-stock" && product.qtyInStock > 0) {
-        return false;
+      if (showQuantities) {
+        if (filters.availability === "in-stock" && product.qtyInStock <= 0) {
+          return false;
+        }
+        if (filters.availability === "out-of-stock" && product.qtyInStock > 0) {
+          return false;
+        }
       }
 
       return true;
@@ -178,18 +203,21 @@ export default function CategoryPage() {
         filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case "price-low":
-        filtered.sort((a, b) => Number(a.price) - Number(b.price));
+        if (!hidePrices)
+          filtered.sort((a, b) => Number(a.price) - Number(b.price));
         break;
       case "price-high":
-        filtered.sort((a, b) => Number(b.price) - Number(a.price));
+        if (!hidePrices)
+          filtered.sort((a, b) => Number(b.price) - Number(a.price));
         break;
       case "stock":
-        filtered.sort((a, b) => b.qtyInStock - a.qtyInStock);
+        if (showQuantities)
+          filtered.sort((a, b) => b.qtyInStock - a.qtyInStock);
         break;
     }
 
     return filtered;
-  }, [products, filters]);
+  }, [products, filters, hidePrices, showQuantities]);
 
   const handleBack = () => {
     // If we have a parent, go to the parent category, otherwise go to browse

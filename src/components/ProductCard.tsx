@@ -39,7 +39,10 @@ export default function ProductCard({
   const base = `/files/products/${product.barcode}`;
   const exts = [".webp", ".jpg", ".jpeg", ".png", ".avif"];
   const hasSale =
-    salesEnabled && product.salePrice && Number(product.salePrice) > 0;
+    !hidePrices &&
+    salesEnabled &&
+    product.salePrice &&
+    Number(product.salePrice) > 0;
   const regularPrice = Number(product.price);
   const salePrice = hasSale ? Number(product.salePrice) : null;
   const showNA = !hasSale && !hidePrices && salesEnabled && regularPrice === 0;
@@ -64,8 +67,10 @@ export default function ProductCard({
       fetch("/api/settings")
         .then((res) => res.json())
         .then((settings) => {
-          setHidePrices(settings.hide_prices === "true");
-          setSalesEnabled(settings.sales_enabled !== "false");
+          const hp = settings.hide_prices === "true";
+          setHidePrices(hp);
+          // If prices are hidden, also disable sales indicators
+          setSalesEnabled(!hp && settings.sales_enabled !== "false");
           setShowQuantities(settings.show_quantities === "true");
         })
         .catch(() => {
