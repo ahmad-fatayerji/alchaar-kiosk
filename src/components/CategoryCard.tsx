@@ -83,7 +83,7 @@ export default function CategoryCard({
         </div>
 
         {/* Content Section */}
-        <div className="p-3 sm:p-4 flex-shrink-0">
+        <div className="p-3 sm:p-4 flex-shrink-0 h-32">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
             {name}
           </h3>
