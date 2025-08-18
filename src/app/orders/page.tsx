@@ -380,7 +380,7 @@ export default function OrdersPage() {
                                   {item.name}
                                 </div>
                                 <div className="text-xs text-gray-500 mt-1">
-                                  #{item.barcode}
+                                  {item.barcode}
                                 </div>
                               </div>
 
