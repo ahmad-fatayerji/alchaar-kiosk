@@ -30,8 +30,15 @@ export default function Home() {
       </div>
 
       {/* Language toggle between logo and welcome text — large buttons */}
-      <div className="mt-6 w-full max-w-md px-4" onClick={(e) => e.stopPropagation()}>
-        <div className="grid grid-cols-2 gap-4" role="group" aria-label="Language switcher">
+      <div
+        className="mt-6 w-full max-w-md px-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="grid grid-cols-2 gap-4"
+          role="group"
+          aria-label="Language switcher"
+        >
           <button
             aria-pressed={lang === "en"}
             className={`h-14 rounded-xl border-2 text-lg font-semibold transition-colors flex items-center justify-center ${

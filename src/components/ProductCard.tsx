@@ -172,7 +172,9 @@ export default function ProductCard({
             <div className="mt-1">
               {hasSale ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-red-600">{formatPrice(salePrice!)}</span>
+                  <span className="text-lg font-bold text-red-600">
+                    {formatPrice(salePrice!)}
+                  </span>
                   <span className="text-sm text-gray-500 line-through">
                     {formatPrice(regularPrice)}
                   </span>
@@ -180,7 +182,9 @@ export default function ProductCard({
               ) : showNA ? (
                 <span className="text-lg font-semibold text-gray-500">N/A</span>
               ) : (
-                <span className="text-lg font-bold text-gray-900">{formatPrice(regularPrice)}</span>
+                <span className="text-lg font-bold text-gray-900">
+                  {formatPrice(regularPrice)}
+                </span>
               )}
             </div>
           )}

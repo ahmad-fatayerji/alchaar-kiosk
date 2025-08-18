@@ -144,24 +144,24 @@ export default function ProductFilters({
               </Badge>
             )}
 
-      {!priceFiltersDisabled && filters.priceMin > 0 && (
+            {!priceFiltersDisabled && filters.priceMin > 0 && (
               <Badge
                 variant="secondary"
                 className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer flex items-center gap-1"
                 onClick={() => updateFilter("priceMin", 0)}
               >
-        {t("min_label")}: ${formatDigits(filters.priceMin)}
+                {t("min_label")}: ${formatDigits(filters.priceMin)}
                 <X className="h-3 w-3" />
               </Badge>
             )}
 
-      {!priceFiltersDisabled && filters.priceMax < maxPrice && (
+            {!priceFiltersDisabled && filters.priceMax < maxPrice && (
               <Badge
                 variant="secondary"
                 className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer flex items-center gap-1"
                 onClick={() => updateFilter("priceMax", maxPrice)}
               >
-        {t("max_label")}: ${formatDigits(filters.priceMax)}
+                {t("max_label")}: ${formatDigits(filters.priceMax)}
                 <X className="h-3 w-3" />
               </Badge>
             )}

@@ -131,9 +131,9 @@ export default function Cart({ onCheckout }: CartProps) {
           className="bg-[#3da874] hover:bg-[#2d7a56] text-white rounded-full shadow-lg relative"
         >
           <ShoppingCart className="h-6 w-6" />
-      {getTotalItems() > 0 && (
+          {getTotalItems() > 0 && (
             <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[1.5rem] h-6 rounded-full flex items-center justify-center">
-        {formatDigits(getTotalItems())}
+              {formatDigits(getTotalItems())}
             </Badge>
           )}
         </Button>
@@ -272,7 +272,9 @@ export default function Cart({ onCheckout }: CartProps) {
                       </div>
 
                       {/* Item Total */}
-                      <div className="text-lg font-bold text-[#3da874] w-20 text-right">{formatPrice(totalPrice)}</div>
+                      <div className="text-lg font-bold text-[#3da874] w-20 text-right">
+                        {formatPrice(totalPrice)}
+                      </div>
 
                       {/* Remove Button */}
                       <Button
@@ -291,8 +293,12 @@ export default function Cart({ onCheckout }: CartProps) {
               {/* Cart Summary */}
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="text-lg font-semibold">{t("total_items")}: {formatDigits(getTotalItems())}</div>
-                  <div className="text-2xl font-bold text-[#3da874]">{formatPrice(getTotalPrice())}</div>
+                  <div className="text-lg font-semibold">
+                    {t("total_items")}: {formatDigits(getTotalItems())}
+                  </div>
+                  <div className="text-2xl font-bold text-[#3da874]">
+                    {formatPrice(getTotalPrice())}
+                  </div>
                 </div>
 
                 {/* Action Buttons */}

@@ -67,9 +67,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const t = useMemo(() => {
     // Map western digits to Arabic-Indic digits
     const toArabicDigits = (str: string) =>
-      str.replace(/[0-9]/g, (d) =>
-        "٠١٢٣٤٥٦٧٨٩"[parseInt(d as string, 10)]
-      );
+      str.replace(/[0-9]/g, (d) => "٠١٢٣٤٥٦٧٨٩"[parseInt(d as string, 10)]);
 
     const interpolate = (
       template: string,
