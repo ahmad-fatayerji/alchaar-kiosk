@@ -85,10 +85,5 @@ docker compose -f docker-compose.prod.yml exec db ls -lah /backups
 
 ## Troubleshooting
 
-- Build error: `/app/public: not found` -> The Dockerfile now creates `public/`, `public/categories`, `public/products` even if empty; ensure `public/logo.svg` exists.
 - Scripts blocked: run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` in PowerShell session.
 - App not starting: check `docker compose -f docker-compose.prod.yml logs -f db` and `app` logs; entrypoint waits for DB and runs migrations.
-
-## License
-
-Proprietary – internal deployment for Alchaar kiosk.
