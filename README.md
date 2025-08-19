@@ -1,6 +1,6 @@
 # Alchaar Kiosk
 
-A kiosk‑optimized shopping UI for a vertical 2160×3840 screen, built with Next.js App Router, React, Tailwind v4, Prisma, and Postgres. Ships as a Docker app with one‑command install, automatic DB migrations, pre‑update backups, and a simple update/restore flow.
+A kiosk‑optimized shopping UI, built with Next.js App Router, React, Tailwind v4, Prisma, and Postgres. Ships as a Docker app with one‑command install, automatic DB migrations, pre‑update backups, and a simple update/restore flow.
 
 ## Features
 
@@ -82,14 +82,6 @@ docker compose -f docker-compose.prod.yml exec db ls -lah /backups
 - Workflow `.github/workflows/docker-publish.yml` builds on `main` and pushes tags:
   - `latest` and short SHA to `ghcr.io/ahmad-fatayerji/alchaar-kiosk`.
 - Compose defaults to that image; override via `APP_IMAGE` env if needed.
-
-### Why GHCR shows an "unknown/unknown" entry
-
-You’ll see OS/Arch `linux/amd64` and also `unknown/unknown`. The latter is typically an OCI artifact (provenance/attestation or metadata) pushed by Buildx, which GHCR lists with unknown OS/arch. It’s harmless and can be ignored.
-
-- To hide it, set in the workflow step:
-  - `provenance: false` (and optionally `sbom: false`) on `docker/build-push-action`.
-- To support more platforms, set `platforms: linux/amd64,linux/arm64` and keep QEMU setup.
 
 ## Troubleshooting
 
