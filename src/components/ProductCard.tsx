@@ -109,7 +109,7 @@ export default function ProductCard({
 
   return (
     <Card
-      className="group cursor-pointer w-full aspect-[3/4] max-w-[280px] mx-auto overflow-hidden bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition duration-200"
+      className="group cursor-pointer w-full aspect-[3/4] overflow-hidden bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition duration-200"
       onClick={handleClick}
     >
       <CardContent className="p-0 h-full flex flex-col">

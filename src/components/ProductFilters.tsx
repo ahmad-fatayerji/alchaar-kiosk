@@ -34,17 +34,13 @@ export default function ProductFilters({
 }: ProductFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const { hidePrices, showQuantities } = useKioskSettings();
-  const { t, lang, formatDigits } = useI18n();
+  const { t, formatDigits } = useI18n();
 
-  // When prices are hidden, disable price+price-sort filters; when quantities are hidden, disable stock filters
   const priceFiltersDisabled = hidePrices;
   const stockFiltersDisabled = !showQuantities;
 
   const updateFilter = (key: keyof FilterState, value: any) => {
-    onFiltersChange({
-      ...filters,
-      [key]: value,
-    });
+    onFiltersChange({ ...filters, [key]: value });
   };
 
   const clearFilters = () => {
@@ -65,25 +61,23 @@ export default function ProductFilters({
     const availabilityActive =
       !stockFiltersDisabled && filters.availability !== "all";
     const sortActive =
-      !priceFiltersDisabled &&
       filters.sortBy !== "name" &&
-      ["price-low", "price-high"].includes(filters.sortBy)
-        ? true
-        : filters.sortBy !== "name" &&
-          filters.sortBy === "stock" &&
-          !stockFiltersDisabled
-        ? true
-        : filters.sortBy !== "name" &&
-          !["price-low", "price-high", "stock"].includes(filters.sortBy);
+      !(
+        (priceFiltersDisabled &&
+          (filters.sortBy === "price-low" ||
+            filters.sortBy === "price-high")) ||
+        (stockFiltersDisabled && filters.sortBy === "stock")
+      );
+
     return searchActive || priceActive || availabilityActive || sortActive;
   }, [filters, maxPrice, priceFiltersDisabled, stockFiltersDisabled]);
 
   return (
-    <Card className="mb-6 bg-white/95 backdrop-blur-sm border-2">
-      <CardHeader className="pb-4">
+    <Card className="mb-6 bg-white/95 backdrop-blur-sm border-2 kiosk-text">
+      <CardHeader className="pb-4 kiosk-header">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-bold text-[#3da874] flex items-center gap-2">
-            <Filter className="h-5 w-5" />
+          <CardTitle className="text-2xl font-bold text-[#3da874] flex items-center gap-2 kiosk-title">
+            <Filter className="h-6 w-6" />
             {t("filters")}
             {hasActiveFilters && (
               <Badge variant="secondary" className="ml-2">
@@ -92,26 +86,25 @@ export default function ProductFilters({
             )}
           </CardTitle>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600">
+            <span className="text-base text-gray-700">
               {t("products_found", { count: productCount })}
             </span>
             <Button
               variant="ghost"
               size="lg"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-[#3da874]"
+              className="kiosk-button text-[#3da874]"
             >
-              {isExpanded ? t("hide_filters") : t("show_filters")}{" "}
-              {t("filters")}
+              {isExpanded ? t("hide_filters") : t("show_filters")}
             </Button>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 kiosk-text">
         {/* Search - always visible */}
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
           <Input
             type="search"
             inputMode="search"
@@ -122,14 +115,14 @@ export default function ProductFilters({
             placeholder={t("search_products_placeholder")}
             value={filters.search}
             onChange={(e) => updateFilter("search", e.target.value)}
-            className="pl-10 text-lg h-14"
+            className="pl-12 kiosk-input"
           />
         </div>
 
         {/* Active Filter Badges */}
         {hasActiveFilters && (
           <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <span className="text-sm font-medium text-gray-600">
+            <span className="text-base font-medium text-gray-700">
               {t("active")} {t("filters")}:
             </span>
 
@@ -140,7 +133,7 @@ export default function ProductFilters({
                 onClick={() => updateFilter("search", "")}
               >
                 {t("browse")}: {filters.search}
-                <X className="h-3 w-3" />
+                <X className="h-4 w-4" />
               </Badge>
             )}
 
@@ -151,7 +144,7 @@ export default function ProductFilters({
                 onClick={() => updateFilter("priceMin", 0)}
               >
                 {t("min_label")}: ${formatDigits(filters.priceMin)}
-                <X className="h-3 w-3" />
+                <X className="h-4 w-4" />
               </Badge>
             )}
 
@@ -162,7 +155,7 @@ export default function ProductFilters({
                 onClick={() => updateFilter("priceMax", maxPrice)}
               >
                 {t("max_label")}: ${formatDigits(filters.priceMax)}
-                <X className="h-3 w-3" />
+                <X className="h-4 w-4" />
               </Badge>
             )}
 
@@ -175,7 +168,7 @@ export default function ProductFilters({
                 {filters.availability === "in-stock"
                   ? t("in_stock_only")
                   : t("out_of_stock")}
-                <X className="h-3 w-3" />
+                <X className="h-4 w-4" />
               </Badge>
             )}
 
@@ -204,7 +197,7 @@ export default function ProductFilters({
                   : filters.sortBy === "stock"
                   ? t("stock_level")
                   : filters.sortBy}
-                <X className="h-3 w-3" />
+                <X className="h-4 w-4" />
               </Badge>
             )}
 
@@ -212,7 +205,7 @@ export default function ProductFilters({
               variant="ghost"
               size="sm"
               onClick={clearFilters}
-              className="text-gray-600 hover:text-gray-800"
+              className="kiosk-button text-gray-700 hover:text-gray-900"
             >
               {t("clear_all")}
             </Button>
@@ -224,7 +217,7 @@ export default function ProductFilters({
           <div className="space-y-6 border-t pt-4">
             {/* Sort */}
             <div>
-              <Label className="text-base font-semibold mb-3 block">
+              <Label className="kiosk-label text-base font-semibold mb-3 block">
                 {t("sort_by")}
               </Label>
               <div className="grid grid-cols-2 gap-3">
@@ -255,7 +248,7 @@ export default function ProductFilters({
                     onClick={() =>
                       !option.disabled && updateFilter("sortBy", option.value)
                     }
-                    className={`justify-start h-12 text-base active:scale-[0.99] ${
+                    className={`kiosk-button justify-start h-12 text-base active:scale-[0.99] ${
                       option.disabled ? "opacity-50 cursor-not-allowed" : ""
                     }`}
                     disabled={option.disabled}
@@ -273,14 +266,13 @@ export default function ProductFilters({
                 priceFiltersDisabled ? "opacity-50 pointer-events-none" : ""
               }
             >
-              <Label className="text-base font-semibold mb-3 block">
+              <Label className="kiosk-label text-base font-semibold mb-3 block">
                 {t("price_range", {
                   min: filters.priceMin,
                   max: filters.priceMax,
                 })}
               </Label>
               <div className="space-y-4 px-2">
-                {/* dual-thumb slider with filled range */}
                 <div className="relative h-10 flex items-center">
                   <div className="absolute inset-x-0 h-2 bg-gray-200 rounded-full" />
                   <div
@@ -351,7 +343,7 @@ export default function ProductFilters({
                     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
                   }
                 `}</style>
-                <div className="flex justify-between text-base text-gray-700 font-medium">
+                <div className="flex justify-between text-base text-gray-800 font-semibold">
                   <span>${formatDigits(filters.priceMin)}</span>
                   <span>${formatDigits(filters.priceMax)}</span>
                 </div>
@@ -365,7 +357,7 @@ export default function ProductFilters({
                 stockFiltersDisabled ? "opacity-50 pointer-events-none" : ""
               }
             >
-              <Label className="text-base font-semibold mb-3 block">
+              <Label className="kiosk-label text-base font-semibold mb-3 block">
                 {t("availability")}
               </Label>
               <div className="space-y-3">
@@ -387,7 +379,7 @@ export default function ProductFilters({
                       className="h-6 w-6"
                       disabled={stockFiltersDisabled}
                     />
-                    <Label className="text-base font-normal cursor-pointer">
+                    <Label className="kiosk-label text-base font-normal cursor-pointer">
                       {option.label}
                     </Label>
                   </div>
@@ -401,9 +393,9 @@ export default function ProductFilters({
                 <Button
                   variant="outline"
                   onClick={clearFilters}
-                  className="w-full text-red-600 border-red-200 hover:bg-red-50"
+                  className="kiosk-button w-full text-red-600 border-red-200 hover:bg-red-50"
                 >
-                  <X className="h-4 w-4 mr-2" />
+                  <X className="h-5 w-5 mr-2" />
                   {t("clear_all")} {t("filters")}
                 </Button>
               </div>

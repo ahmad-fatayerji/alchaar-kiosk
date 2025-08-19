@@ -60,22 +60,22 @@ export default function BrowsePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
+    <div className="kiosk-viewport min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
       {/* Hero Section */}
-      <div className="container mx-auto px-6 py-12 text-center">
+      <div className="container mx-auto px-6 py-12 text-center kiosk-text">
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+          <h2 className="kiosk-title text-3xl font-bold text-gray-800 mb-4">
             {t("browse_subcategories")}
           </h2>
-          <p className="text-gray-600 leading-relaxed">
+          <p className="text-gray-700 leading-relaxed text-lg">
             {t("select_category")}
           </p>
         </div>
       </div>
 
       {/* Categories Grid */}
-      <div className="container mx-auto px-6 pb-16">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10 max-w-6xl mx-auto">
+      <div className="container mx-auto px-6 pb-16 kiosk-text">
+        <div className="grid kiosk-cols-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12 sm:gap-x-10 sm:gap-y-14 mx-auto">
           {/* View All Card - Always first */}
           <CategoryCard
             id={null}
@@ -108,7 +108,7 @@ export default function BrowsePage() {
 
         {/* Empty state */}
         {categories.length === 0 && (
-          <div className="text-center py-16">
+          <div className="text-center py-16 kiosk-text">
             <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto">
               <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-700 mb-2">
@@ -121,7 +121,7 @@ export default function BrowsePage() {
       </div>
 
       {/* Footer CTA */}
-      <div className="bg-gradient-to-r from-[#3da874] to-[#2d7a5f] text-white py-12">
+      <div className="bg-gradient-to-r from-[#3da874] to-[#2d7a5f] text-white py-12 kiosk-text">
         <div className="container mx-auto px-6 text-center">
           <h3 className="text-2xl font-bold mb-4">{t("need_help_title")}</h3>
           <p className="text-green-100 mb-6 max-w-2xl mx-auto">
@@ -129,7 +129,7 @@ export default function BrowsePage() {
           </p>
           <Button
             onClick={() => handleCategorySelect(null)}
-            className="bg-white text-[#3da874] hover:bg-gray-50 transition-all duration-300 px-8 py-3 text-lg font-semibold"
+            className="kiosk-button bg-white text-[#3da874] hover:bg-gray-50 transition-all duration-300 px-8 py-3 text-lg font-semibold"
           >
             {t("view_all_products_btn")}
           </Button>

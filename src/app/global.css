@@ -141,3 +141,130 @@
 .animate-fadeIn {
   animation: fadeIn 1s ease-out;
 }
+
+/* --------------------------------------------------
+   Kiosk ergonomics: tall portrait 2160x3840 and up
+   - Push content down to reachable band
+   - Lift floating elements from the floor
+   - Increase base font-size for legibility
+   - Provide helpers for sticky headers and grids
+---------------------------------------------------*/
+:root {
+  --kiosk-vertical-offset: 0vh; /* content top padding */
+  --kiosk-bottom-gutter: 6vh; /* bottom safe area */
+  --kiosk-sticky-top: 0px; /* sticky offset */
+}
+
+/* Apply kiosk layout on tall portrait screens (works for 1080×1920 CSS px too) */
+@media (orientation: portrait) and (min-height: 1200px) {
+  :root {
+    --kiosk-vertical-offset: 18vh;
+    --kiosk-bottom-gutter: 12vh;
+    --kiosk-sticky-top: 16vh;
+  }
+  html {
+    font-size: 24px;
+  }
+  .kiosk-viewport {
+    font-size: 1.125rem;
+    line-height: 1.7;
+  }
+  .kiosk-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .kiosk-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Force kiosk layout when html gets .kiosk-portrait (via KioskBoot) */
+.kiosk-portrait {
+  --kiosk-vertical-offset: 18vh;
+  --kiosk-bottom-gutter: 12vh;
+  --kiosk-sticky-top: 16vh;
+  font-size: 24px; /* html level */
+}
+.kiosk-portrait .kiosk-viewport {
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+.kiosk-portrait .kiosk-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.kiosk-portrait .kiosk-cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Safe-band container: pushes content down and off the floor */
+.kiosk-viewport {
+  min-height: 100svh;
+  padding-top: calc(
+    var(--kiosk-vertical-offset) + env(safe-area-inset-top, 0px)
+  );
+  padding-bottom: calc(
+    var(--kiosk-bottom-gutter) + env(safe-area-inset-bottom, 0px)
+  );
+}
+
+/* Sticky elements that should sit below the kiosk top offset */
+.kiosk-sticky {
+  position: sticky;
+  top: calc(var(--kiosk-sticky-top) + env(safe-area-inset-top, 0px));
+  z-index: 10;
+}
+
+/* Marker classes for potential kiosk-specific card tweaks */
+.kiosk-card {
+  transform: translateZ(0);
+}
+
+/* Kiosk: place cart floating button mid-right */
+.kiosk-portrait .kiosk-fab {
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  right: calc(1.5rem + env(safe-area-inset-right, 0px));
+}
+
+/* Kiosk: scale common UI controls for readability */
+.kiosk-portrait .kiosk-viewport button {
+  font-size: 1.125rem; /* ~27px at 24px base */
+  line-height: 1.3;
+}
+.kiosk-portrait .kiosk-viewport .kiosk-button {
+  font-size: 1.25rem !important; /* ~30px; force over utility text-sm */
+  padding-inline: 1.25rem !important;
+  padding-block: 0.75rem !important;
+}
+.kiosk-portrait .kiosk-viewport .kiosk-button svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+.kiosk-portrait .kiosk-viewport .kiosk-title {
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  line-height: 1.2;
+}
+.kiosk-portrait .kiosk-viewport .kiosk-header {
+  padding-block: 1rem;
+}
+
+/* Kiosk helpers for general text and inputs */
+.kiosk-portrait .kiosk-viewport .kiosk-text {
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+.kiosk-portrait .kiosk-viewport .kiosk-input {
+  font-size: 1.125rem !important;
+  height: 3.75rem !important; /* 60px */
+}
+.kiosk-portrait .kiosk-viewport .kiosk-label {
+  font-size: 1.125rem;
+}
+
+/* Optional: home hero tighter vertical rhythm in kiosk */
+.kiosk-portrait .home-hero-tight > .logo {
+  margin-top: -0.5rem;
+}
+.kiosk-portrait .home-hero-tight > .below-logo {
+  margin-top: 0.75rem;
+}

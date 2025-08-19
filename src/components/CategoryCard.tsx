@@ -48,7 +48,7 @@ export default function CategoryCard({
 
   return (
     <Card
-      className="group cursor-pointer w-full aspect-[3/4] max-w-[320px] mx-auto overflow-hidden bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition duration-200"
+      className="group cursor-pointer w-full aspect-[3/4] mx-auto overflow-hidden bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition duration-200"
       onClick={handleClick}
     >
       <CardContent className="p-0 h-full flex flex-col">

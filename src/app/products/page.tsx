@@ -160,20 +160,20 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+    <div className="kiosk-viewport min-h-screen bg-gradient-to-b from-green-50 to-white">
       {/* Header */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-green-100 sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="bg-white/90 backdrop-blur-sm border-b border-green-100 kiosk-sticky kiosk-header">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between kiosk-text">
           <Button
             variant="ghost"
             size="lg"
             onClick={handleBack}
-            className="text-[#3da874] hover:bg-green-50"
+            className="kiosk-button text-[#3da874] hover:bg-green-50"
           >
             <ArrowLeft className="mr-2 h-6 w-6" />
             {t("back_to_categories")}
           </Button>
-          <h1 className="text-3xl font-bold text-[#3da874]">
+          <h1 className="kiosk-title text-3xl font-bold text-[#3da874]">
             {t("all_products")}
           </h1>
           <div className="w-32" /> {/* Spacer for centering */}
@@ -181,7 +181,7 @@ export default function ProductsPage() {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-6 py-8 kiosk-text">
         {/* Filters */}
         <ProductFilters
           filters={filters}
@@ -192,7 +192,7 @@ export default function ProductsPage() {
 
         {/* Products Grid */}
         {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-3 gap-x-6 gap-y-16 max-w-5xl mx-auto">
+          <div className="grid kiosk-cols-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-14 mx-auto">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.barcode}
@@ -202,7 +202,7 @@ export default function ProductsPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16">
+          <div className="text-center py-16 kiosk-text">
             <div className="text-2xl text-gray-700 mb-4">No products found</div>
             <div className="text-lg text-gray-500">
               {products.length === 0

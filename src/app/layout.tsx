@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { CartProvider } from "@/contexts/CartContext";
 import { LanguageProvider } from "@/contexts/LangContext";
 import { Roboto } from "next/font/google";
+import KioskBoot from "@/components/KioskBoot";
 
 export const metadata: Metadata = {
   title: "Al-Chaar Pharmacy",
@@ -26,7 +27,10 @@ export default function RootLayout({
     <html lang="en" className={roboto.className}>
       <body>
         <LanguageProvider>
-          <CartProvider>{children}</CartProvider>
+          <CartProvider>
+            <KioskBoot />
+            {children}
+          </CartProvider>
         </LanguageProvider>
       </body>
     </html>

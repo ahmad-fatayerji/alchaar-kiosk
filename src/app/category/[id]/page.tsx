@@ -267,17 +267,17 @@ export default function CategoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+    <div className="kiosk-viewport min-h-screen bg-gradient-to-b from-green-50 to-white">
       {/* Header */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-green-100 sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4">
+      <div className="bg-white/90 backdrop-blur-sm border-b border-green-100 kiosk-sticky kiosk-header">
+        <div className="container mx-auto px-6 py-4 kiosk-text">
           {/* Navigation Row */}
           <div className="flex items-center justify-between mb-2">
             <Button
               variant="ghost"
               size="lg"
               onClick={handleBack}
-              className="text-[#3da874] hover:bg-green-50"
+              className="kiosk-button text-[#3da874] hover:bg-green-50"
             >
               <ArrowLeft className="mr-2 h-6 w-6" />
               {parentPath.length > 0 ? "Back" : "Back to Categories"}
@@ -315,7 +315,7 @@ export default function CategoryPage() {
             )}
 
             {/* Category Title */}
-            <h1 className="text-3xl font-bold text-[#3da874]">
+            <h1 className="kiosk-title text-3xl font-bold text-[#3da874]">
               {lang === "ar" && (category as any)?.arabicName
                 ? (category as any).arabicName
                 : category?.name || `Category ${categoryId}`}
@@ -327,7 +327,7 @@ export default function CategoryPage() {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-6 py-8 kiosk-text">
         {!isLeafCategory ? (
           /* Show subcategories if this is not a leaf category */
           <>
@@ -339,7 +339,7 @@ export default function CategoryPage() {
             </div>
 
             {subcategories.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10 max-w-6xl mx-auto">
+              <div className="grid kiosk-cols-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12 sm:gap-x-10 sm:gap-y-14 mx-auto">
                 {subcategories.map((subcategory) => (
                   <CategoryCard
                     key={subcategory.id}
@@ -382,7 +382,7 @@ export default function CategoryPage() {
 
             {/* Products Grid */}
             {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10 max-w-6xl mx-auto">
+              <div className="grid kiosk-cols-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12 sm:gap-x-10 sm:gap-y-14 mx-auto">
                 {filteredProducts.map((product) => (
                   <ProductCard
                     key={product.barcode}
