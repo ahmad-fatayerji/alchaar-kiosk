@@ -16,10 +16,10 @@ export default function Home() {
   return (
     <main
       onClick={handleStart}
-      className="relative kiosk-viewport home-hero-tight flex min-h-screen flex-col items-center justify-center bg-white text-[#3da874] select-none"
+      className="relative kiosk-viewport home-hero home-hero-tight flex min-h-screen flex-col items-center justify-center bg-white text-[#3da874] select-none"
     >
-      {/* Logo — slightly bigger and higher */}
-      <div className="logo relative w-[72vw] max-w-[720px] h-[58vh] max-h-[58vh] -mt-10">
+      {/* Default desktop sizes; kiosk scales via global css */}
+  <div className="logo relative w-[60vw] max-w-[520px] h-[40vh] max-h-[40vh] -mt-4 kiosk-portrait:w-[78vw] kiosk-portrait:max-w-[820px] kiosk-portrait:h-[64vh] kiosk-portrait:max-h-[64vh] kiosk-portrait:-mt-12">
         <Image
           src="/logo.svg" // make sure public/logo.svg exists
           alt="Al-Chaar Pharmacy logo"
@@ -31,17 +31,17 @@ export default function Home() {
 
       {/* Language toggle — closer and larger buttons/text */}
       <div
-        className="below-logo mt-2 w-full max-w-lg px-4 kiosk-text"
+        className="below-logo mt-3 w-full max-w-md px-4 kiosk-text kiosk-portrait:mt-1 kiosk-portrait:max-w-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="grid grid-cols-2 gap-5"
+          className="grid grid-cols-2 gap-4 kiosk-portrait:gap-4"
           role="group"
           aria-label="Language switcher"
         >
           <button
             aria-pressed={lang === "en"}
-            className={`kiosk-button h-16 rounded-xl border-2 text-2xl font-semibold transition-colors flex items-center justify-center ${
+            className={`h-12 rounded-xl border-2 text-lg font-semibold transition-colors flex items-center justify-center kiosk-portrait:h-20 kiosk-portrait:text-3xl ${
               lang === "en"
                 ? "bg-[#3da874] text-white border-[#3da874]"
                 : "bg-white text-[#3da874] border-[#3da874] hover:bg-green-50"
@@ -52,7 +52,7 @@ export default function Home() {
           </button>
           <button
             aria-pressed={lang === "ar"}
-            className={`kiosk-button h-16 rounded-xl border-2 text-2xl font-semibold transition-colors flex items-center justify-center ${
+            className={`h-12 rounded-xl border-2 text-lg font-semibold transition-colors flex items-center justify-center kiosk-portrait:h-20 kiosk-portrait:text-3xl ${
               lang === "ar"
                 ? "bg-[#3da874] text-white border-[#3da874]"
                 : "bg-white text-[#3da874] border-[#3da874] hover:bg-green-50"
@@ -65,12 +65,12 @@ export default function Home() {
       </div>
 
       {/* Greeting — larger and tighter spacing */}
-      <h1 className="welcome mt-3 kiosk-title text-4xl font-semibold tracking-wide text-center">
+  <h1 className="welcome mt-5 text-3xl font-semibold tracking-wide text-center kiosk-portrait:mt-2 kiosk-portrait:text-5xl">
         {t("welcome")}
       </h1>
 
       {/* Tap hint — larger and moved up */}
-      <p className="hint mt-4 kiosk-text text-2xl text-gray-600 animate-pulse">
+  <p className="hint mt-6 text-lg text-gray-600 animate-pulse kiosk-portrait:mt-2 kiosk-portrait:text-3xl">
         {t("tap_anywhere")}
       </p>
     </main>

@@ -123,13 +123,13 @@ export default function BrowsePage() {
       {/* Footer CTA */}
       <div className="bg-gradient-to-r from-[#3da874] to-[#2d7a5f] text-white py-12 kiosk-text">
         <div className="container mx-auto px-6 text-center">
-          <h3 className="text-2xl font-bold mb-4">{t("need_help_title")}</h3>
-          <p className="text-green-100 mb-6 max-w-2xl mx-auto">
+          <h3 className="footer-cta-title text-2xl font-bold mb-4">{t("need_help_title")}</h3>
+          <p className="footer-cta-desc text-green-100 mb-6 max-w-2xl mx-auto">
             {t("need_help_desc")}
           </p>
           <Button
             onClick={() => handleCategorySelect(null)}
-            className="kiosk-button bg-white text-[#3da874] hover:bg-gray-50 transition-all duration-300 px-8 py-3 text-lg font-semibold"
+            className="kiosk-button footer-cta-button bg-white text-[#3da874] hover:bg-gray-50 transition-all duration-300 px-8 py-3 text-lg font-semibold"
           >
             {t("view_all_products_btn")}
           </Button>

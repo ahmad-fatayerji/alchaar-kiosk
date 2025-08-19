@@ -168,10 +168,10 @@ export default function ProductsPage() {
             variant="ghost"
             size="lg"
             onClick={handleBack}
-            className="kiosk-button text-[#3da874] hover:bg-green-50"
+            className="kiosk-button products-back-button text-[#3da874] hover:bg-green-50 px-3 py-2 text-lg font-semibold"
           >
-            <ArrowLeft className="mr-2 h-6 w-6" />
-            {t("back_to_categories")}
+            <ArrowLeft className="mr-3 h-7 w-7" />
+            <span className="leading-none">{t("back_to_categories")}</span>
           </Button>
           <h1 className="kiosk-title text-3xl font-bold text-[#3da874]">
             {t("all_products")}

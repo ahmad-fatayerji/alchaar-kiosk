@@ -4,42 +4,26 @@ import { useEffect } from "react";
 
 /**
  * KioskBoot
- * Adds `kiosk-portrait` class to <html> when device is tall portrait
- * so our CSS variables and scaling reliably apply on kiosks.
- * Also supports a dev override via URL/localStorage:
- *   - ?kiosk=1  → force enable
- *   - ?kiosk=0  → disable override
+ * Adds `kiosk-portrait` to <html> only when viewport is near 2160×3840 in portrait.
  */
 export default function KioskBoot() {
   useEffect(() => {
     const root = document.documentElement;
     const mq = window.matchMedia("(orientation: portrait)");
 
-    const readOverride = () => {
-      const sp = new URLSearchParams(window.location.search);
-      const qp = sp.get("kiosk");
-      if (qp === "1" || qp === "on" || qp === "true") {
-        try {
-          localStorage.setItem("kioskForce", "1");
-        } catch {}
-      } else if (qp === "0" || qp === "off" || qp === "false") {
-        try {
-          localStorage.removeItem("kioskForce");
-        } catch {}
-      }
-      try {
-        return localStorage.getItem("kioskForce") === "1";
-      } catch {
-        return false;
-      }
+    const isNearKioskResolution = () => {
+      const portrait = mq.matches;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      // Tolerance band around 2160×3840 CSS px
+      const nearW = w >= 1900 && w <= 2350;
+      const nearH = h >= 3300 && h <= 4100;
+      return portrait && nearW && nearH;
     };
 
     const apply = () => {
-      const force = readOverride();
-      const portrait = mq.matches;
-      const h = window.innerHeight;
-      const isKiosk = portrait && h >= 1000; // CSS px threshold
-      root.classList.toggle("kiosk-portrait", force || isKiosk);
+      const enable = isNearKioskResolution();
+      root.classList.toggle("kiosk-portrait", enable);
     };
 
     apply();

@@ -85,15 +85,15 @@ export default function ProductFilters({
               </Badge>
             )}
           </CardTitle>
-          <div className="flex items-center gap-3">
-            <span className="text-base text-gray-700">
+          <div className="flex items-center gap-4">
+            <span className="text-lg sm:text-xl text-gray-700 font-medium">
               {t("products_found", { count: productCount })}
             </span>
             <Button
               variant="ghost"
               size="lg"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="kiosk-button text-[#3da874]"
+              className="kiosk-button text-[#3da874] px-3 py-2 text-lg font-semibold"
             >
               {isExpanded ? t("hide_filters") : t("show_filters")}
             </Button>

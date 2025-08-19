@@ -30,6 +30,7 @@ export default function Cart({ onCheckout }: CartProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showQuantities, setShowQuantities] = useState(false);
   const [hidePrices, setHidePrices] = useState(false);
+  const [salesEnabled, setSalesEnabled] = useState(true);
   const [productStocks, setProductStocks] = useState<Record<string, number>>(
     {}
   );
@@ -41,10 +42,12 @@ export default function Cart({ onCheckout }: CartProps) {
       try {
         const response = await fetch("/api/settings");
         const settings = await response.json();
-        const shouldShowQuantities = settings.show_quantities === "true";
-        const shouldHidePrices = settings.hide_prices === "true";
+  const shouldShowQuantities = settings.show_quantities === "true";
+  const shouldHidePrices = settings.hide_prices === "true";
         setShowQuantities(shouldShowQuantities);
         setHidePrices(shouldHidePrices);
+  // Disable sales when price are hidden or when sales_enabled explicitly false
+  setSalesEnabled(!shouldHidePrices && settings.sales_enabled !== "false");
 
         // If quantities are shown and cart is open with items, fetch stock info
         if (shouldShowQuantities && state.isOpen && state.items.length > 0) {
@@ -64,8 +67,9 @@ export default function Cart({ onCheckout }: CartProps) {
         }
       } catch (error) {
         console.error("Error loading settings or stock data:", error);
-        setShowQuantities(false);
-        setHidePrices(false);
+  setShowQuantities(false);
+  setHidePrices(false);
+  setSalesEnabled(true);
         setProductStocks({});
       }
     };
@@ -142,10 +146,10 @@ export default function Cart({ onCheckout }: CartProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 cart-modal">
       <Card className="w-full max-w-2xl max-h-[80vh] flex flex-col bg-white">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-2xl font-bold text-[#3da874]">
+          <CardTitle className="cart-title text-2xl font-bold text-[#3da874]">
             {t("shopping_cart")}
           </CardTitle>
           <Button
@@ -174,13 +178,12 @@ export default function Cart({ onCheckout }: CartProps) {
               {/* Cart Items */}
               <div className="flex-1 overflow-y-auto space-y-4 mb-6">
                 {state.items.map((item) => {
-                  const price =
-                    item.salePrice && Number(item.salePrice) > 0
-                      ? Number(item.salePrice)
-                      : Number(item.price);
-                  const totalPrice = price * item.quantity;
                   const hasSale =
-                    !hidePrices && item.salePrice && Number(item.salePrice) > 0;
+                    salesEnabled && !hidePrices && item.salePrice && Number(item.salePrice) > 0;
+                  const unitPrice = hasSale
+                    ? Number(item.salePrice)
+                    : Number(item.price);
+                  const totalPrice = unitPrice * item.quantity;
                   const stockQty = productStocks[item.barcode];
                   const isAtStockLimit =
                     showQuantities &&
@@ -210,10 +213,10 @@ export default function Cart({ onCheckout }: CartProps) {
                           </div>
                         )}
                         <div className="flex items-center gap-2 mt-1">
-                          {hasSale ? (
+          {hasSale ? (
                             <>
                               <span className="font-bold text-red-600">
-                                ${price.toFixed(2)}
+            ${unitPrice.toFixed(2)}
                               </span>
                               {!hidePrices && (
                                 <span className="text-sm text-gray-500 line-through">
@@ -226,9 +229,9 @@ export default function Cart({ onCheckout }: CartProps) {
                                 </Badge>
                               )}
                             </>
-                          ) : (
+              ) : (
                             <span className="font-bold text-[#3da874]">
-                              ${price.toFixed(2)}
+                ${unitPrice.toFixed(2)}
                             </span>
                           )}
                         </div>
@@ -245,11 +248,11 @@ export default function Cart({ onCheckout }: CartProps) {
                               item.quantity - 1
                             )
                           }
-                          className="h-8 w-8 p-0"
+                          className="cart-qty-btn h-8 w-8 p-0"
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="w-8 text-center font-semibold">
+                        <span className="cart-qty-text w-8 text-center font-semibold">
                           {formatDigits(item.quantity)}
                         </span>
                         <Button
@@ -261,7 +264,7 @@ export default function Cart({ onCheckout }: CartProps) {
                               item.quantity + 1
                             )
                           }
-                          className="h-8 w-8 p-0"
+                          className="cart-qty-btn h-8 w-8 p-0"
                           disabled={isAtStockLimit}
                           title={
                             isAtStockLimit ? t("max_stock_reached") : undefined
@@ -296,24 +299,31 @@ export default function Cart({ onCheckout }: CartProps) {
                   <div className="text-lg font-semibold">
                     {t("total_items")}: {formatDigits(getTotalItems())}
                   </div>
-                  <div className="text-2xl font-bold text-[#3da874]">
-                    {formatPrice(getTotalPrice())}
+                  <div className="cart-total text-2xl font-bold text-[#3da874]">
+                    {formatPrice(
+                      state.items.reduce((sum, i) => {
+                        const applySale =
+                          salesEnabled && !hidePrices && i.salePrice && Number(i.salePrice) > 0;
+                        const p = applySale ? Number(i.salePrice) : Number(i.price);
+                        return sum + p * i.quantity;
+                      }, 0)
+                    )}
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3">
+        <div className="flex gap-3">
                   <Button
                     variant="outline"
-                    onClick={clearCart}
-                    className="flex-1"
+          onClick={clearCart}
+          className="cart-action-btn flex-1"
                     disabled={isProcessing}
                   >
                     {t("clear_cart")}
                   </Button>
                   <Button
                     onClick={handleCheckout}
-                    className="flex-1 bg-[#3da874] hover:bg-[#2d7a56] text-white"
+          className="cart-action-btn flex-1 bg-[#3da874] hover:bg-[#2d7a56] text-white"
                     disabled={isProcessing}
                   >
                     {isProcessing ? (

@@ -148,7 +148,7 @@ export default function ProductCard({
               showQuantities && (
                 <Badge
                   variant="secondary"
-                  className={`text-[11px] leading-none font-semibold rounded-full h-6 px-2 inline-flex items-center justify-center ${
+                  className={`stock-badge text-base leading-none font-semibold rounded-full h-8 px-4 inline-flex items-center justify-center ${
                     product.qtyInStock <= 5
                       ? "bg-orange-100 text-orange-800"
                       : "bg-emerald-100 text-emerald-800"
@@ -163,7 +163,7 @@ export default function ProductCard({
 
         {/* Content Section */}
         <div className="p-3 sm:p-4 flex-shrink-0">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
+          <h3 className="product-card-title text-base sm:text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
             {product.name}
           </h3>
 
@@ -172,17 +172,17 @@ export default function ProductCard({
             <div className="mt-1">
               {hasSale ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-red-600">
+                  <span className="product-card-price text-lg font-bold text-red-600">
                     {formatPrice(salePrice!)}
                   </span>
-                  <span className="text-sm text-gray-500 line-through">
+                  <span className="product-card-price-small text-sm text-gray-500 line-through">
                     {formatPrice(regularPrice)}
                   </span>
                 </div>
               ) : showNA ? (
-                <span className="text-lg font-semibold text-gray-500">N/A</span>
+                <span className="product-card-price text-lg font-semibold text-gray-500">N/A</span>
               ) : (
-                <span className="text-lg font-bold text-gray-900">
+                <span className="product-card-price text-lg font-bold text-gray-900">
                   {formatPrice(regularPrice)}
                 </span>
               )}
@@ -200,7 +200,7 @@ export default function ProductCard({
             {isInStock ? (
               <Button
                 onClick={handleAddToCart}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm"
+                className="product-card-button w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm"
                 size="sm"
               >
                 <ShoppingCart className="h-4 w-4 mr-2" />

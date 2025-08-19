@@ -53,13 +53,13 @@ export default function CategoryCard({
     >
       <CardContent className="p-0 h-full flex flex-col">
         {/* Image Section */}
-        <div className="relative flex-1 bg-gray-50 overflow-hidden">
+  <div className="relative flex-1 bg-gray-50 overflow-hidden category-image">
           {isViewAll ? (
             // View All Design
             <div className="absolute inset-0 bg-gradient-to-br from-[#3da874] to-[#2d7a5f] flex items-center justify-center">
-              <div className="text-center text-white">
-                <ShoppingBag className="h-12 w-12 mx-auto mb-2" />
-                <div className="text-lg font-semibold">
+              <div className="text-center text-white all-products-logo">
+                <ShoppingBag className="all-products-logo-icon h-12 w-12 mx-auto mb-2" />
+                <div className="all-products-label text-lg font-semibold">
                   {t("all_products_label")}
                 </div>
               </div>
@@ -86,17 +86,17 @@ export default function CategoryCard({
           )}
         </div>
 
-        {/* Content Section */}
-        <div className="p-3 sm:p-4 flex-shrink-0 h-32">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
+  {/* Content Section */}
+  <div className="p-3 sm:p-4 flex-shrink-0 h-32 category-content-height">
+          <h3 className="category-title text-base sm:text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
             {name}
           </h3>
-          <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+          <p className="category-description text-sm text-gray-600 line-clamp-2 leading-relaxed">
             {description}
           </p>
 
           {/* Action indicator */}
-          <div className="mt-3 text-xs text-[#2d7a5f] font-medium">
+          <div className="category-cta mt-3 text-xs text-[#2d7a5f] font-medium">
             {t("browse")} →
           </div>
         </div>
