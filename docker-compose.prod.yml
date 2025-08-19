@@ -2,6 +2,8 @@ services:
   db:
     image: postgres:16
     restart: unless-stopped
+    # Allow Postgres time to shutdown cleanly when the stack stops/restarts
+    stop_grace_period: 60s
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-kiosk}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
@@ -10,11 +12,7 @@ services:
       - dbdata:/var/lib/postgresql/data
       - backups:/backups
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-kiosk} -d ${POSTGRES_DB:-pharmacy} || exit 1",
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kiosk} -d ${POSTGRES_DB:-pharmacy} || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -28,8 +26,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
       POSTGRES_DB: ${POSTGRES_DB:-pharmacy}
       POSTGRES_HOST: db
-      DATABASE_URL: postgresql://${POSTGRES_USER:-kiosk}:${POSTGRES_PASSWORD:-secret}@db:5432/${POSTGRES_DB:-pharmacy}?schema=public
-      PORT: 3000
+      # If DATABASE_URL is provided in .env, it will be passed through; otherwise entrypoint builds it
+      PORT: "3000"
     depends_on:
       db:
         condition: service_healthy
