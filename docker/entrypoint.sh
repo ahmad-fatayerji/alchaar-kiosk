@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-// Prefer DATABASE_URL; if absent, build one from provided POSTGRES_* (default host 'db')
+# Prefer DATABASE_URL; if absent, build one from provided POSTGRES_* (default host 'db')
 if [ -z "$DATABASE_URL" ]; then
   export DATABASE_URL="postgresql://${POSTGRES_USER:-kiosk}:${POSTGRES_PASSWORD:-secret}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-pharmacy}?schema=public"
 fi
