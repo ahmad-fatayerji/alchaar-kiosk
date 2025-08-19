@@ -12,6 +12,8 @@ RUN npm ci --production=false
 
 # Copy source and build
 COPY . .
+# Ensure required public subfolders exist even if empty in git
+RUN mkdir -p public public/categories public/products
 RUN npx prisma generate
 RUN npm run build
 
