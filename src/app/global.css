@@ -151,8 +151,8 @@
 ---------------------------------------------------*/
 :root {
   --kiosk-vertical-offset: 0vh; /* content top padding */
-  --kiosk-bottom-gutter: 6vh;   /* bottom safe area */
-  --kiosk-sticky-top: 0px;      /* sticky offset */
+  --kiosk-bottom-gutter: 6vh; /* bottom safe area */
+  --kiosk-sticky-top: 0px; /* sticky offset */
 }
 
 /* Apply kiosk layout on tall portrait screens (works for 1080×1920 CSS px too) */
@@ -162,10 +162,19 @@
     --kiosk-bottom-gutter: 12vh;
     --kiosk-sticky-top: 16vh;
   }
-  html { font-size: 24px; }
-  .kiosk-viewport { font-size: 1.125rem; line-height: 1.7; }
-  .kiosk-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .kiosk-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  html {
+    font-size: 24px;
+  }
+  .kiosk-viewport {
+    font-size: 1.125rem;
+    line-height: 1.7;
+  }
+  .kiosk-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .kiosk-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 /* Force kiosk layout when html gets .kiosk-portrait (via KioskBoot) */
@@ -175,15 +184,26 @@
   --kiosk-sticky-top: 16vh;
   font-size: 24px; /* html level */
 }
-.kiosk-portrait .kiosk-viewport { font-size: 1.125rem; line-height: 1.7; }
-.kiosk-portrait .kiosk-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.kiosk-portrait .kiosk-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.kiosk-portrait .kiosk-viewport {
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+.kiosk-portrait .kiosk-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.kiosk-portrait .kiosk-cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
 
 /* Safe-band container: pushes content down and off the floor */
 .kiosk-viewport {
   min-height: 100svh;
-  padding-top: calc(var(--kiosk-vertical-offset) + env(safe-area-inset-top, 0px));
-  padding-bottom: calc(var(--kiosk-bottom-gutter) + env(safe-area-inset-bottom, 0px));
+  padding-top: calc(
+    var(--kiosk-vertical-offset) + env(safe-area-inset-top, 0px)
+  );
+  padding-bottom: calc(
+    var(--kiosk-bottom-gutter) + env(safe-area-inset-bottom, 0px)
+  );
 }
 
 /* Sticky elements that should sit below the kiosk top offset */
@@ -194,7 +214,9 @@
 }
 
 /* Marker classes for potential kiosk-specific card tweaks */
-.kiosk-card { transform: translateZ(0); }
+.kiosk-card {
+  transform: translateZ(0);
+}
 
 /* Kiosk: place cart floating button mid-right */
 .kiosk-portrait .kiosk-fab {
@@ -248,50 +270,105 @@
   font-size: 1.75rem; /* larger label under the icon */
 }
 /* Increase the white content area (bottom) for category cards so buttons and titles have more room */
-.kiosk-portrait .kiosk-viewport .category-image { flex: 0 0 62%; }
-.kiosk-portrait .kiosk-viewport .category-content-height { height: 6rem; }
+.kiosk-portrait .kiosk-viewport .category-image {
+  flex: 0 0 62%;
+}
+.kiosk-portrait .kiosk-viewport .category-content-height {
+  height: 6rem;
+}
 
 /* Kiosk-only: enlarge category card text */
-.kiosk-portrait .kiosk-viewport .category-title { font-size: 1.9rem; line-height: 1.25; }
-.kiosk-portrait .kiosk-viewport .category-description { font-size: 1.25rem; line-height: 1.6; }
-.kiosk-portrait .kiosk-viewport .category-cta { font-size: 1.25rem; }
+.kiosk-portrait .kiosk-viewport .category-title {
+  font-size: 1.9rem;
+  line-height: 1.25;
+}
+.kiosk-portrait .kiosk-viewport .category-description {
+  font-size: 1.25rem;
+  line-height: 1.6;
+}
+.kiosk-portrait .kiosk-viewport .category-cta {
+  font-size: 1.25rem;
+}
 
 /* Kiosk-only: enlarge footer CTA text */
-.kiosk-portrait .kiosk-viewport .footer-cta-title { font-size: 2.5rem; }
-.kiosk-portrait .kiosk-viewport .footer-cta-desc { font-size: 1.35rem; line-height: 1.85; }
-.kiosk-portrait .kiosk-viewport .footer-cta-button { font-size: 1.6rem !important; padding-block: 1.1rem !important; padding-inline: 1.75rem !important; }
+.kiosk-portrait .kiosk-viewport .footer-cta-title {
+  font-size: 2.5rem;
+}
+.kiosk-portrait .kiosk-viewport .footer-cta-desc {
+  font-size: 1.35rem;
+  line-height: 1.85;
+}
+.kiosk-portrait .kiosk-viewport .footer-cta-button {
+  font-size: 1.6rem !important;
+  padding-block: 1.1rem !important;
+  padding-inline: 1.75rem !important;
+}
 
 /* Ensure the category card container uses kiosk-card if present to apply transforms */
-.kiosk-portrait .kiosk-viewport .kiosk-card { transform: none; }
+.kiosk-portrait .kiosk-viewport .kiosk-card {
+  transform: none;
+}
 
 /* Optional: home hero tighter vertical rhythm in kiosk */
-.kiosk-portrait .home-hero-tight > .logo { margin-top: -0.5rem; }
-.kiosk-portrait .home-hero-tight > .below-logo { margin-top: 0.75rem; }
+.kiosk-portrait .home-hero-tight > .logo {
+  margin-top: -0.5rem;
+}
+.kiosk-portrait .home-hero-tight > .below-logo {
+  margin-top: 0.75rem;
+}
 /* Home hero lift and scale for kiosk */
-.kiosk-portrait .home-hero { 
-  /* Pull content band slightly higher and increase base legibility */
-  padding-top: calc(var(--kiosk-vertical-offset) - 4vh);
+.kiosk-portrait .home-hero {
+  /* Pull content band a bit higher for kiosk */
+  padding-top: calc(var(--kiosk-vertical-offset) - 5.5vh);
 }
 /* Kiosk-only: enlarge product stock badge */
 .kiosk-portrait .kiosk-viewport .stock-badge {
-  font-size: 1.1rem;  /* ~26px */
-  height: 2.25rem;    /* 36px */
+  font-size: 1.1rem; /* ~26px */
+  height: 2.25rem; /* 36px */
   padding-inline: 0.9rem;
 }
 
 /* Kiosk-only: bump back-to-categories button on products page */
-.kiosk-portrait .kiosk-viewport .products-back-button { font-size: 1.5rem !important; padding-block: 0.9rem !important; padding-inline: 1.25rem !important; }
+.kiosk-portrait .kiosk-viewport .products-back-button {
+  font-size: 1.5rem !important;
+  padding-block: 0.9rem !important;
+  padding-inline: 1.25rem !important;
+}
 
 /* Kiosk-only: ProductCard typography and button sizing */
-.kiosk-portrait .kiosk-viewport .product-card-title { font-size: 1.5rem; line-height: 1.25; }
-.kiosk-portrait .kiosk-viewport .product-card-price { font-size: 1.6rem; }
-.kiosk-portrait .kiosk-viewport .product-card-price-small { font-size: 1.125rem; }
-.kiosk-portrait .kiosk-viewport .product-card-button { font-size: 1.25rem; padding-block: 0.9rem; }
+.kiosk-portrait .kiosk-viewport .product-card-title {
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+.kiosk-portrait .kiosk-viewport .product-card-price {
+  font-size: 1.6rem;
+}
+.kiosk-portrait .kiosk-viewport .product-card-price-small {
+  font-size: 1.125rem;
+}
+.kiosk-portrait .kiosk-viewport .product-card-button {
+  font-size: 1.25rem;
+  padding-block: 0.9rem;
+}
 
 /* Kiosk-only: Cart modal scaling */
-.kiosk-portrait .kiosk-viewport .cart-modal { font-size: 1.125rem; }
-.kiosk-portrait .kiosk-viewport .cart-modal .cart-title { font-size: 2rem; }
-.kiosk-portrait .kiosk-viewport .cart-modal .cart-qty-btn { height: 2.5rem; width: 2.5rem; }
-.kiosk-portrait .kiosk-viewport .cart-modal .cart-qty-text { font-size: 1.25rem; }
-.kiosk-portrait .kiosk-viewport .cart-modal .cart-total { font-size: 2rem; }
-.kiosk-portrait .kiosk-viewport .cart-modal .cart-action-btn { font-size: 1.25rem; padding-block: 0.9rem; }
+.kiosk-portrait .kiosk-viewport .cart-modal {
+  font-size: 1.125rem;
+}
+.kiosk-portrait .kiosk-viewport .cart-modal .cart-title {
+  font-size: 2rem;
+}
+.kiosk-portrait .kiosk-viewport .cart-modal .cart-qty-btn {
+  height: 2.5rem;
+  width: 2.5rem;
+}
+.kiosk-portrait .kiosk-viewport .cart-modal .cart-qty-text {
+  font-size: 1.25rem;
+}
+.kiosk-portrait .kiosk-viewport .cart-modal .cart-total {
+  font-size: 2rem;
+}
+.kiosk-portrait .kiosk-viewport .cart-modal .cart-action-btn {
+  font-size: 1.25rem;
+  padding-block: 0.9rem;
+}

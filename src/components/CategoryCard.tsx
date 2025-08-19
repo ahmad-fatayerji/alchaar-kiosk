@@ -53,7 +53,7 @@ export default function CategoryCard({
     >
       <CardContent className="p-0 h-full flex flex-col">
         {/* Image Section */}
-  <div className="relative flex-1 bg-gray-50 overflow-hidden category-image">
+        <div className="relative flex-1 bg-gray-50 overflow-hidden category-image">
           {isViewAll ? (
             // View All Design
             <div className="absolute inset-0 bg-gradient-to-br from-[#3da874] to-[#2d7a5f] flex items-center justify-center">
@@ -86,8 +86,8 @@ export default function CategoryCard({
           )}
         </div>
 
-  {/* Content Section */}
-  <div className="p-3 sm:p-4 flex-shrink-0 h-32 category-content-height">
+        {/* Content Section */}
+        <div className="p-3 sm:p-4 flex-shrink-0 h-32 category-content-height">
           <h3 className="category-title text-base sm:text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
             {name}
           </h3>

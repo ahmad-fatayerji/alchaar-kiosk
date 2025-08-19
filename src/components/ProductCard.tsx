@@ -180,7 +180,9 @@ export default function ProductCard({
                   </span>
                 </div>
               ) : showNA ? (
-                <span className="product-card-price text-lg font-semibold text-gray-500">N/A</span>
+                <span className="product-card-price text-lg font-semibold text-gray-500">
+                  N/A
+                </span>
               ) : (
                 <span className="product-card-price text-lg font-bold text-gray-900">
                   {formatPrice(regularPrice)}

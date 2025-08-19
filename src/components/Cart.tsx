@@ -42,12 +42,14 @@ export default function Cart({ onCheckout }: CartProps) {
       try {
         const response = await fetch("/api/settings");
         const settings = await response.json();
-  const shouldShowQuantities = settings.show_quantities === "true";
-  const shouldHidePrices = settings.hide_prices === "true";
+        const shouldShowQuantities = settings.show_quantities === "true";
+        const shouldHidePrices = settings.hide_prices === "true";
         setShowQuantities(shouldShowQuantities);
         setHidePrices(shouldHidePrices);
-  // Disable sales when price are hidden or when sales_enabled explicitly false
-  setSalesEnabled(!shouldHidePrices && settings.sales_enabled !== "false");
+        // Disable sales when price are hidden or when sales_enabled explicitly false
+        setSalesEnabled(
+          !shouldHidePrices && settings.sales_enabled !== "false"
+        );
 
         // If quantities are shown and cart is open with items, fetch stock info
         if (shouldShowQuantities && state.isOpen && state.items.length > 0) {
@@ -67,9 +69,9 @@ export default function Cart({ onCheckout }: CartProps) {
         }
       } catch (error) {
         console.error("Error loading settings or stock data:", error);
-  setShowQuantities(false);
-  setHidePrices(false);
-  setSalesEnabled(true);
+        setShowQuantities(false);
+        setHidePrices(false);
+        setSalesEnabled(true);
         setProductStocks({});
       }
     };
@@ -179,7 +181,10 @@ export default function Cart({ onCheckout }: CartProps) {
               <div className="flex-1 overflow-y-auto space-y-4 mb-6">
                 {state.items.map((item) => {
                   const hasSale =
-                    salesEnabled && !hidePrices && item.salePrice && Number(item.salePrice) > 0;
+                    salesEnabled &&
+                    !hidePrices &&
+                    item.salePrice &&
+                    Number(item.salePrice) > 0;
                   const unitPrice = hasSale
                     ? Number(item.salePrice)
                     : Number(item.price);
@@ -213,10 +218,10 @@ export default function Cart({ onCheckout }: CartProps) {
                           </div>
                         )}
                         <div className="flex items-center gap-2 mt-1">
-          {hasSale ? (
+                          {hasSale ? (
                             <>
                               <span className="font-bold text-red-600">
-            ${unitPrice.toFixed(2)}
+                                ${unitPrice.toFixed(2)}
                               </span>
                               {!hidePrices && (
                                 <span className="text-sm text-gray-500 line-through">
@@ -229,9 +234,9 @@ export default function Cart({ onCheckout }: CartProps) {
                                 </Badge>
                               )}
                             </>
-              ) : (
+                          ) : (
                             <span className="font-bold text-[#3da874]">
-                ${unitPrice.toFixed(2)}
+                              ${unitPrice.toFixed(2)}
                             </span>
                           )}
                         </div>
@@ -303,8 +308,13 @@ export default function Cart({ onCheckout }: CartProps) {
                     {formatPrice(
                       state.items.reduce((sum, i) => {
                         const applySale =
-                          salesEnabled && !hidePrices && i.salePrice && Number(i.salePrice) > 0;
-                        const p = applySale ? Number(i.salePrice) : Number(i.price);
+                          salesEnabled &&
+                          !hidePrices &&
+                          i.salePrice &&
+                          Number(i.salePrice) > 0;
+                        const p = applySale
+                          ? Number(i.salePrice)
+                          : Number(i.price);
                         return sum + p * i.quantity;
                       }, 0)
                     )}
@@ -312,18 +322,18 @@ export default function Cart({ onCheckout }: CartProps) {
                 </div>
 
                 {/* Action Buttons */}
-        <div className="flex gap-3">
+                <div className="flex gap-3">
                   <Button
                     variant="outline"
-          onClick={clearCart}
-          className="cart-action-btn flex-1"
+                    onClick={clearCart}
+                    className="cart-action-btn flex-1"
                     disabled={isProcessing}
                   >
                     {t("clear_cart")}
                   </Button>
                   <Button
                     onClick={handleCheckout}
-          className="cart-action-btn flex-1 bg-[#3da874] hover:bg-[#2d7a56] text-white"
+                    className="cart-action-btn flex-1 bg-[#3da874] hover:bg-[#2d7a56] text-white"
                     disabled={isProcessing}
                   >
                     {isProcessing ? (
