@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:16
+    container_name: kiosk_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kiosk}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - backups:/backups
+    ports:
+      - "5432:5432"
+
+  app:
+    image: ${APP_IMAGE:-ghcr.io/ahmad-fatayerji/alchaar-kiosk:latest}
+    container_name: kiosk_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # If DATABASE_URL is not provided, entrypoint will build one from the PG vars below
+      DATABASE_URL: ${DATABASE_URL}
+      POSTGRES_HOST: db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-kiosk}
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    volumes:
+      # Keep product images overridable on host if desired
+      - ./public/products:/app/public/products
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  db_data:
+  backups:
