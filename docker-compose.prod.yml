@@ -31,6 +31,12 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-pharmacy}
       POSTGRES_HOST: db
       PORT: "3000"
+      # Admin panel authentication
+      NEXT_PUBLIC_ADMIN_PASS: ${NEXT_PUBLIC_ADMIN_PASS:-admin}
+      # Kiosk configuration flags
+      NEXT_PUBLIC_HIDE_PRICES: ${NEXT_PUBLIC_HIDE_PRICES:-false}
+      NEXT_PUBLIC_SALES_ENABLED: ${NEXT_PUBLIC_SALES_ENABLED:-true}
+      NEXT_PUBLIC_HIDE_STOCK: ${NEXT_PUBLIC_HIDE_STOCK:-false}
     depends_on:
       db:
         condition: service_healthy
