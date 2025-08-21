@@ -20,6 +20,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 30
+    # Publish DB to the host for external access (optional; remove in locked-down prod)
+    ports:
+      - "5433:5432"
 
   app:
     image: ${APP_IMAGE:-ghcr.io/ahmad-fatayerji/alchaar-kiosk:latest}
