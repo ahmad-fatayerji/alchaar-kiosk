@@ -11,14 +11,27 @@ import { Lock } from "lucide-react";
 export default function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
   const [pwd, setPwd] = useState("");
   const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function submit() {
-    if (login(pwd)) {
-      onSuccess();
-    } else {
-      setErr("Wrong password");
+  async function submit() {
+    setLoading(true);
+    setErr("");
+
+    try {
+      const success = await login(pwd);
+
+      if (success) {
+        onSuccess();
+      } else {
+        setErr("Wrong password");
+        setPwd("");
+      }
+    } catch (error) {
+      setErr("Login failed. Please try again.");
       setPwd("");
     }
+
+    setLoading(false);
   }
 
   return (
@@ -33,7 +46,7 @@ export default function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
             Enter your password to access the admin panel
           </p>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
@@ -43,7 +56,8 @@ export default function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
               value={pwd}
               onChange={(e) => setPwd(e.target.value)}
               placeholder="Enter your password"
-              onKeyDown={(e) => e.key === "Enter" && submit()}
+              onKeyDown={(e) => e.key === "Enter" && !loading && submit()}
+              disabled={loading}
             />
           </div>
 
@@ -55,11 +69,11 @@ export default function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
 
           <Button
             onClick={submit}
-            disabled={!pwd}
+            disabled={!pwd || loading}
             className="w-full"
             size="lg"
           >
-            Sign In
+            {loading ? "Signing In..." : "Sign In"}
           </Button>
         </CardContent>
       </Card>

@@ -1,30 +1,36 @@
 /**
- * Super-lightweight "auth" based on a single localStorage flag.
- * Exposes the password to the browser via NEXT_PUBLIC_ADMIN_PASS.
+ * Admin authentication with server-side password validation.
+ * This ensures .env passwords work correctly at runtime.
  */
-
-export const ADMIN_PASS =
-    process.env.NEXT_PUBLIC_ADMIN_PASS || 'admin';
 
 export function isAuthed(): boolean {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem('admin_authed') === 'true';
 }
 
-export function login(pass: string): boolean {
-    // Debug logging for password validation
-    if (process.env.NODE_ENV === 'development') {
-        console.log('Login attempt - Expected:', ADMIN_PASS, 'Provided:', pass);
-    }
+export async function login(pass: string): Promise<boolean> {
+    if (!pass || pass.length === 0) return false;
 
-    const ok = pass === ADMIN_PASS && pass.length > 0;
-    if (ok && typeof window !== 'undefined') {
-        localStorage.setItem('admin_authed', 'true');
-    }
-    return ok;
-}
+    try {
+        const response = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pass })
+        });
 
-export function logout(): void {
+        const result = await response.json();
+
+        if (result.success && typeof window !== 'undefined') {
+            localStorage.setItem('admin_authed', 'true');
+            return true;
+        }
+
+        return false;
+    } catch (error) {
+        console.error('Login error:', error);
+        return false;
+    }
+} export function logout(): void {
     if (typeof window !== 'undefined') {
         localStorage.removeItem('admin_authed');
     }
