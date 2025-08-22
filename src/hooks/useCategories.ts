@@ -25,10 +25,23 @@ export function useCategories() {
 
     /* ---- helper: fetch root list ----------------------------------- */
     const loadRoot = useCallback(async () => {
-        const root: Category[] = await fetch("/api/categories").then((r) =>
-            r.json(),
-        );
-        setTree(root);
+        try {
+            const res = await fetch("/api/categories");
+            if (!res.ok) {
+                console.warn("Failed to load categories", res.status);
+                return; // keep old tree
+            }
+            let data: Category[] | null = null;
+            try {
+                data = await res.json();
+            } catch (e) {
+                console.warn("Bad JSON from /api/categories", e);
+                return;
+            }
+            if (Array.isArray(data)) setTree(data);
+        } catch (err) {
+            console.warn("Network error loading categories", err);
+        }
     }, []);
 
     /* ---- ensure children (lazy) ------------------------------------ */
