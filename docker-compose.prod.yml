@@ -1,8 +1,10 @@
+version: "3.9"
+name: alchaar-kiosk
+
 services:
   db:
     image: postgres:16
     restart: unless-stopped
-    # Allow Postgres time to shutdown cleanly when the stack stops/restarts
     stop_grace_period: 60s
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-kiosk}
@@ -20,7 +22,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 30
-    # Publish DB to the host for external access (optional; remove in locked-down prod)
     ports:
       - "5432:5432"
 
@@ -34,9 +35,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-pharmacy}
       POSTGRES_HOST: db
       PORT: "3000"
-      # Admin panel authentication
       NEXT_PUBLIC_ADMIN_PASS: ${NEXT_PUBLIC_ADMIN_PASS:-admin}
-      # Kiosk configuration flags
       NEXT_PUBLIC_HIDE_PRICES: ${NEXT_PUBLIC_HIDE_PRICES:-false}
       NEXT_PUBLIC_SALES_ENABLED: ${NEXT_PUBLIC_SALES_ENABLED:-true}
       NEXT_PUBLIC_HIDE_STOCK: ${NEXT_PUBLIC_HIDE_STOCK:-false}
@@ -46,8 +45,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-  - productsdata:/app/public/products
-  - categoriesdata:/app/public/categories
+      - productsdata:/app/public/products
+      - categoriesdata:/app/public/categories
       - ./docker/entrypoint.sh:/app/docker/entrypoint.sh:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
@@ -56,7 +55,7 @@ services:
       retries: 3
 
 volumes:
-  dbdata:
-  backups:
-  productsdata:
-  categoriesdata:
+  dbdata: {}
+  backups: {}
+  productsdata: {}
+  categoriesdata: {}
