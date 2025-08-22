@@ -36,7 +36,10 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./public/products:/app/public/products
+  - productsdata:/app/public/products
+  - categoriesdata:/app/public/categories
 
 volumes:
   dbdata:
+  productsdata:
+  categoriesdata:

@@ -37,7 +37,9 @@ COPY --from=builder /app/prisma ./prisma
 COPY docker/entrypoint.sh ./docker/entrypoint.sh
 
 # Ensure entrypoint is executable
-RUN chmod +x ./docker/entrypoint.sh
+RUN chmod +x ./docker/entrypoint.sh \
+    && mkdir -p /app/public/categories /app/public/products \
+    && chown -R app:app /app/public
 
 USER app
 EXPOSE 3000
