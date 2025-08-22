@@ -46,7 +46,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./public/products:/app/public/products
+  - productsdata:/app/public/products
+  - categoriesdata:/app/public/categories
       - ./docker/entrypoint.sh:/app/docker/entrypoint.sh:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
@@ -57,3 +58,5 @@ services:
 volumes:
   dbdata:
   backups:
+  productsdata:
+  categoriesdata:

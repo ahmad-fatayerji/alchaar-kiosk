@@ -42,4 +42,8 @@ if [ -f "./node_modules/.bin/prisma" ]; then
   ./node_modules/.bin/prisma migrate deploy || true
 fi
 
+# Ensure runtime-upload directories exist & ownable (for named volumes)
+mkdir -p /app/public/products /app/public/categories || true
+chown -R $(id -u):$(id -g) /app/public/products /app/public/categories 2>/dev/null || true
+
 exec "$@"
