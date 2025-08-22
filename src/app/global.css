@@ -372,3 +372,17 @@
   font-size: 1.25rem;
   padding-block: 0.9rem;
 }
+
+/* Super-size the floating cart button & badge for kiosk */
+.kiosk-portrait .kiosk-fab button {
+  width: 6rem;
+  height: 6rem;
+}
+.kiosk-portrait .kiosk-fab button svg {
+  width: 3rem;
+  height: 3rem;
+}
+.kiosk-portrait .kiosk-fab .cart-badge {
+  font-size: 1.4rem;
+  line-height: 1;
+}
