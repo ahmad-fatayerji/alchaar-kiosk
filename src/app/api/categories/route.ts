@@ -6,24 +6,28 @@ import { slugify } from "@/lib/slugify";
    GET /api/categories                → root categories (+1 level)
 -------------------------------------------------------------------*/
 export async function GET() {
-    /** grab root + one level, but also ask for `_count` so we know
-        if *any* child has further kids */
-    const roots = await prisma.category.findMany({
-        where: { parentId: null },
-        include: {
-            _count: { select: { children: true } },
-            children: {
-                include: { _count: { select: { children: true } } },
-                orderBy: { id: "asc" }
-            }
-        },
-        orderBy: { id: "asc" }
-    });
+    try {
+        /** grab root + one level, but also ask for `_count` so we know
+            if *any* child has further kids */
+        const roots = await prisma.category.findMany({
+            where: { parentId: null },
+            include: {
+                _count: { select: { children: true } },
+                children: {
+                    include: { _count: { select: { children: true } } },
+                    orderBy: { id: "asc" }
+                }
+            },
+            orderBy: { id: "asc" }
+        });
 
-    /* convert `_count.children` → `hasChildren`  (recursive) */
-    const withFlags = roots.map(flagLeafs);
-
-    return NextResponse.json(withFlags);           // 200 OK
+        // convert `_count.children` → `hasChildren`  (recursive)
+        const withFlags = roots.map(flagLeafs);
+        return NextResponse.json(withFlags);           // 200 OK
+    } catch (e: any) {
+        console.error("/api/categories GET failed", e);
+        return NextResponse.json({ error: "categories_fetch_failed" }, { status: 500 });
+    }
 }
 
 /* helper ───────────────────────────────────────────────────────── */

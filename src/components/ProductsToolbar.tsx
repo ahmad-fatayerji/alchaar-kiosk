@@ -59,7 +59,7 @@ export default function ProductsToolbar({
   }, []);
 
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-4 p-4 bg-muted/30 rounded-lg border">
+    <div className="products-toolbar mb-6 flex flex-wrap items-center justify-between gap-4 p-4 bg-muted/30 rounded-lg border">
       <SearchBox
         value={search}
         onChange={(e) => onSearch(e.target.value)}

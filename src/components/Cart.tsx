@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, X, Plus, Minus, Trash2, CreditCard } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useI18n } from "@/contexts/LangContext";
 
 type CartProps = {
@@ -35,6 +35,99 @@ export default function Cart({ onCheckout }: CartProps) {
     {}
   );
   const { t, formatDigits, formatPrice } = useI18n();
+
+  // Floating cart (FAB) drag state (snap-to-edge)
+  type FabDock = { side: "left" | "right"; y: number };
+  const [fabDock, setFabDock] = useState<FabDock | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragBtnRef = useRef<HTMLButtonElement | null>(null);
+  const pointerOffsetRef = useRef<number>(0); // offset inside button for smooth vertical drag
+
+  // Load saved FAB dock (backwards compatibility with old free-float format)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const rawDock = localStorage.getItem("kiosk.cartFabDock");
+      if (rawDock) {
+        const parsed: any = JSON.parse(rawDock);
+        if (
+          (parsed.side === "left" || parsed.side === "right") &&
+          typeof parsed.y === "number"
+        ) {
+          setFabDock(parsed as FabDock);
+          return;
+        }
+      }
+      // Fallback: migrate old position format (x,y)
+      const legacy = localStorage.getItem("kiosk.cartFabPos");
+      if (legacy) {
+        const p: any = JSON.parse(legacy);
+        if (typeof p.x === "number" && typeof p.y === "number") {
+          const side: FabDock["side"] =
+            p.x < window.innerWidth / 2 ? "left" : "right";
+          const y = Math.min(Math.max(p.y, 80), window.innerHeight - 80);
+          const migrated: FabDock = { side, y };
+          setFabDock(migrated);
+          localStorage.setItem("kiosk.cartFabDock", JSON.stringify(migrated));
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  // Pointer handlers for edge docking
+  const handleFabPointerDown: React.PointerEventHandler = (e) => {
+    if (state.isOpen) return;
+    setIsDragging(true);
+    const rect = dragBtnRef.current?.getBoundingClientRect();
+    pointerOffsetRef.current = rect ? e.clientY - rect.top : 0;
+
+    const move = (ev: PointerEvent) => {
+      const side: FabDock["side"] =
+        ev.clientX < window.innerWidth / 2 ? "left" : "right";
+      const margin = 64;
+      const rawY =
+        ev.clientY - pointerOffsetRef.current + (rect ? rect.height / 2 : 0);
+      let topClamp = margin;
+      const boundaryEl = document.querySelector(
+        ".products-toolbar"
+      ) as HTMLElement | null;
+      if (boundaryEl) {
+        const bRect = boundaryEl.getBoundingClientRect();
+        // Only clamp if toolbar is within viewport top half (main UI)
+        topClamp = Math.max(topClamp, bRect.bottom + 32);
+      }
+      const maxY = window.innerHeight - margin;
+      const y = Math.min(Math.max(rawY, topClamp), maxY);
+      setFabDock({ side, y });
+    };
+    const up = () => {
+      setIsDragging(false);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      if (fabDock) {
+        try {
+          localStorage.setItem("kiosk.cartFabDock", JSON.stringify(fabDock));
+        } catch {
+          /* ignore */
+        }
+      }
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up, { once: true });
+  };
+
+  // Persist whenever dock changes
+  useEffect(() => {
+    if (fabDock) {
+      try {
+        localStorage.setItem("kiosk.cartFabDock", JSON.stringify(fabDock));
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [fabDock]);
 
   // Load settings and fetch stock information when cart opens
   useEffect(() => {
@@ -129,16 +222,37 @@ export default function Cart({ onCheckout }: CartProps) {
   };
 
   if (!state.isOpen) {
+    const dock = fabDock || {
+      side: "right" as const,
+      y: window.innerHeight / 2,
+    };
+    const style: React.CSSProperties = {
+      position: "fixed",
+      top: dock.y,
+      [dock.side]: 24,
+      transform: "translateY(-50%)",
+      zIndex: 50,
+      cursor: isDragging ? "grabbing" : "grab",
+      bottom: "auto",
+    } as any;
     return (
-      <div className="fixed bottom-6 right-6 kiosk-fab z-50">
+      <div style={style} className="kiosk-fab">
         <Button
-          onClick={toggleCart}
-          size="lg"
-          className="bg-[#3da874] hover:bg-[#2d7a56] text-white rounded-full shadow-lg relative"
+          ref={dragBtnRef}
+          onPointerDown={handleFabPointerDown}
+          onClick={(e) => {
+            if (isDragging) {
+              e.preventDefault();
+              return;
+            }
+            toggleCart();
+          }}
+          aria-label={t("shopping_cart")}
+          className="bg-[#3da874] hover:bg-[#2d7a56] text-white rounded-full relative h-14 w-14 p-0 flex items-center justify-center shadow-xl transition-all kiosk-portrait:h-[6rem] kiosk-portrait:w-[6rem] kiosk-portrait:border-4 kiosk-portrait:border-white/30 kiosk-portrait:shadow-2xl kiosk-portrait:shadow-black/30"
         >
-          <ShoppingCart className="h-6 w-6" />
+          <ShoppingCart className="h-7 w-7 kiosk-portrait:h-[3rem] kiosk-portrait:w-[3rem]" />
           {getTotalItems() > 0 && (
-            <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[1.5rem] h-6 rounded-full flex items-center justify-center">
+            <Badge className="cart-badge absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[1.5rem] h-6 rounded-full flex items-center justify-center kiosk-portrait:-top-2.5 kiosk-portrait:-right-2.5 kiosk-portrait:text-lg kiosk-portrait:min-w-[2.4rem] kiosk-portrait:h-[2.4rem] kiosk-portrait:rounded-full kiosk-portrait:px-1.5 kiosk-portrait:font-bold kiosk-portrait:tracking-tight">
               {formatDigits(getTotalItems())}
             </Badge>
           )}
@@ -149,28 +263,30 @@ export default function Cart({ onCheckout }: CartProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 cart-modal">
-      <Card className="w-full max-w-2xl max-h-[80vh] flex flex-col bg-white">
+      <Card className="w-full max-w-2xl max-h-[80vh] flex flex-col bg-white kiosk-portrait:w-[94vw] kiosk-portrait:h-[88vh] kiosk-portrait:max-w-none kiosk-portrait:max-h-none kiosk-portrait:text-[1.4rem] kiosk-portrait:rounded-[2.25rem] kiosk-portrait:px-14 kiosk-portrait:py-10 kiosk-portrait:shadow-2xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="cart-title text-2xl font-bold text-[#3da874]">
+          <CardTitle className="cart-title text-2xl font-bold text-[#3da874] kiosk-portrait:text-[4.5rem] kiosk-portrait:leading-tight">
             {t("shopping_cart")}
           </CardTitle>
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleCart}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 kiosk-portrait:h-20 kiosk-portrait:w-20"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4 kiosk-portrait:h-12 kiosk-portrait:w-12" />
           </Button>
         </CardHeader>
 
         <CardContent className="flex-1 overflow-hidden flex flex-col">
           {state.items.length === 0 ? (
             <div className="flex-1 flex items-center justify-center text-center">
-              <div>
-                <ShoppingCart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-lg text-gray-500">{t("cart_empty")}</p>
-                <p className="text-sm text-gray-400 mt-2">
+              <div className="kiosk-portrait:space-y-6">
+                <ShoppingCart className="h-16 w-16 text-gray-300 mx-auto mb-4 kiosk-portrait:h-64 kiosk-portrait:w-64 kiosk-portrait:mb-10" />
+                <p className="text-lg text-gray-500 kiosk-portrait:text-[3rem] kiosk-portrait:font-semibold">
+                  {t("cart_empty")}
+                </p>
+                <p className="text-sm text-gray-400 mt-2 kiosk-portrait:text-[1.75rem] kiosk-portrait:mt-4">
                   {t("cart_add_products_hint")}
                 </p>
               </div>
@@ -178,7 +294,7 @@ export default function Cart({ onCheckout }: CartProps) {
           ) : (
             <>
               {/* Cart Items */}
-              <div className="flex-1 overflow-y-auto space-y-4 mb-6">
+              <div className="flex-1 overflow-y-auto space-y-4 mb-6 kiosk-portrait:space-y-8 kiosk-portrait:pr-4">
                 {state.items.map((item) => {
                   const hasSale =
                     salesEnabled &&
@@ -198,7 +314,7 @@ export default function Cart({ onCheckout }: CartProps) {
                   return (
                     <div
                       key={item.barcode}
-                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg bg-gray-50"
+                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg bg-gray-50 kiosk-portrait:gap-10 kiosk-portrait:p-8"
                     >
                       {/* Product Info */}
                       <div className="flex-1">
@@ -243,7 +359,7 @@ export default function Cart({ onCheckout }: CartProps) {
                       </div>
 
                       {/* Quantity Controls */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 kiosk-portrait:gap-4">
                         <Button
                           variant="outline"
                           size="sm"
@@ -253,9 +369,9 @@ export default function Cart({ onCheckout }: CartProps) {
                               item.quantity - 1
                             )
                           }
-                          className="cart-qty-btn h-8 w-8 p-0"
+                          className="cart-qty-btn h-8 w-8 p-0 kiosk-portrait:h-20 kiosk-portrait:w-20 kiosk-portrait:text-[2rem]"
                         >
-                          <Minus className="h-4 w-4" />
+                          <Minus className="h-4 w-4 kiosk-portrait:h-10 kiosk-portrait:w-10" />
                         </Button>
                         <span className="cart-qty-text w-8 text-center font-semibold">
                           {formatDigits(item.quantity)}
@@ -269,18 +385,18 @@ export default function Cart({ onCheckout }: CartProps) {
                               item.quantity + 1
                             )
                           }
-                          className="cart-qty-btn h-8 w-8 p-0"
+                          className="cart-qty-btn h-8 w-8 p-0 kiosk-portrait:h-20 kiosk-portrait:w-20 kiosk-portrait:text-[2rem]"
                           disabled={isAtStockLimit}
                           title={
                             isAtStockLimit ? t("max_stock_reached") : undefined
                           }
                         >
-                          <Plus className="h-4 w-4" />
+                          <Plus className="h-4 w-4 kiosk-portrait:h-10 kiosk-portrait:w-10" />
                         </Button>
                       </div>
 
                       {/* Item Total */}
-                      <div className="text-lg font-bold text-[#3da874] w-20 text-right">
+                      <div className="text-lg font-bold text-[#3da874] w-20 text-right kiosk-portrait:text-[2rem] kiosk-portrait:w-32">
                         {formatPrice(totalPrice)}
                       </div>
 
@@ -300,11 +416,11 @@ export default function Cart({ onCheckout }: CartProps) {
 
               {/* Cart Summary */}
               <div className="border-t border-gray-200 pt-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-lg font-semibold">
+                <div className="flex items-center justify-between mb-4 kiosk-portrait:mb-8">
+                  <div className="text-lg font-semibold kiosk-portrait:text-[2rem]">
                     {t("total_items")}: {formatDigits(getTotalItems())}
                   </div>
-                  <div className="cart-total text-2xl font-bold text-[#3da874]">
+                  <div className="cart-total text-2xl font-bold text-[#3da874] kiosk-portrait:text-[3rem]">
                     {formatPrice(
                       state.items.reduce((sum, i) => {
                         const applySale =
@@ -322,25 +438,25 @@ export default function Cart({ onCheckout }: CartProps) {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3">
+                <div className="flex gap-3 kiosk-portrait:gap-6">
                   <Button
                     variant="outline"
                     onClick={clearCart}
-                    className="cart-action-btn flex-1"
+                    className="cart-action-btn flex-1 kiosk-portrait:text-[1.5rem] kiosk-portrait:py-6"
                     disabled={isProcessing}
                   >
                     {t("clear_cart")}
                   </Button>
                   <Button
                     onClick={handleCheckout}
-                    className="cart-action-btn flex-1 bg-[#3da874] hover:bg-[#2d7a56] text-white"
+                    className="cart-action-btn flex-1 bg-[#3da874] hover:bg-[#2d7a56] text-white kiosk-portrait:text-[1.8rem] kiosk-portrait:py-6"
                     disabled={isProcessing}
                   >
                     {isProcessing ? (
                       t("processing")
                     ) : (
                       <>
-                        <CreditCard className="h-4 w-4 mr-2" />
+                        <CreditCard className="h-4 w-4 mr-2 kiosk-portrait:h-8 kiosk-portrait:w-8" />
                         {t("checkout")}
                       </>
                     )}

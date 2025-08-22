@@ -34,18 +34,27 @@ export default function CategoriesPanel() {
   /* single-thumb upload */
   async function onThumb(e: React.ChangeEvent<HTMLInputElement>) {
     if (!thumbCatId || !e.target.files?.[0]) return;
+    const file = e.target.files[0];
     const fd = new FormData();
-    fd.append("file", e.target.files[0]);
-
-    await fetch(`/api/categories/${thumbCatId}/thumbnail`, {
-      method: "POST",
-      body: fd,
-    });
-
-    bumpThumbVersion(); // 🔄 refresh all <CatThumb> components
-    await loadRoot(); // reload tree so new props propagate
-    setThumbCatId(null);
-    e.target.value = ""; // reset chooser
+    fd.append("file", file);
+    try {
+      const res = await fetch(`/api/categories/${thumbCatId}/thumbnail`, {
+        method: "POST",
+        body: fd,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(`Upload failed: ${data.error || res.status}`);
+        return;
+      }
+      bumpThumbVersion(); // 🔄 refresh
+      await loadRoot();
+    } catch (err) {
+      alert("Network error uploading image");
+    } finally {
+      setThumbCatId(null);
+      e.target.value = "";
+    }
   }
 
   return (

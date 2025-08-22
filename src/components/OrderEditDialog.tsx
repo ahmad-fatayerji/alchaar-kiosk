@@ -202,7 +202,7 @@ export default function OrderEditDialog({
                     <div>
                       <div className="font-medium">{product.name}</div>
                       <div className="text-sm text-gray-500">
-                        #{product.barcode}
+                        {product.barcode}
                       </div>
                     </div>
                     <div className="text-right">
@@ -238,7 +238,7 @@ export default function OrderEditDialog({
                 >
                   <div className="flex-1">
                     <div className="font-medium">{item.name}</div>
-                    <div className="text-sm text-gray-500">#{item.barcode}</div>
+                    <div className="text-sm text-gray-500">{item.barcode}</div>
                     <div className="text-sm">
                       {item.salePrice ? (
                         <>
