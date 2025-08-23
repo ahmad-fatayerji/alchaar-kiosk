@@ -10,6 +10,14 @@ export async function POST(req: Request) {
     try {
         const form = await req.formData();
         const file = form.get("file") as File | null;
+        // Optional CSV list of barcodes whose names should be updated if different
+        const updateNamesRaw = (form.get("updateNames") || "") as string;
+        const updateNamesSet = new Set(
+            updateNamesRaw
+                .split(/[\s,]+/)
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0)
+        );
         if (!file) return NextResponse.json({ error: "file missing" }, { status: 400 });
         if (file.size === 0) return NextResponse.json({ error: "empty file" }, { status: 400 });
 
@@ -32,8 +40,10 @@ export async function POST(req: Request) {
         const results = {
             created: 0,
             updated: 0,
+            updatedNames: 0,
             skipped: [] as { row: number; barcode?: string; reason: string }[],
             errors: [] as { row: number; barcode?: string; reason: string }[],
+            nameDifferences: [] as { barcode: string; existingName: string; newName: string }[],
         };
         for (let i = startIdx; i < rows.length; i++) {
             const r = rows[i];
@@ -60,11 +70,27 @@ export async function POST(req: Request) {
             try {
                 const existing = await prisma.product.findUnique({ where: { barcode } });
                 if (existing) {
+                    const nameDifferent = existing.name !== name;
+                    const shouldRename = nameDifferent && updateNamesSet.has(barcodeStr);
                     await prisma.product.update({
                         where: { barcode },
-                        data: { qtyInStock: stock, price: priceNum, archived: false },
+                        data: {
+                            qtyInStock: stock,
+                            price: priceNum,
+                            archived: false,
+                            ...(shouldRename ? { name } : {}),
+                        },
                     });
                     results.updated++;
+                    if (shouldRename) results.updatedNames++;
+                    else if (nameDifferent) {
+                        // collect for possible subsequent confirmation
+                        results.nameDifferences.push({
+                            barcode: barcodeStr,
+                            existingName: existing.name,
+                            newName: name,
+                        });
+                    }
                 } else {
                     await prisma.product.create({
                         data: { barcode, name, qtyInStock: stock, price: priceNum, archived: false },
