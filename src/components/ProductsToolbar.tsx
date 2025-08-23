@@ -14,6 +14,13 @@ import SearchBox from "./SearchBox";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRef, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type Props = {
   search: string;
@@ -48,6 +55,23 @@ export default function ProductsToolbar({
 }: Props) {
   const bulkRef = useRef<HTMLInputElement>(null);
   const [salesEnabled, setSalesEnabled] = useState(true);
+  const [importSummary, setImportSummary] = useState<any | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+
+  function downloadReport() {
+    if (!importSummary) return;
+    const blob = new Blob([JSON.stringify(importSummary, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "import-report.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  }
 
   // Load sales enabled setting
   useEffect(() => {
@@ -148,36 +172,8 @@ export default function ProductsToolbar({
                   );
                 } else {
                   const summary = await res.json();
-                  const lines: string[] = [];
-                  lines.push(`Created: ${summary.created}`);
-                  lines.push(`Updated: ${summary.updated}`);
-                  lines.push(`Skipped: ${summary.skipped?.length || 0}`);
-                  lines.push(`Errors: ${summary.errors?.length || 0}`);
-                  if (summary.skipped?.length) {
-                    lines.push("\nSkipped (sample up to 5):");
-                    summary.skipped
-                      .slice(0, 5)
-                      .forEach((s: any) =>
-                        lines.push(
-                          `  row ${s.row}${
-                            s.barcode ? ` (${s.barcode})` : ""
-                          }: ${s.reason}`
-                        )
-                      );
-                  }
-                  if (summary.errors?.length) {
-                    lines.push("\nErrors (sample up to 10):");
-                    summary.errors
-                      .slice(0, 10)
-                      .forEach((e: any) =>
-                        lines.push(
-                          `  row ${e.row}${
-                            e.barcode ? ` (${e.barcode})` : ""
-                          }: ${e.reason}`
-                        )
-                      );
-                  }
-                  alert(lines.join("\n"));
+                  setImportSummary(summary);
+                  setImportOpen(true);
                   onImported?.();
                 }
               } finally {
@@ -251,6 +247,93 @@ export default function ProductsToolbar({
           New Product
         </Button>
       </div>
+
+      {/* Import Report Dialog */}
+      <Dialog open={importOpen} onOpenChange={(o) => setImportOpen(o)}>
+        <DialogContent className="max-w-3xl w-full max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Import Report</DialogTitle>
+          </DialogHeader>
+          {importSummary && (
+            <div className="flex-1 overflow-y-auto space-y-6 pr-1">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                <div className="p-3 rounded-lg bg-green-50 border border-green-100">
+                  <div className="text-xs uppercase font-medium text-green-700">
+                    Created
+                  </div>
+                  <div className="text-lg font-semibold text-green-800">
+                    {importSummary.created}
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
+                  <div className="text-xs uppercase font-medium text-blue-700">
+                    Updated
+                  </div>
+                  <div className="text-lg font-semibold text-blue-800">
+                    {importSummary.updated}
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-amber-50 border border-amber-100">
+                  <div className="text-xs uppercase font-medium text-amber-700">
+                    Skipped
+                  </div>
+                  <div className="text-lg font-semibold text-amber-800">
+                    {importSummary.skipped?.length || 0}
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-red-50 border border-red-100">
+                  <div className="text-xs uppercase font-medium text-red-700">
+                    Errors
+                  </div>
+                  <div className="text-lg font-semibold text-red-800">
+                    {importSummary.errors?.length || 0}
+                  </div>
+                </div>
+              </div>
+
+              {importSummary.errors?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2 text-red-700 flex items-center">
+                    Errors
+                  </h3>
+                  <ul className="space-y-1 text-sm bg-red-50 border border-red-100 rounded p-3 max-h-56 overflow-auto">
+                    {importSummary.errors.map((e: any, idx: number) => (
+                      <li key={idx} className="whitespace-pre-wrap">
+                        Row {e.row}
+                        {e.barcode ? ` (${e.barcode})` : ""}: {e.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {importSummary.skipped?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2 text-amber-700">Skipped</h3>
+                  <ul className="space-y-1 text-sm bg-amber-50 border border-amber-100 rounded p-3 max-h-56 overflow-auto">
+                    {importSummary.skipped.map((s: any, idx: number) => (
+                      <li key={idx}>
+                        Row {s.row}
+                        {s.barcode ? ` (${s.barcode})` : ""}: {s.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={downloadReport}
+              disabled={!importSummary}
+            >
+              Download JSON
+            </Button>
+            <Button onClick={() => setImportOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
