@@ -7,6 +7,7 @@ import {
   Trash2,
   FolderSymlink,
   Tag,
+  FileUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SearchBox from "./SearchBox";
@@ -20,6 +21,7 @@ type Props = {
   onNew(): void;
   onBulk(files: FileList): void;
   onExport(): void;
+  onImported?(): void; // optional refresh callback after import
   onBulkDelete(): void;
   onBulkAssignClick(): void;
   onBulkSaleClick(): void;
@@ -42,6 +44,7 @@ export default function ProductsToolbar({
   selectedCount,
   showArchived,
   onToggleArchived,
+  onImported,
 }: Props) {
   const bulkRef = useRef<HTMLInputElement>(null);
   const [salesEnabled, setSalesEnabled] = useState(true);
@@ -119,6 +122,75 @@ export default function ProductsToolbar({
           <FileDown className="mr-1.5 h-4 w-4" />
           Export
         </Button>
+
+        {/* import */}
+        <div className="relative">
+          <input
+            type="file"
+            accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
+            className="absolute inset-0 opacity-0 cursor-pointer"
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              const fd = new FormData();
+              fd.append("file", f);
+              try {
+                const res = await fetch("/api/products/import", {
+                  method: "POST",
+                  body: fd,
+                });
+                if (!res.ok) {
+                  const j = await res.json().catch(() => ({}));
+                  alert(
+                    `Import failed (${res.status}): ${
+                      j.error || "unknown error"
+                    }`
+                  );
+                } else {
+                  const summary = await res.json();
+                  const lines: string[] = [];
+                  lines.push(`Created: ${summary.created}`);
+                  lines.push(`Updated: ${summary.updated}`);
+                  lines.push(`Skipped: ${summary.skipped?.length || 0}`);
+                  lines.push(`Errors: ${summary.errors?.length || 0}`);
+                  if (summary.skipped?.length) {
+                    lines.push("\nSkipped (sample up to 5):");
+                    summary.skipped
+                      .slice(0, 5)
+                      .forEach((s: any) =>
+                        lines.push(
+                          `  row ${s.row}${
+                            s.barcode ? ` (${s.barcode})` : ""
+                          }: ${s.reason}`
+                        )
+                      );
+                  }
+                  if (summary.errors?.length) {
+                    lines.push("\nErrors (sample up to 10):");
+                    summary.errors
+                      .slice(0, 10)
+                      .forEach((e: any) =>
+                        lines.push(
+                          `  row ${e.row}${
+                            e.barcode ? ` (${e.barcode})` : ""
+                          }: ${e.reason}`
+                        )
+                      );
+                  }
+                  alert(lines.join("\n"));
+                  onImported?.();
+                }
+              } finally {
+                e.target.value = ""; // reset chooser
+              }
+            }}
+          />
+          <Button variant="outline" size="sm" disabled={disabled} asChild>
+            <span>
+              <FileUp className="mr-1.5 h-4 w-4" /> Import
+            </span>
+          </Button>
+        </div>
 
         {/* bulk delete */}
         <Button
