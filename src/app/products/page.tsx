@@ -162,21 +162,45 @@ export default function ProductsPage() {
   return (
     <div className="kiosk-viewport min-h-screen bg-gradient-to-b from-green-50 to-white">
       {/* Header */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-green-100 kiosk-sticky kiosk-header">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between kiosk-text">
-          <Button
-            variant="ghost"
-            size="lg"
-            onClick={handleBack}
-            className="kiosk-button products-back-button text-[#3da874] hover:bg-green-50 px-3 py-2 text-lg font-semibold"
-          >
-            <ArrowLeft className="mr-3 h-7 w-7" />
-            <span className="leading-none">{t("back_to_categories")}</span>
-          </Button>
-          <h1 className="kiosk-title text-3xl font-bold text-[#3da874]">
+      <div className="bg-white border-b border-green-200 kiosk-header-static">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between kiosk-text kiosk-portrait:py-6 products-header-bar">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={handleBack}
+              className="kiosk-button products-back-button text-[#3da874] hover:bg-green-50 px-5 py-3 text-xl font-semibold kiosk-portrait:text-[2.8rem] kiosk-portrait:px-12 kiosk-portrait:py-10"
+            >
+              <ArrowLeft className="mr-3 h-8 w-8 kiosk-portrait:h-20 kiosk-portrait:w-20" />
+              <span className="leading-none kiosk-portrait:text-[2.8rem]">
+                {t("back_to_categories")}
+              </span>
+            </Button>
+          </div>
+          <h1 className="kiosk-title text-3xl font-bold text-[#3da874] kiosk-portrait:text-[4.5rem]">
             {t("all_products")}
           </h1>
-          <div className="w-32" /> {/* Spacer for centering */}
+          {/* Language toggle in header (reuse floating context) */}
+          <div className="hidden kiosk-portrait:flex gap-4">
+            {(["en", "ar"] as const).map((code) => (
+              <button
+                key={code}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  localStorage.setItem("lang", code);
+                  window.dispatchEvent(new Event("storage"));
+                }}
+                className={`h-12 px-6 rounded-2xl border-2 font-semibold text-lg tracking-wide kiosk-portrait:h-[7rem] kiosk-portrait:px-14 kiosk-portrait:text-[2.4rem] kiosk-portrait:rounded-[2rem] ${
+                  typeof window !== "undefined" &&
+                  localStorage.getItem("lang") === code
+                    ? "bg-[#3da874] text-white border-[#3da874]"
+                    : "bg-white text-[#3da874] border-[#3da874] hover:bg-green-50"
+                }`}
+              >
+                {code.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

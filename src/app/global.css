@@ -1,6 +1,8 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+/* Enable using `kiosk-portrait:` prefix on utilities when `.kiosk-portrait` is on <html> */
+@custom-variant kiosk-portrait (&:is(.kiosk-portrait *));
 
 @import "tailwindcss";
 
@@ -321,6 +323,44 @@
   /* Pull content band a bit higher for kiosk */
   padding-top: calc(var(--kiosk-vertical-offset) - 5.5vh);
 }
+/* Explicit kiosk home screen element scaling (also apply if html has data-kiosk-home attr) */
+html[data-kiosk-home] .kiosk-home-logo,
+.kiosk-portrait .kiosk-home-logo {
+  width: 100vw !important;
+  max-width: 1350px !important; /* 25% smaller than 1800 */
+  height: 53vh !important; /* ~25% smaller than 70vh */
+  max-height: 53vh !important;
+  margin-top: -4.5vh !important; /* scaled */
+}
+html[data-kiosk-home] .kiosk-home-lang-wrap,
+.kiosk-portrait .kiosk-home-lang-wrap {
+  margin-top: -1vh !important;
+  max-width: 1650px !important; /* 25% reduction */
+}
+html[data-kiosk-home] .kiosk-home-lang-grid,
+.kiosk-portrait .kiosk-home-lang-grid {
+  gap: 6vh !important; /* reduced */
+}
+html[data-kiosk-home] .kiosk-home-lang-btn,
+.kiosk-portrait .kiosk-home-lang-btn {
+  height: 7.5vh !important; /* 25% smaller */
+  font-size: 2.25rem !important; /* 25% smaller */
+  border-width: 3px !important;
+  padding-inline: 2.25rem !important; /* scaled */
+  border-radius: 1.5rem !important; /* scaled */
+}
+html[data-kiosk-home] .kiosk-home-welcome,
+.kiosk-portrait .kiosk-home-welcome {
+  margin-top: 0.75vh !important;
+  font-size: clamp(3.75rem, 5.25vw, 5.6rem) !important; /* 25% reduction */
+  line-height: 1.06 !important;
+}
+html[data-kiosk-home] .kiosk-home-hint,
+.kiosk-portrait .kiosk-home-hint {
+  margin-top: 0.4vh !important;
+  font-size: clamp(2.25rem, 3.4vw, 3rem) !important; /* 25% smaller */
+  letter-spacing: 0.035em !important;
+}
 /* Kiosk-only: enlarge product stock badge */
 .kiosk-portrait .kiosk-viewport .stock-badge {
   font-size: 1.1rem; /* ~26px */
@@ -330,9 +370,9 @@
 
 /* Kiosk-only: bump back-to-categories button on products page */
 .kiosk-portrait .kiosk-viewport .products-back-button {
-  font-size: 1.5rem !important;
-  padding-block: 0.9rem !important;
-  padding-inline: 1.25rem !important;
+  font-size: 1.9rem !important;
+  padding-block: 1.15rem !important;
+  padding-inline: 1.75rem !important;
 }
 
 /* Kiosk-only: ProductCard typography and button sizing */
@@ -356,7 +396,17 @@
   font-size: 1.125rem;
 }
 .kiosk-portrait .kiosk-viewport .cart-modal .cart-title {
-  font-size: 2rem;
+  font-size: 5rem;
+}
+.kiosk-portrait .kiosk-viewport .cart-modal .cart-qty-text {
+  font-size: 2.4rem;
+}
+.kiosk-portrait .kiosk-viewport .cart-modal .cart-total {
+  font-size: 4rem;
+}
+.kiosk-portrait .kiosk-viewport .cart-modal .cart-action-btn {
+  font-size: 2.4rem;
+  padding-block: 1.6rem;
 }
 .kiosk-portrait .kiosk-viewport .cart-modal .cart-qty-btn {
   height: 2.5rem;

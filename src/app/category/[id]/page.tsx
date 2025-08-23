@@ -59,6 +59,7 @@ export default function CategoryPage() {
   const [parentPath, setParentPath] = useState<{ id: number; name: string }[]>(
     []
   );
+  const { t, lang, setLang } = useI18n();
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     priceMin: 0,
@@ -67,7 +68,6 @@ export default function CategoryPage() {
     sortBy: "name",
   });
   const { hidePrices, showQuantities } = useKioskSettings();
-  const { t, lang } = useI18n();
 
   // Calculate max price from products
   const maxPrice = useMemo(() => {
@@ -269,60 +269,72 @@ export default function CategoryPage() {
   return (
     <div className="kiosk-viewport min-h-screen bg-gradient-to-b from-green-50 to-white">
       {/* Header */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-green-100 kiosk-sticky kiosk-header">
-        <div className="container mx-auto px-6 py-4 kiosk-text">
-          {/* Navigation Row */}
-          <div className="flex items-center justify-between mb-2">
-            <Button
-              variant="ghost"
-              size="lg"
-              onClick={handleBack}
-              className="kiosk-button text-[#3da874] hover:bg-green-50"
-            >
-              <ArrowLeft className="mr-2 h-6 w-6" />
-              {parentPath.length > 0 ? "Back" : "Back to Categories"}
-            </Button>
-            <div className="w-32" /> {/* Spacer for centering */}
-          </div>
-
-          {/* Breadcrumb and Title */}
-          <div className="text-center">
-            {/* Breadcrumb */}
-            {parentPath.length > 0 && (
-              <div className="flex items-center justify-center text-sm text-gray-600 mb-2">
-                <button
-                  onClick={() => handleBreadcrumbClick(null)}
-                  className="hover:text-[#3da874] transition-colors"
-                >
-                  {t("browse")}
-                </button>
-                {parentPath.map((parent, index) => (
-                  <span key={parent.id} className="flex items-center">
-                    <span className="mx-2">→</span>
-                    <button
-                      onClick={() => handleBreadcrumbClick(parent.id)}
-                      className="hover:text-[#3da874] transition-colors"
-                    >
-                      {parent.name}
-                    </button>
-                  </span>
-                ))}
-                <span className="mx-2">→</span>
-                <span className="text-[#3da874] font-medium">
-                  {category?.name}
+      <div className="bg-white border-b border-green-200 kiosk-header-static">
+        <div className="container mx-auto px-4 py-3 kiosk-text kiosk-portrait:py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="lg"
+                onClick={handleBack}
+                className="kiosk-button text-[#3da874] hover:bg-green-50 px-5 py-3 text-xl font-semibold kiosk-portrait:text-[2.8rem] kiosk-portrait:px-12 kiosk-portrait:py-10"
+              >
+                <ArrowLeft className="mr-3 h-8 w-8 kiosk-portrait:h-20 kiosk-portrait:w-20" />
+                <span className="leading-none kiosk-portrait:text-[2.8rem]">
+                  {parentPath.length > 0 ? t("back") : t("back_to_categories")}
                 </span>
-              </div>
-            )}
-
-            {/* Category Title */}
-            <h1 className="kiosk-title text-3xl font-bold text-[#3da874]">
+              </Button>
+            </div>
+            <h1 className="kiosk-title text-3xl font-bold text-[#3da874] kiosk-portrait:text-[4.2rem]">
               {lang === "ar" && (category as any)?.arabicName
                 ? (category as any).arabicName
                 : category?.name || `Category ${categoryId}`}
             </h1>
-
-            {/* Category Type Badge removed for cleaner kiosk UI */}
+            <div className="hidden kiosk-portrait:flex gap-4">
+              {(["en", "ar"] as const).map((code) => (
+                <button
+                  key={code}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLang(code);
+                  }}
+                  className={`h-12 px-6 rounded-2xl border-2 font-semibold text-lg tracking-wide kiosk-portrait:h-[7rem] kiosk-portrait:px-14 kiosk-portrait:text-[2.4rem] kiosk-portrait:rounded-[2rem] ${
+                    lang === code
+                      ? "bg-[#3da874] text-white border-[#3da874]"
+                      : "bg-white text-[#3da874] border-[#3da874] hover:bg-green-50"
+                  }`}
+                >
+                  {code.toUpperCase()}
+                </button>
+              ))}
+            </div>
           </div>
+          {/* Breadcrumb */}
+          {parentPath.length > 0 && (
+            <div className="flex items-center justify-center text-sm text-gray-600 mt-4 kiosk-portrait:text-[1.6rem]">
+              <button
+                onClick={() => handleBreadcrumbClick(null)}
+                className="hover:text-[#3da874] transition-colors"
+              >
+                {t("browse")}
+              </button>
+              {parentPath.map((parent) => (
+                <span key={parent.id} className="flex items-center">
+                  <span className="mx-2">→</span>
+                  <button
+                    onClick={() => handleBreadcrumbClick(parent.id)}
+                    className="hover:text-[#3da874] transition-colors"
+                  >
+                    {parent.name}
+                  </button>
+                </span>
+              ))}
+              <span className="mx-2">→</span>
+              <span className="text-[#3da874] font-medium">
+                {category?.name}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

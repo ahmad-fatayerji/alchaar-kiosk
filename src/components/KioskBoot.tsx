@@ -22,8 +22,20 @@ export default function KioskBoot() {
     };
 
     const apply = () => {
-      const enable = isNearKioskResolution();
+      let enable = isNearKioskResolution();
+      // Allow manual override via query (?kiosk=1) or persisted flag
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("kiosk") === "1") enable = true;
+      try {
+        const forced = localStorage.getItem("force-kiosk");
+        if (forced === "1") enable = true;
+      } catch {}
       root.classList.toggle("kiosk-portrait", enable);
+      if (enable) {
+        root.setAttribute("data-kiosk-home", "1");
+      } else {
+        root.removeAttribute("data-kiosk-home");
+      }
     };
 
     apply();
