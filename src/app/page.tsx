@@ -5,9 +5,25 @@
 
 import Image from "next/image";
 import { useI18n } from "@/contexts/LangContext";
+import { useEffect } from "react";
 
 export default function Home() {
   const { t, lang, setLang } = useI18n();
+  // Ensure cart starts closed for a new user session
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("kiosk-cart");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.isOpen) {
+          parsed.isOpen = false;
+          localStorage.setItem("kiosk-cart", JSON.stringify(parsed));
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
   // Navigate to /browse on any tap / click
   const handleStart = () => {
     window.location.href = "/browse";
