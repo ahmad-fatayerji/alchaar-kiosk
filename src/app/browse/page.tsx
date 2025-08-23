@@ -26,13 +26,33 @@ export default function BrowsePage() {
     fetch("/api/categories")
       .then((res) => res.json())
       .then((data) => {
-        setCategories(data);
+        if (Array.isArray(data)) {
+          setCategories(data);
+        } else if (Array.isArray((data as any)?.categories)) {
+          setCategories((data as any).categories);
+        } else {
+          console.warn("/api/categories returned unexpected shape", data);
+          setCategories([]);
+        }
         setLoading(false);
       })
       .catch((err) => {
         console.error("Failed to load categories:", err);
         setLoading(false);
       });
+    // Ensure cart starts closed when entering browse fresh
+    try {
+      const saved = localStorage.getItem("kiosk-cart");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.isOpen) {
+          parsed.isOpen = false;
+          localStorage.setItem("kiosk-cart", JSON.stringify(parsed));
+        }
+      }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const handleCategorySelect = (categoryId: number | null) => {
@@ -86,24 +106,25 @@ export default function BrowsePage() {
           />
 
           {/* Category Cards */}
-          {categories.map((category) => (
-            <CategoryCard
-              key={category.id}
-              id={category.id}
-              name={
-                lang === "ar" && (category as any).arabicName
-                  ? (category as any).arabicName
-                  : category.name
-              }
-              description={
-                category.hasChildren
-                  ? t("category_has_children_desc")
-                  : t("category_browse_desc")
-              }
-              isViewAll={false}
-              onClick={handleCategorySelect}
-            />
-          ))}
+          {Array.isArray(categories) &&
+            categories.map((category) => (
+              <CategoryCard
+                key={category.id}
+                id={category.id}
+                name={
+                  lang === "ar" && (category as any).arabicName
+                    ? (category as any).arabicName
+                    : category.name
+                }
+                description={
+                  category.hasChildren
+                    ? t("category_has_children_desc")
+                    : t("category_browse_desc")
+                }
+                isViewAll={false}
+                onClick={handleCategorySelect}
+              />
+            ))}
         </div>
 
         {/* Empty state */}

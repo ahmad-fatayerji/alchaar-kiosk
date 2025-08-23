@@ -24,6 +24,7 @@ export default function Cart({ onCheckout }: CartProps) {
     updateQuantity,
     clearCart,
     toggleCart,
+    setCartOpen,
     getTotalItems,
     getTotalPrice,
   } = useCart();
@@ -198,7 +199,9 @@ export default function Cart({ onCheckout }: CartProps) {
       if (response.ok) {
         const result = await response.json();
         onCheckout?.(result.orderNumber);
+        // Clear and explicitly close cart so next session starts closed
         clearCart();
+        setCartOpen(false);
       } else {
         const error = await response.json();
         if (error.error === "Insufficient stock for some items") {
