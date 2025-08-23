@@ -57,6 +57,62 @@ export default function ProductsToolbar({
   const [salesEnabled, setSalesEnabled] = useState(true);
   const [importSummary, setImportSummary] = useState<any | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [initialSummary, setInitialSummary] = useState<any | null>(null);
+  const [conflicts, setConflicts] = useState<any[]>([]);
+  const [conflictSelections, setConflictSelections] = useState<
+    Record<string, boolean>
+  >({});
+  const [conflictOpen, setConflictOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+
+  async function runImport(
+    file: File,
+    updateNames: string[] = [],
+    mergeWithInitial = false
+  ) {
+    const fd = new FormData();
+    fd.append("file", file);
+    if (updateNames.length) fd.append("updateNames", updateNames.join(","));
+    setImporting(true);
+    try {
+      const res = await fetch("/api/products/import", {
+        method: "POST",
+        body: fd,
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        alert(`Import failed (${res.status}): ${j.error || "unknown error"}`);
+        return;
+      }
+      const summary = await res.json();
+      if (mergeWithInitial && initialSummary) {
+        const merged = {
+          ...initialSummary,
+          updatedNames: summary.updatedNames,
+          nameDifferences: summary.nameDifferences,
+        };
+        setImportSummary(merged);
+        setImportOpen(true);
+        setInitialSummary(null);
+        setConflicts([]);
+        setConflictSelections({});
+      } else if (summary.nameDifferences?.length) {
+        setInitialSummary(summary);
+        setConflicts(summary.nameDifferences);
+        const sel: Record<string, boolean> = {};
+        summary.nameDifferences.forEach((c: any) => (sel[c.barcode] = false));
+        setConflictSelections(sel);
+        setConflictOpen(true);
+      } else {
+        setImportSummary(summary);
+        setImportOpen(true);
+      }
+      onImported?.();
+    } finally {
+      setImporting(false);
+    }
+  }
 
   function downloadReport() {
     if (!importSummary) return;
@@ -156,28 +212,11 @@ export default function ProductsToolbar({
             onChange={async (e) => {
               const f = e.target.files?.[0];
               if (!f) return;
-              const fd = new FormData();
-              fd.append("file", f);
               try {
-                const res = await fetch("/api/products/import", {
-                  method: "POST",
-                  body: fd,
-                });
-                if (!res.ok) {
-                  const j = await res.json().catch(() => ({}));
-                  alert(
-                    `Import failed (${res.status}): ${
-                      j.error || "unknown error"
-                    }`
-                  );
-                } else {
-                  const summary = await res.json();
-                  setImportSummary(summary);
-                  setImportOpen(true);
-                  onImported?.();
-                }
+                setPendingFile(f);
+                await runImport(f);
               } finally {
-                e.target.value = ""; // reset chooser
+                e.target.value = "";
               }
             }}
           />
@@ -273,6 +312,16 @@ export default function ProductsToolbar({
                     {importSummary.updated}
                   </div>
                 </div>
+                {typeof importSummary.updatedNames === "number" && (
+                  <div className="p-3 rounded-lg bg-violet-50 border border-violet-100">
+                    <div className="text-xs uppercase font-medium text-violet-700">
+                      Renamed
+                    </div>
+                    <div className="text-lg font-semibold text-violet-800">
+                      {importSummary.updatedNames}
+                    </div>
+                  </div>
+                )}
                 <div className="p-3 rounded-lg bg-amber-50 border border-amber-100">
                   <div className="text-xs uppercase font-medium text-amber-700">
                     Skipped
@@ -290,6 +339,25 @@ export default function ProductsToolbar({
                   </div>
                 </div>
               </div>
+
+              {importSummary.nameDifferences?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mt-4 mb-2 text-sm text-violet-700">
+                    Not Renamed ({importSummary.nameDifferences.length})
+                  </h3>
+                  <ul className="space-y-1 text-xs bg-violet-50 border border-violet-100 rounded p-3 max-h-40 overflow-auto">
+                    {importSummary.nameDifferences.map((c: any) => (
+                      <li key={c.barcode}>
+                        <span className="font-mono">{c.barcode}</span>: "
+                        {c.existingName}" →{" "}
+                        <span className="line-through decoration-violet-500/60">
+                          {c.newName}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {importSummary.errors?.length > 0 && (
                 <div>
@@ -331,6 +399,132 @@ export default function ProductsToolbar({
               Download JSON
             </Button>
             <Button onClick={() => setImportOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Name Conflict Dialog */}
+      <Dialog
+        open={conflictOpen}
+        onOpenChange={(o) => {
+          if (!o) setConflictOpen(false);
+        }}
+      >
+        <DialogContent className="max-w-3xl w-full max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Product Name Differences</DialogTitle>
+          </DialogHeader>
+          {conflicts.length === 0 ? (
+            <div className="text-sm text-muted-foreground">No conflicts.</div>
+          ) : (
+            <>
+              <div className="text-sm text-muted-foreground mb-2">
+                Choose which existing products to rename to the new name from
+                the file.
+              </div>
+              <div className="flex gap-2 flex-wrap mb-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setConflictSelections(
+                      Object.fromEntries(
+                        conflicts.map((c) => [c.barcode, true])
+                      )
+                    )
+                  }
+                >
+                  Select All
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setConflictSelections(
+                      Object.fromEntries(
+                        conflicts.map((c) => [c.barcode, false])
+                      )
+                    )
+                  }
+                >
+                  None
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setImportSummary(initialSummary);
+                    setImportOpen(true);
+                    setConflictOpen(false);
+                    setInitialSummary(null);
+                  }}
+                >
+                  Skip Renames
+                </Button>
+              </div>
+              <div className="flex-1 overflow-y-auto border rounded">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted text-left sticky top-0">
+                    <tr>
+                      <th className="p-2 w-16">Rename</th>
+                      <th className="p-2">Barcode</th>
+                      <th className="p-2">Current</th>
+                      <th className="p-2">New</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {conflicts.map((c) => (
+                      <tr key={c.barcode} className="border-t">
+                        <td className="p-2 align-top">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4"
+                            checked={!!conflictSelections[c.barcode]}
+                            onChange={(ev) =>
+                              setConflictSelections({
+                                ...conflictSelections,
+                                [c.barcode]: ev.target.checked,
+                              })
+                            }
+                          />
+                        </td>
+                        <td className="p-2 font-mono align-top">{c.barcode}</td>
+                        <td className="p-2 align-top text-red-700">
+                          {c.existingName}
+                        </td>
+                        <td className="p-2 align-top text-green-700">
+                          {c.newName}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConflictOpen(false);
+                setInitialSummary(null);
+                setConflicts([]);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={importing || conflicts.length === 0}
+              onClick={async () => {
+                if (!pendingFile) return;
+                const chosen = conflicts
+                  .filter((c) => conflictSelections[c.barcode])
+                  .map((c) => c.barcode);
+                setConflictOpen(false);
+                await runImport(pendingFile, chosen, true);
+              }}
+            >
+              {importing ? "Applying..." : "Apply Selected Renames"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
