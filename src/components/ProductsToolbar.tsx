@@ -7,12 +7,20 @@ import {
   Trash2,
   FolderSymlink,
   Tag,
+  FileUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SearchBox from "./SearchBox";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRef, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type Props = {
   search: string;
@@ -20,6 +28,7 @@ type Props = {
   onNew(): void;
   onBulk(files: FileList): void;
   onExport(): void;
+  onImported?(): void; // optional refresh callback after import
   onBulkDelete(): void;
   onBulkAssignClick(): void;
   onBulkSaleClick(): void;
@@ -42,9 +51,27 @@ export default function ProductsToolbar({
   selectedCount,
   showArchived,
   onToggleArchived,
+  onImported,
 }: Props) {
   const bulkRef = useRef<HTMLInputElement>(null);
   const [salesEnabled, setSalesEnabled] = useState(true);
+  const [importSummary, setImportSummary] = useState<any | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+
+  function downloadReport() {
+    if (!importSummary) return;
+    const blob = new Blob([JSON.stringify(importSummary, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "import-report.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  }
 
   // Load sales enabled setting
   useEffect(() => {
@@ -120,6 +147,47 @@ export default function ProductsToolbar({
           Export
         </Button>
 
+        {/* import */}
+        <div className="relative">
+          <input
+            type="file"
+            accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
+            className="absolute inset-0 opacity-0 cursor-pointer"
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              const fd = new FormData();
+              fd.append("file", f);
+              try {
+                const res = await fetch("/api/products/import", {
+                  method: "POST",
+                  body: fd,
+                });
+                if (!res.ok) {
+                  const j = await res.json().catch(() => ({}));
+                  alert(
+                    `Import failed (${res.status}): ${
+                      j.error || "unknown error"
+                    }`
+                  );
+                } else {
+                  const summary = await res.json();
+                  setImportSummary(summary);
+                  setImportOpen(true);
+                  onImported?.();
+                }
+              } finally {
+                e.target.value = ""; // reset chooser
+              }
+            }}
+          />
+          <Button variant="outline" size="sm" disabled={disabled} asChild>
+            <span>
+              <FileUp className="mr-1.5 h-4 w-4" /> Import
+            </span>
+          </Button>
+        </div>
+
         {/* bulk delete */}
         <Button
           variant="outline"
@@ -179,6 +247,93 @@ export default function ProductsToolbar({
           New Product
         </Button>
       </div>
+
+      {/* Import Report Dialog */}
+      <Dialog open={importOpen} onOpenChange={(o) => setImportOpen(o)}>
+        <DialogContent className="max-w-3xl w-full max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Import Report</DialogTitle>
+          </DialogHeader>
+          {importSummary && (
+            <div className="flex-1 overflow-y-auto space-y-6 pr-1">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                <div className="p-3 rounded-lg bg-green-50 border border-green-100">
+                  <div className="text-xs uppercase font-medium text-green-700">
+                    Created
+                  </div>
+                  <div className="text-lg font-semibold text-green-800">
+                    {importSummary.created}
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
+                  <div className="text-xs uppercase font-medium text-blue-700">
+                    Updated
+                  </div>
+                  <div className="text-lg font-semibold text-blue-800">
+                    {importSummary.updated}
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-amber-50 border border-amber-100">
+                  <div className="text-xs uppercase font-medium text-amber-700">
+                    Skipped
+                  </div>
+                  <div className="text-lg font-semibold text-amber-800">
+                    {importSummary.skipped?.length || 0}
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-red-50 border border-red-100">
+                  <div className="text-xs uppercase font-medium text-red-700">
+                    Errors
+                  </div>
+                  <div className="text-lg font-semibold text-red-800">
+                    {importSummary.errors?.length || 0}
+                  </div>
+                </div>
+              </div>
+
+              {importSummary.errors?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2 text-red-700 flex items-center">
+                    Errors
+                  </h3>
+                  <ul className="space-y-1 text-sm bg-red-50 border border-red-100 rounded p-3 max-h-56 overflow-auto">
+                    {importSummary.errors.map((e: any, idx: number) => (
+                      <li key={idx} className="whitespace-pre-wrap">
+                        Row {e.row}
+                        {e.barcode ? ` (${e.barcode})` : ""}: {e.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {importSummary.skipped?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2 text-amber-700">Skipped</h3>
+                  <ul className="space-y-1 text-sm bg-amber-50 border border-amber-100 rounded p-3 max-h-56 overflow-auto">
+                    {importSummary.skipped.map((s: any, idx: number) => (
+                      <li key={idx}>
+                        Row {s.row}
+                        {s.barcode ? ` (${s.barcode})` : ""}: {s.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={downloadReport}
+              disabled={!importSummary}
+            >
+              Download JSON
+            </Button>
+            <Button onClick={() => setImportOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
