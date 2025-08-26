@@ -46,36 +46,68 @@
 
 :root {
   --radius: 0.625rem;
+  /* Provide sRGB hex fallbacks first, then OKLCH (unsupported browsers ignore later unknown values safely) */
+  --background: #ffffff;
   --background: oklch(1 0 0);
+  --foreground: #252525;
   --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
   --card: oklch(1 0 0);
+  --card-foreground: #252525;
   --card-foreground: oklch(0.145 0 0);
+  --popover: #ffffff;
   --popover: oklch(1 0 0);
+  --popover-foreground: #252525;
   --popover-foreground: oklch(0.145 0 0);
+  --primary: #1f1f1f;
   --primary: oklch(0.205 0 0);
+  --primary-foreground: #fcfcfc;
   --primary-foreground: oklch(0.985 0 0);
+  --secondary: #f7f7f7;
   --secondary: oklch(0.97 0 0);
+  --secondary-foreground: #1f1f1f;
   --secondary-foreground: oklch(0.205 0 0);
+  --muted: #f7f7f7;
   --muted: oklch(0.97 0 0);
+  --muted-foreground: #7f7f7f;
   --muted-foreground: oklch(0.556 0 0);
+  --accent: #f7f7f7;
   --accent: oklch(0.97 0 0);
+  --accent-foreground: #1f1f1f;
   --accent-foreground: oklch(0.205 0 0);
+  --destructive: #d32f2f;
   --destructive: oklch(0.577 0.245 27.325);
+  --border: #e9e9e9;
   --border: oklch(0.922 0 0);
+  --input: #e9e9e9;
   --input: oklch(0.922 0 0);
+  --ring: #b3b3b3;
   --ring: oklch(0.708 0 0);
+  --chart-1: #d66d4a;
   --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: #4b91d6;
   --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: #5163a6;
   --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: #f5b34c;
   --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: #e2b248;
   --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: #fcfcfc;
   --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: #252525;
   --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: #1f1f1f;
   --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: #fcfcfc;
   --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: #f7f7f7;
   --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: #1f1f1f;
   --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: #e9e9e9;
   --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: #b3b3b3;
   --sidebar-ring: oklch(0.708 0 0);
 }
 
@@ -199,6 +231,7 @@
 
 /* Safe-band container: pushes content down and off the floor */
 .kiosk-viewport {
+  min-height: 100vh;
   min-height: 100svh;
   padding-top: calc(
     var(--kiosk-vertical-offset) + env(safe-area-inset-top, 0px)
@@ -436,6 +469,29 @@ html[data-kiosk-home] .kiosk-home-hint,
 .kiosk-portrait .kiosk-fab .cart-badge {
   font-size: 1.4rem;
   line-height: 1;
+}
+
+/* Fallback palette when OKLCH unsupported */
+.no-oklch {
+  --background: #ffffff;
+  --foreground: #222222;
+  --primary: #14532d; /* deep green */
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #1e293b;
+  --accent: #f1f5f9;
+  --accent-foreground: #14532d;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --destructive: #b91c1c;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #94a3b8;
+}
+
+/* If small viewport units unsupported, adjust layout to avoid cropping */
+.no-svh .kiosk-viewport {
+  min-height: 100vh; /* ensure at least full classic viewport */
 }
 
 /* Kiosk-only: Browse page band sits in lower half (hero + grid grouped near bottom) */

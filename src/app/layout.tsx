@@ -26,6 +26,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={roboto.className}>
+      <head>
+        <script
+          // Feature detect modern color / viewport units early
+          dangerouslySetInnerHTML={{
+            __html: `(() => {try {const d=document.documentElement; if(!CSS.supports('color','oklch(0.6 0.1 120'))){d.classList.add('no-oklch');} if(!CSS.supports('height','100svh')){d.classList.add('no-svh');} } catch(e) { /* ignore */ }})();`,
+          }}
+        />
+      </head>
       <body>
         <LanguageProvider>
           <CartProvider>
