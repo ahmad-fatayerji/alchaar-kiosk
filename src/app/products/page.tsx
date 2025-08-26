@@ -162,21 +162,47 @@ export default function ProductsPage() {
   return (
     <div className="kiosk-viewport min-h-screen bg-gradient-to-b from-green-50 to-white">
       {/* Header */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-green-100 kiosk-sticky kiosk-header">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between kiosk-text">
-          <Button
-            variant="ghost"
-            size="lg"
-            onClick={handleBack}
-            className="kiosk-button products-back-button text-[#3da874] hover:bg-green-50 px-3 py-2 text-lg font-semibold"
-          >
-            <ArrowLeft className="mr-3 h-7 w-7" />
-            <span className="leading-none">{t("back_to_categories")}</span>
-          </Button>
-          <h1 className="kiosk-title text-3xl font-bold text-[#3da874]">
+      <div className="bg-white border-b border-green-200 kiosk-header-static">
+        <div className="container mx-auto px-4 py-3 kiosk-text kiosk-portrait:py-6 products-header-bar relative flex items-center">
+          {/* Back button (left) */}
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={handleBack}
+              className="kiosk-button products-back-button text-[#3da874] hover:bg-green-50 px-5 py-3 text-xl font-semibold kiosk-portrait:text-[2.8rem] kiosk-portrait:px-12 kiosk-portrait:py-10"
+            >
+              <ArrowLeft className="mr-3 h-8 w-8 kiosk-portrait:h-20 kiosk-portrait:w-20" />
+              <span className="leading-none kiosk-portrait:text-[2.8rem]">
+                {t("back_to_categories")}
+              </span>
+            </Button>
+          </div>
+          {/* Centered title absolute to remain centered regardless of side widths */}
+          <h1 className="kiosk-title text-3xl font-bold text-[#3da874] kiosk-portrait:text-[4.5rem] absolute left-1/2 -translate-x-1/2 pointer-events-none">
             {t("all_products")}
           </h1>
-          <div className="w-32" /> {/* Spacer for centering */}
+          {/* Right language toggle (kiosk only visible here) */}
+          <div className="ml-auto flex items-center gap-3">
+            {(["en", "ar"] as const).map((code) => (
+              <button
+                key={code}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  localStorage.setItem("lang", code);
+                  window.dispatchEvent(new Event("storage"));
+                }}
+                className={`px-3 h-10 rounded-xl border-2 font-semibold tracking-wide transition-colors text-sm kiosk-portrait:h-[7rem] kiosk-portrait:text-[2.2rem] kiosk-portrait:px-10 kiosk-portrait:rounded-[2rem] ${
+                  typeof window !== "undefined" &&
+                  localStorage.getItem("lang") === code
+                    ? "bg-[#3da874] text-white border-[#3da874] shadow"
+                    : "bg-white text-[#3da874] border-[#3da874] hover:bg-green-50"
+                }`}
+              >
+                {code.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
