@@ -32,7 +32,7 @@ export default function ProductsPage() {
   });
 
   const { hidePrices, showQuantities } = useKioskSettings();
-  const { t } = useI18n();
+  const { t, lang, setLang } = useI18n();
 
   // Calculate max price from products
   const maxPrice = useMemo(() => {
@@ -189,12 +189,10 @@ export default function ProductsPage() {
                 key={code}
                 onClick={(e) => {
                   e.stopPropagation();
-                  localStorage.setItem("lang", code);
-                  window.dispatchEvent(new Event("storage"));
+                  setLang(code);
                 }}
                 className={`px-3 h-10 rounded-xl border-2 font-semibold tracking-wide transition-colors text-sm kiosk-portrait:h-[7rem] kiosk-portrait:text-[2.2rem] kiosk-portrait:px-10 kiosk-portrait:rounded-[2rem] ${
-                  typeof window !== "undefined" &&
-                  localStorage.getItem("lang") === code
+                  lang === code
                     ? "bg-[#3da874] text-white border-[#3da874] shadow"
                     : "bg-white text-[#3da874] border-[#3da874] hover:bg-green-50"
                 }`}
