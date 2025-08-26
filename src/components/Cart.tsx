@@ -222,31 +222,17 @@ export default function Cart({ onCheckout }: CartProps) {
   };
 
   if (!state.isOpen) {
-    const dock = fabDock || {
-      side: "right" as const,
-      y: window.innerHeight / 2,
-    };
-    const style: React.CSSProperties = {
-      position: "fixed",
-      top: dock.y,
-      [dock.side]: 24,
-      transform: "translateY(-50%)",
-      zIndex: 50,
-      cursor: isDragging ? "grabbing" : "grab",
-      bottom: "auto",
-    } as any;
+    // Anchored bottom-left; disable drag logic while preserving previous code for possible revert
     return (
-      <div style={style} className="kiosk-fab">
+      <div
+        className="kiosk-fab fixed left-4 bottom-4 z-50"
+        style={{
+          insetInlineStart: undefined,
+        }}
+      >
         <Button
           ref={dragBtnRef}
-          onPointerDown={handleFabPointerDown}
-          onClick={(e) => {
-            if (isDragging) {
-              e.preventDefault();
-              return;
-            }
-            toggleCart();
-          }}
+          onClick={() => toggleCart()}
           aria-label={t("shopping_cart")}
           className="bg-[#3da874] hover:bg-[#2d7a56] text-white rounded-full relative h-14 w-14 p-0 flex items-center justify-center shadow-xl transition-all kiosk-portrait:h-[6rem] kiosk-portrait:w-[6rem] kiosk-portrait:border-4 kiosk-portrait:border-white/30 kiosk-portrait:shadow-2xl kiosk-portrait:shadow-black/30"
         >

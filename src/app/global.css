@@ -220,12 +220,13 @@
   transform: translateZ(0);
 }
 
-/* Kiosk: place cart floating button mid-right */
+/* Kiosk: place cart floating button bottom-left (anchored) */
 .kiosk-portrait .kiosk-fab {
-  top: 50%;
-  bottom: auto;
-  transform: translateY(-50%);
-  right: calc(1.5rem + env(safe-area-inset-right, 0px));
+  top: auto;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  left: calc(1.5rem + env(safe-area-inset-left, 0px));
+  right: auto;
+  transform: none;
 }
 
 /* Kiosk: scale common UI controls for readability */
@@ -435,4 +436,36 @@ html[data-kiosk-home] .kiosk-home-hint,
 .kiosk-portrait .kiosk-fab .cart-badge {
   font-size: 1.4rem;
   line-height: 1;
+}
+
+/* Kiosk-only: Browse page band sits in lower half (hero + grid grouped near bottom) */
+.kiosk-portrait .browse-kiosk-band {
+  /* locally adjust offset so overall top padding larger, pushing flex-end group lower */
+  --kiosk-vertical-offset: 28vh;
+}
+.kiosk-portrait .browse-kiosk-band > .flex-1 {
+  min-height: 55vh;
+}
+/* Kiosk-only: Browse page specific cart position (middle-left) */
+.kiosk-portrait .browse-page .kiosk-fab {
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  left: 2rem;
+}
+/* Browse page: remove extra white gutter below footer and apply safe padding inside footer instead */
+.browse-page {
+  padding-bottom: 0;
+}
+.browse-page .kiosk-footer-floor {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
+}
+.kiosk-portrait .browse-page {
+  padding-bottom: 0;
+}
+.kiosk-portrait .browse-page .kiosk-footer-floor {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);
+  /* prevent feeling of stretch: keep internal max width and reduce vertical padding */
+  padding-top: 2.5rem !important;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2.5rem) !important;
 }

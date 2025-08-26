@@ -14,7 +14,10 @@ export default function LangToggle() {
     pathname === "/" ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/orders") ||
-    pathname.startsWith("/order")
+    pathname.startsWith("/order") ||
+    pathname.startsWith("/products") ||
+    pathname.startsWith("/category") ||
+    pathname.startsWith("/browse")
   ) {
     return null;
   }
@@ -28,7 +31,7 @@ export default function LangToggle() {
 
   return (
     <div
-      className="fixed top-3 right-3 z-50 flex gap-2 kiosk-portrait:top-6 kiosk-portrait:right-6"
+      className="fixed top-3 right-3 z-50 flex gap-2 kiosk-portrait:top-[16vh] kiosk-portrait:left-1/2 kiosk-portrait:-translate-x-1/2 kiosk-portrait:right-auto"
       onClick={(e) => e.stopPropagation()}
     >
       {(["en", "ar"] as const).map((code) => (

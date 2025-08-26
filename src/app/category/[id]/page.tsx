@@ -271,7 +271,8 @@ export default function CategoryPage() {
       {/* Header */}
       <div className="bg-white border-b border-green-200 kiosk-header-static">
         <div className="container mx-auto px-4 py-3 kiosk-text kiosk-portrait:py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center relative">
+            {/* Back button on left */}
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
@@ -285,12 +286,14 @@ export default function CategoryPage() {
                 </span>
               </Button>
             </div>
-            <h1 className="kiosk-title text-3xl font-bold text-[#3da874] kiosk-portrait:text-[4.2rem]">
+            {/* Centered category title */}
+            <h1 className="kiosk-title text-3xl font-bold text-[#3da874] kiosk-portrait:text-[4.2rem] absolute left-1/2 -translate-x-1/2 pointer-events-none">
               {lang === "ar" && (category as any)?.arabicName
                 ? (category as any).arabicName
                 : category?.name || `Category ${categoryId}`}
             </h1>
-            <div className="hidden kiosk-portrait:flex gap-4">
+            {/* Language toggle on right */}
+            <div className="ml-auto flex items-center gap-3">
               {(["en", "ar"] as const).map((code) => (
                 <button
                   key={code}
@@ -298,9 +301,9 @@ export default function CategoryPage() {
                     e.stopPropagation();
                     setLang(code);
                   }}
-                  className={`h-12 px-6 rounded-2xl border-2 font-semibold text-lg tracking-wide kiosk-portrait:h-[7rem] kiosk-portrait:px-14 kiosk-portrait:text-[2.4rem] kiosk-portrait:rounded-[2rem] ${
+                  className={`px-3 h-10 rounded-xl border-2 font-semibold tracking-wide transition-colors text-sm kiosk-portrait:h-[7rem] kiosk-portrait:text-[2.2rem] kiosk-portrait:px-10 kiosk-portrait:rounded-[2rem] ${
                     lang === code
-                      ? "bg-[#3da874] text-white border-[#3da874]"
+                      ? "bg-[#3da874] text-white border-[#3da874] shadow"
                       : "bg-white text-[#3da874] border-[#3da874] hover:bg-green-50"
                   }`}
                 >
