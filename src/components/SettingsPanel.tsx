@@ -11,6 +11,7 @@ type Settings = {
   hide_prices: string;
   sales_enabled: string;
   show_quantities: string;
+  inactivity_timeout_ms?: string; // stored as string milliseconds
 };
 
 export default function SettingsPanel() {
@@ -18,6 +19,7 @@ export default function SettingsPanel() {
     hide_prices: "false",
     sales_enabled: "true",
     show_quantities: "false",
+    inactivity_timeout_ms: "60000",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -31,6 +33,8 @@ export default function SettingsPanel() {
           hide_prices: data.hide_prices || "false",
           sales_enabled: data.sales_enabled || "true",
           show_quantities: data.show_quantities || "false",
+          inactivity_timeout_ms:
+            data.inactivity_timeout_ms || data.INACTIVITY_TIMEOUT_MS || "60000",
         });
         setLoading(false);
       })
@@ -239,6 +243,57 @@ export default function SettingsPanel() {
                 "Hide"
               ) : (
                 "Show"
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Inactivity Timeout */}
+        <div className="flex items-center justify-between p-4 border rounded-lg">
+          <div className="flex items-center gap-3">
+            <Tag className="h-5 w-5 text-purple-500" />
+            <div>
+              <Label className="text-base font-medium">
+                Inactivity Reset Timeout
+              </Label>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Number of seconds of no customer interaction before the cart
+                resets and the kiosk returns to the home screen.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              min={10}
+              step={5}
+              className="w-24 border rounded px-2 py-1 text-sm"
+              value={Math.round(
+                Number(settings.inactivity_timeout_ms || "60000") / 1000
+              )}
+              onChange={(e) => {
+                const secs = Math.max(5, Number(e.target.value || 0));
+                setSettings((prev) => ({
+                  ...prev,
+                  inactivity_timeout_ms: String(secs * 1000),
+                }));
+              }}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={saving === "inactivity_timeout_ms"}
+              onClick={() =>
+                updateSetting(
+                  "inactivity_timeout_ms",
+                  String(settings.inactivity_timeout_ms)
+                )
+              }
+            >
+              {saving === "inactivity_timeout_ms" ? (
+                <Save className="h-4 w-4 animate-spin" />
+              ) : (
+                "Save"
               )}
             </Button>
           </div>

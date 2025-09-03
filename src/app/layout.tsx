@@ -6,6 +6,7 @@ import { LanguageProvider } from "@/contexts/LangContext";
 import { Roboto } from "next/font/google";
 import KioskBoot from "@/components/KioskBoot";
 import LangToggleHost from "@/components/LangToggleHost";
+import InactivityReset from "@/components/InactivityReset";
 
 export const metadata: Metadata = {
   title: "Al-Chaar Pharmacy",
@@ -39,6 +40,7 @@ export default function RootLayout({
           <CartProvider>
             <KioskBoot />
             <LangToggleHost />
+            <InactivityReset />
             {children}
           </CartProvider>
         </LanguageProvider>

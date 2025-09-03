@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import ProductDialog, { Product } from "./ProductDialog";
 import ProductTable from "./ProductTable";
 import ProductsToolbar from "./ProductsToolbar";
@@ -46,6 +46,31 @@ export default function ProductsPanel() {
   const [saleOpen, setSaleOpen] = useState(false);
   const [salesEnabled, setSalesEnabled] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
+
+  /* ---------- auto refresh (live updates) ---------- */
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    function tick() {
+      if (
+        document.hidden ||
+        editing !== undefined ||
+        assignOpen ||
+        saleOpen ||
+        busy
+      ) {
+        schedule();
+        return;
+      }
+      refresh(showArchived).finally(schedule);
+    }
+    function schedule() {
+      pollRef.current = setTimeout(tick, 30_000);
+    }
+    schedule();
+    return () => {
+      if (pollRef.current) clearTimeout(pollRef.current);
+    };
+  }, [refresh, showArchived, editing, assignOpen, saleOpen, busy]);
 
   // Refresh when toggling archived view
   useEffect(() => {
