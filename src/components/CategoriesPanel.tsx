@@ -13,8 +13,16 @@ import { Plus } from "lucide-react";
 import AdminCategoryDialog from "./AdminCategoryDialog";
 
 export default function CategoriesPanel() {
-  const { tree, busyIds, loadRoot, ensureChildren, create, rename, remove } =
-    useCategories();
+  const {
+    tree,
+    busyIds,
+    loadRoot,
+    ensureChildren,
+    create,
+    rename,
+    remove,
+    reorder,
+  } = useCategories();
 
   const [dialogCatId, setDialogCatId] = useState<number | null>(null);
   const [thumbCatId, setThumbCatId] = useState<number | null>(null);
@@ -85,6 +93,7 @@ export default function CategoriesPanel() {
         cats={tree}
         busy={busyIds}
         ensure={ensureChildren}
+        reorder={reorder}
         create={(pid) =>
           setCatModal({
             open: true,

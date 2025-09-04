@@ -26,6 +26,7 @@ model Category {
   slug       String  @unique
   name       String
   arabicName String?
+  sortOrder  Int     @default(0)
 
   parentId Int?
   parent   Category?  @relation("CatParent", fields: [parentId], references: [id])
@@ -38,6 +39,7 @@ model Category {
   updatedAt DateTime @updatedAt
 
   @@index([slug])
+  @@index([sortOrder])
 }
 
 /**

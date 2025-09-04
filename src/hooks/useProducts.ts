@@ -176,15 +176,21 @@ export function useProducts() {
             const current = Number(p?.qtyInStock ?? 0);
             const next = Math.max(0, current + Number(delta || 0));
             try {
-                setBusy(true);
-                await fetch(`/api/products/${barcode}`, {
+                // optimistic update
+                setProducts((prev) => prev.map(pr => pr.barcode === String(barcode) ? { ...pr, qtyInStock: next } : pr));
+                const res = await fetch(`/api/products/${barcode}`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ qtyInStock: next }),
                 });
-                await refresh();
+                if (!res.ok) {
+                    // revert on failure
+                    setProducts((prev) => prev.map(pr => pr.barcode === String(barcode) ? { ...pr, qtyInStock: current } : pr));
+                    alert("Stock update failed");
+                }
             } finally {
-                setBusy(false);
+                // optionally silent background refresh for consistency
+                refresh();
             }
         },
         [products, refresh]

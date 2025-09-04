@@ -21,7 +21,7 @@ export async function GET(
 
     const children = await prisma.category.findMany({
         where: { parentId },
-        orderBy: { id: "asc" },
+        orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     });
     return NextResponse.json(children);
 }

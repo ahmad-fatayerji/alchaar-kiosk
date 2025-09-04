@@ -15,10 +15,10 @@ export async function GET() {
                 _count: { select: { children: true } },
                 children: {
                     include: { _count: { select: { children: true } } },
-                    orderBy: { id: "asc" }
+                    orderBy: [{ sortOrder: "asc" }, { id: "asc" }]
                 }
             },
-            orderBy: { id: "asc" }
+            orderBy: [{ sortOrder: "asc" }, { id: "asc" }]
         });
 
         // convert `_count.children` → `hasChildren`  (recursive)
@@ -59,12 +59,21 @@ export async function POST(req: Request) {
 
     // Create category; if it's a subcategory, ensure the parent no longer holds products
     const created = await prisma.$transaction(async (tx) => {
+        // determine next sortOrder within the sibling group
+        const maxSibling = await tx.category.findFirst({
+            where: { parentId: parentId ?? null },
+            orderBy: { sortOrder: "desc" },
+            select: { sortOrder: true },
+        });
+        const nextOrder = (maxSibling?.sortOrder ?? 0) + 1;
+
         const cat = await tx.category.create({
             data: {
                 name,
                 slug: slugify(name),
                 parentId: parentId ?? null,
                 arabicName: arabicName?.trim() || null,
+                sortOrder: nextOrder,
             },
         });
 
