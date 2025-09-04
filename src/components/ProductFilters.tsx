@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useCallback } from "react";
 import { useI18n } from "@/contexts/LangContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -260,95 +260,21 @@ export default function ProductFilters({
             </div>
 
             {/* Price Range */}
-            <div
-              aria-disabled={priceFiltersDisabled}
-              className={
-                priceFiltersDisabled ? "opacity-50 pointer-events-none" : ""
-              }
-            >
-              <Label className="kiosk-label text-base font-semibold mb-3 block">
-                {t("price_range", {
-                  min: filters.priceMin,
-                  max: filters.priceMax,
-                })}
-              </Label>
-              <div className="space-y-4 px-2">
-                <div className="relative h-10 flex items-center">
-                  <div className="absolute inset-x-0 h-2 bg-gray-200 rounded-full" />
-                  <div
-                    className="absolute h-2 bg-[#3da874] rounded-full"
-                    style={{
-                      left: `${
-                        (Math.min(filters.priceMin, filters.priceMax) /
-                          maxPrice) *
-                        100
-                      }%`,
-                      right: `${
-                        100 -
-                        (Math.max(filters.priceMin, filters.priceMax) /
-                          maxPrice) *
-                          100
-                      }%`,
-                    }}
-                  />
-                  <input
-                    type="range"
-                    min={0}
-                    max={maxPrice}
-                    value={Math.min(filters.priceMin, filters.priceMax)}
-                    onChange={(e) =>
-                      updateFilter(
-                        "priceMin",
-                        Math.min(Number(e.target.value), filters.priceMax)
-                      )
-                    }
-                    className="absolute inset-x-0 w-full appearance-none bg-transparent pointer-events-auto"
-                    style={{ WebkitAppearance: "none" as any }}
-                    disabled={priceFiltersDisabled}
-                  />
-                  <input
-                    type="range"
-                    min={0}
-                    max={maxPrice}
-                    value={Math.max(filters.priceMin, filters.priceMax)}
-                    onChange={(e) =>
-                      updateFilter(
-                        "priceMax",
-                        Math.max(Number(e.target.value), filters.priceMin)
-                      )
-                    }
-                    className="absolute inset-x-0 w-full appearance-none bg-transparent pointer-events-auto"
-                    style={{ WebkitAppearance: "none" as any }}
-                    disabled={priceFiltersDisabled}
-                  />
-                </div>
-                <style jsx>{`
-                  input[type="range"]::-webkit-slider-thumb {
-                    -webkit-appearance: none;
-                    appearance: none;
-                    height: 28px;
-                    width: 28px;
-                    background: white;
-                    border: 2px solid #3da874;
-                    border-radius: 9999px;
-                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-                    margin-top: -13px; /* centers on 2px track */
-                  }
-                  input[type="range"]::-moz-range-thumb {
-                    height: 28px;
-                    width: 28px;
-                    background: white;
-                    border: 2px solid #3da874;
-                    border-radius: 9999px;
-                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-                  }
-                `}</style>
-                <div className="flex justify-between text-base text-gray-800 font-semibold">
-                  <span>${formatDigits(filters.priceMin)}</span>
-                  <span>${formatDigits(filters.priceMax)}</span>
-                </div>
-              </div>
-            </div>
+            <PriceRange
+              disabled={priceFiltersDisabled}
+              min={0}
+              max={maxPrice}
+              value={[filters.priceMin, filters.priceMax]}
+              onChange={(lo, hi) => {
+                updateFilter("priceMin", lo);
+                updateFilter("priceMax", hi);
+              }}
+              label={t("price_range", {
+                min: filters.priceMin,
+                max: filters.priceMax,
+              })}
+              format={(v: number) => formatDigits(v)}
+            />
 
             {/* Availability */}
             <div
@@ -404,5 +330,127 @@ export default function ProductFilters({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// Lightweight custom dual-thumb slider for better centering & smoother UX
+type PriceRangeProps = {
+  min: number;
+  max: number;
+  value: [number, number];
+  onChange: (low: number, high: number) => void;
+  disabled?: boolean;
+  label: string;
+  format?: (v: number) => string | number;
+};
+
+function clamp(v: number, a: number, b: number) {
+  return Math.min(Math.max(v, a), b);
+}
+
+const THUMB_SIZE = 28;
+
+function PriceRange({
+  min,
+  max,
+  value,
+  onChange,
+  disabled,
+  label,
+  format,
+}: PriceRangeProps) {
+  const [lo, hi] = value[0] <= value[1] ? value : [value[1], value[0]];
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const activeThumb = useRef<"lo" | "hi" | null>(null);
+  const frame = useRef<number | null>(null);
+
+  const percent = useCallback(
+    (val: number) => ((val - min) / (max - min)) * 100,
+    [min, max]
+  );
+
+  const setVals = useCallback(
+    (nextLo: number, nextHi: number) => {
+      nextLo = Math.round(clamp(nextLo, min, max));
+      nextHi = Math.round(clamp(nextHi, min, max));
+      if (nextLo > nextHi) [nextLo, nextHi] = [nextHi, nextLo];
+      // rAF to avoid flooding React during fast drag
+      if (frame.current) cancelAnimationFrame(frame.current);
+      frame.current = requestAnimationFrame(() => onChange(nextLo, nextHi));
+    },
+    [min, max, onChange]
+  );
+
+  const handlePointerDown = (e: React.PointerEvent, which: "lo" | "hi") => {
+    if (disabled) return;
+    activeThumb.current = which;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!activeThumb.current || disabled) return;
+    if (!trackRef.current) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const x = clamp(e.clientX - rect.left, 0, rect.width);
+    const val = min + (x / rect.width) * (max - min);
+    if (activeThumb.current === "lo") setVals(val, hi);
+    else setVals(lo, val);
+  };
+  const handlePointerUp = (e: React.PointerEvent) => {
+    activeThumb.current = null;
+  };
+
+  const loPct = percent(lo);
+  const hiPct = percent(hi);
+
+  return (
+    <div
+      aria-disabled={disabled}
+      className={disabled ? "opacity-50 pointer-events-none" : ""}
+    >
+      <Label className="kiosk-label text-base font-semibold mb-3 block">
+        {label}
+      </Label>
+      <div className="space-y-4 px-2 select-none">
+        <div
+          ref={trackRef}
+          className="relative h-10 flex items-center"
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+        >
+          <div className="absolute inset-x-0 h-2 bg-gray-200 rounded-full" />
+          <div
+            className="absolute h-2 bg-[#3da874] rounded-full"
+            style={{ left: `${loPct}%`, right: `${100 - hiPct}%` }}
+          />
+          {[["lo", loPct, lo] as const, ["hi", hiPct, hi] as const].map(
+            ([id, pct, val]) => (
+              <button
+                key={id}
+                type="button"
+                onPointerDown={(e) => handlePointerDown(e, id)}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                className="absolute top-1/2 -translate-y-1/2 bg-white border-2 border-[#3da874] rounded-full shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3da874] transition-colors"
+                style={{
+                  width: THUMB_SIZE,
+                  height: THUMB_SIZE,
+                  left: `calc(${pct}% - ${THUMB_SIZE / 2}px)`,
+                }}
+                aria-label={id === "lo" ? "Minimum price" : "Maximum price"}
+                aria-valuemin={min}
+                aria-valuemax={max}
+                aria-valuenow={val}
+                role="slider"
+              />
+            )
+          )}
+        </div>
+        <div className="flex justify-between text-base text-gray-800 font-semibold">
+          <span>${format ? format(lo) : lo}</span>
+          <span>${format ? format(hi) : hi}</span>
+        </div>
+      </div>
+    </div>
   );
 }
