@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/contexts/LangContext";
+import { useKioskSettings } from "@/hooks/useKioskSettings";
+import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 import CategoryCard from "../../components/CategoryCard";
 import Cart from "../../components/Cart";
 import { Package } from "lucide-react";
@@ -20,6 +22,15 @@ export default function BrowsePage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { t, lang } = useI18n();
+  const { idleTimeoutSeconds } = useKioskSettings();
+
+  useIdleTimeout({
+    timeoutMs: idleTimeoutSeconds * 1000,
+    enabled: idleTimeoutSeconds > 0,
+    onTimeout: () => {
+      window.location.href = "/";
+    },
+  });
 
   useEffect(() => {
     // Fetch root categories

@@ -3,14 +3,21 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Eye, EyeOff, Tag, Save } from "lucide-react";
+import { Settings, Eye, EyeOff, Tag, Save, Clock } from "lucide-react";
+import {
+  DEFAULT_IDLE_TIMEOUT_SECONDS,
+  MAX_IDLE_TIMEOUT_SECONDS,
+  parseIdleTimeoutSeconds,
+} from "@/lib/idleTimeout";
 
 type Settings = {
   hide_prices: string;
   sales_enabled: string;
   show_quantities: string;
+  idle_timeout: string;
 };
 
 export default function SettingsPanel() {
@@ -18,19 +25,27 @@ export default function SettingsPanel() {
     hide_prices: "false",
     sales_enabled: "true",
     show_quantities: "false",
+    idle_timeout: String(DEFAULT_IDLE_TIMEOUT_SECONDS),
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [idleMinutes, setIdleMinutes] = useState(0);
+  const [idleSeconds, setIdleSeconds] = useState(0);
 
   // Load settings on mount
   useEffect(() => {
     fetch("/api/settings")
       .then((res) => res.json())
       .then((data) => {
+        const idleTimeoutSeconds = parseIdleTimeoutSeconds(
+          data.idle_timeout ?? data.idle_timeout_seconds,
+          DEFAULT_IDLE_TIMEOUT_SECONDS
+        );
         setSettings({
           hide_prices: data.hide_prices || "false",
           sales_enabled: data.sales_enabled || "true",
           show_quantities: data.show_quantities || "false",
+          idle_timeout: String(idleTimeoutSeconds),
         });
         setLoading(false);
       })
@@ -39,6 +54,14 @@ export default function SettingsPanel() {
         setLoading(false);
       });
   }, []);
+  useEffect(() => {
+    const totalSeconds = parseIdleTimeoutSeconds(
+      settings.idle_timeout,
+      DEFAULT_IDLE_TIMEOUT_SECONDS
+    );
+    setIdleMinutes(Math.floor(totalSeconds / 60));
+    setIdleSeconds(totalSeconds % 60);
+  }, [settings.idle_timeout]);
 
   // If prices are hidden from a previous session, ensure sales are disabled too
   useEffect(() => {
@@ -79,6 +102,27 @@ export default function SettingsPanel() {
     if (key === "hide_prices" && newValue === "true") {
       await updateSetting("sales_enabled", "false");
     }
+  };
+
+  const normalizeIdleTimeout = (minutes: number, seconds: number) => {
+    const safeMinutes = Number.isFinite(minutes) ? Math.max(0, minutes) : 0;
+    const safeSeconds = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+    const total = Math.min(
+      safeMinutes * 60 + safeSeconds,
+      MAX_IDLE_TIMEOUT_SECONDS
+    );
+    return {
+      total,
+      minutes: Math.floor(total / 60),
+      seconds: total % 60,
+    };
+  };
+
+  const saveIdleTimeout = async () => {
+    const normalized = normalizeIdleTimeout(idleMinutes, idleSeconds);
+    setIdleMinutes(normalized.minutes);
+    setIdleSeconds(normalized.seconds);
+    await updateSetting("idle_timeout", String(normalized.total));
   };
 
   if (loading) {
@@ -239,6 +283,57 @@ export default function SettingsPanel() {
                 "Hide"
               ) : (
                 "Show"
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Idle Timeout Setting */}
+        <div className="flex items-center justify-between p-4 border rounded-lg">
+          <div className="flex items-center gap-3">
+            <Clock className="h-5 w-5 text-blue-500" />
+            <div>
+              <Label className="text-base font-medium">Idle Timeout</Label>
+              <p className="text-sm text-muted-foreground">
+                Return to the home screen after inactivity.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                max={Math.floor(MAX_IDLE_TIMEOUT_SECONDS / 60)}
+                value={idleMinutes}
+                onChange={(e) => setIdleMinutes(Number(e.target.value || 0))}
+                className="w-20"
+                disabled={saving === "idle_timeout"}
+              />
+              <span className="text-xs text-muted-foreground">min</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                max={59}
+                value={idleSeconds}
+                onChange={(e) => setIdleSeconds(Number(e.target.value || 0))}
+                className="w-20"
+                disabled={saving === "idle_timeout"}
+              />
+              <span className="text-xs text-muted-foreground">sec</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={saveIdleTimeout}
+              disabled={saving === "idle_timeout"}
+            >
+              {saving === "idle_timeout" ? (
+                <Save className="h-4 w-4 animate-spin" />
+              ) : (
+                "Save"
               )}
             </Button>
           </div>

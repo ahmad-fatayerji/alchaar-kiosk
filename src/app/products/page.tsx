@@ -8,6 +8,7 @@ import ProductFilters, { FilterState } from "@/components/ProductFilters";
 import Cart from "@/components/Cart";
 import OrderSuccess from "@/components/OrderSuccess";
 import { useKioskSettings } from "@/hooks/useKioskSettings";
+import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 import { useI18n } from "@/contexts/LangContext";
 
 type Product = {
@@ -31,8 +32,16 @@ export default function ProductsPage() {
     sortBy: "name",
   });
 
-  const { hidePrices, showQuantities } = useKioskSettings();
+  const { hidePrices, showQuantities, idleTimeoutSeconds } = useKioskSettings();
   const { t, lang, setLang } = useI18n();
+
+  useIdleTimeout({
+    timeoutMs: idleTimeoutSeconds * 1000,
+    enabled: idleTimeoutSeconds > 0,
+    onTimeout: () => {
+      window.location.href = "/";
+    },
+  });
 
   // Calculate max price from products
   const maxPrice = useMemo(() => {
