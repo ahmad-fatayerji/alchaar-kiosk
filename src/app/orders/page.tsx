@@ -55,7 +55,7 @@ export default function OrdersPage() {
     const cleanup = handleOrderUpdate((update) => {
       if (update.type === "new_order") {
         // Only add the order if it's for the currently filtered date
-        if (update.date === dateFilter) {
+        if (dateFilter && update.date === dateFilter) {
           setOrders((prevOrders) => {
             // Check if order already exists to avoid duplicates
             const exists = prevOrders.some(
@@ -102,6 +102,11 @@ export default function OrdersPage() {
   }, [dateFilter, handleOrderUpdate]);
 
   const fetchOrdersByDate = async () => {
+    if (!dateFilter) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const response = await fetch(`/api/orders/by-date?date=${dateFilter}`);
@@ -280,12 +285,13 @@ export default function OrdersPage() {
         <div className="text-center py-8 text-gray-500">Loading orders...</div>
       ) : filteredOrders.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          No orders found for{" "}
-          {formatLebanon(`${dateFilter}T00:00:00`, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          })}
+          {dateFilter
+            ? `No orders found for ${formatLebanon(`${dateFilter}T00:00:00`, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}`
+            : "Select a date to view orders."}
         </div>
       ) : (
         <div className="space-y-2">
