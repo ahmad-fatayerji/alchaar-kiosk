@@ -11,6 +11,7 @@ import Cart from "@/components/Cart";
 import OrderSuccess from "@/components/OrderSuccess";
 import { useI18n } from "@/contexts/LangContext";
 import { useKioskSettings } from "@/hooks/useKioskSettings";
+import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 
 type Category = {
   id: number;
@@ -67,7 +68,15 @@ export default function CategoryPage() {
     availability: "all",
     sortBy: "name",
   });
-  const { hidePrices, showQuantities } = useKioskSettings();
+  const { hidePrices, showQuantities, idleTimeoutSeconds } = useKioskSettings();
+
+  useIdleTimeout({
+    timeoutMs: idleTimeoutSeconds * 1000,
+    enabled: idleTimeoutSeconds > 0,
+    onTimeout: () => {
+      window.location.href = "/";
+    },
+  });
 
   // Calculate max price from products
   const maxPrice = useMemo(() => {
