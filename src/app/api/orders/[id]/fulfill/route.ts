@@ -61,6 +61,11 @@ export async function PATCH(
 
         const items = orderWithItems.items as OrderItemWithProduct[];
 
+        const showQuantitiesSetting = await prisma.setting.findUnique({
+            where: { key: "show_quantities" },
+            select: { value: true },
+        });
+        const showQuantities = showQuantitiesSetting?.value === "true";
         // Check if there's sufficient stock for all items
         const insufficientStock: string[] = [];
         for (const item of items) {
