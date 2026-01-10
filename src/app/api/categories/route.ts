@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import { slugify } from "@/lib/slugify";
 
 /* ------------------------------------------------------------------
@@ -58,25 +59,27 @@ export async function POST(req: Request) {
     }
 
     // Create category; if it's a subcategory, ensure the parent no longer holds products
-    const created = await prisma.$transaction(async (tx) => {
-        const cat = await tx.category.create({
+    const ops: Prisma.PrismaPromise<unknown>[] = [
+        prisma.category.create({
             data: {
                 name,
                 slug: slugify(name),
                 parentId: parentId ?? null,
                 arabicName: arabicName?.trim() || null,
             },
-        });
+        }),
+    ];
 
-        if (parentId != null) {
-            await tx.product.updateMany({
+    if (parentId != null) {
+        ops.push(
+            prisma.product.updateMany({
                 where: { categoryId: parentId },
                 data: { categoryId: null },
-            });
-        }
+            }),
+        );
+    }
 
-        return cat;
-    });
+    const [created] = await prisma.$transaction(ops);
 
     return NextResponse.json(created, { status: 201 });
 }

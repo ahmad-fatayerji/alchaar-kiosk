@@ -21,24 +21,27 @@ export async function POST(req: Request) {
     const productId = BigInt(productBarcode);
     const keep = values.map((v) => v.filterId);
 
-    await prisma.$transaction(async (tx) => {
-        /* delete rows that were cleared in the dialog */
-        await tx.productFilterValue.deleteMany({
-            where: {
-                productId,
-                NOT: { filterId: { in: keep } },
-            },
-        });
-
-        /* upsert the submitted rows */
-        const ups: Prisma.ProductFilterValueUpsertArgs[] = values.map((v) => ({
-            where: { productId_filterId: { productId, filterId: v.filterId } },
-            create: { productId, ...v },
-            update: { ...v },
-        }));
-
-        for (const args of ups) await tx.productFilterValue.upsert(args);
+    /* delete rows that were cleared in the dialog */
+    const deleteOp = prisma.productFilterValue.deleteMany({
+        where: {
+            productId,
+            NOT: { filterId: { in: keep } },
+        },
     });
+
+    /* upsert the submitted rows */
+    const ups: Prisma.ProductFilterValueUpsertArgs[] = values.map((v) => ({
+        where: { productId_filterId: { productId, filterId: v.filterId } },
+        create: { productId, ...v },
+        update: { ...v },
+    }));
+
+    const ops: Prisma.PrismaPromise<unknown>[] = [
+        deleteOp,
+        ...ups.map((args) => prisma.productFilterValue.upsert(args)),
+    ];
+
+    await prisma.$transaction(ops);
 
     return Response.json({ ok: true });
 }

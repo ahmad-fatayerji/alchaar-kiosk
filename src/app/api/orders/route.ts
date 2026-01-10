@@ -1,10 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import { broadcastOrderUpdate } from "@/lib/orderSSE";
+
+type OrderItemInput = { barcode: string; quantity: number };
+type StockProduct = { barcode: bigint; name: string; qtyInStock: number };
+type OrderWithItems = Prisma.OrderGetPayload<{
+    include: { items: { include: { product: true } } };
+}>;
+type OrderItemWithProduct = {
+    product: {
+        barcode: bigint;
+        name: string;
+        price: Prisma.Decimal;
+        salePrice: Prisma.Decimal | null;
+    };
+    qty: number;
+};
 
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json();
+        const body = (await request.json()) as { items?: OrderItemInput[] };
         const { items } = body;
 
         if (!items || !Array.isArray(items) || items.length === 0) {
@@ -25,12 +41,10 @@ export async function POST(request: NextRequest) {
         }
 
         // Check stock availability for all items before creating the order
-        const stockValidation = await prisma.product.findMany({
+        const stockValidation: StockProduct[] = await prisma.product.findMany({
             where: {
                 barcode: {
-                    in: items.map((item: { barcode: string; quantity: number }) =>
-                        BigInt(item.barcode)
-                    ),
+                    in: items.map((item) => BigInt(item.barcode)),
                 },
             },
             select: {
@@ -45,7 +59,7 @@ export async function POST(request: NextRequest) {
         const missingProducts: string[] = [];
 
         for (const item of items) {
-            const product = stockValidation.find(p => p.barcode.toString() === item.barcode);
+            const product = stockValidation.find((p) => p.barcode.toString() === item.barcode);
 
             if (!product) {
                 missingProducts.push(item.barcode);
@@ -106,11 +120,11 @@ export async function POST(request: NextRequest) {
         const orderNumber = `${yearStr}${dayStr}${seqStr}`;
 
         // Create the order with the generated order number
-        const order = await prisma.order.create({
+        const order: OrderWithItems = await prisma.order.create({
             data: {
                 orderNumber,
                 items: {
-                    create: items.map((item: { barcode: string; quantity: number }) => ({
+                    create: items.map((item) => ({
                         productId: BigInt(item.barcode),
                         qty: item.quantity,
                     })),
@@ -126,12 +140,14 @@ export async function POST(request: NextRequest) {
         });
 
         // Format order data for broadcasting
+        const formattedItems = order.items as OrderItemWithProduct[];
         const formattedOrder = {
             id: Number(order.id),
             orderNumber: order.orderNumber || order.id.toString().padStart(4, '0'),
             createdAt: order.createdAt.toISOString(),
             isFulfilled: order.isFulfilled,
-            items: order.items.map((item: any) => ({
+            isCancelled: order.isCancelled,
+            items: formattedItems.map((item) => ({
                 barcode: item.product.barcode.toString(),
                 name: item.product.name,
                 quantity: item.qty,
@@ -175,7 +191,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Convert order number to search for order
-        let order;
+        let order: OrderWithItems | null = null;
 
         // If it's a 3-digit number, search by the last 3 digits (SSS)
         if (orderNumber.length === 3) {
@@ -241,12 +257,14 @@ export async function GET(request: NextRequest) {
         }
 
         // Format the response
+        const formattedItems = order.items as OrderItemWithProduct[];
         const formattedOrder = {
             id: Number(order.id),
             orderNumber: order.orderNumber || order.id.toString().padStart(4, '0'), // Fallback for legacy orders
             createdAt: order.createdAt.toISOString(),
             isFulfilled: order.isFulfilled,
-            items: order.items.map((item: any) => ({
+            isCancelled: order.isCancelled,
+            items: formattedItems.map((item) => ({
                 barcode: item.product.barcode.toString(),
                 name: item.product.name,
                 quantity: item.qty,

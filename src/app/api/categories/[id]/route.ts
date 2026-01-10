@@ -66,7 +66,7 @@ export async function DELETE(
     while (toVisit.length) {
         const batch = toVisit.splice(0, 50);
         allIds.push(...batch);
-        const children = await prisma.category.findMany({
+        const children: Array<{ id: number }> = await prisma.category.findMany({
             where: { parentId: { in: batch } },
             select: { id: true },
         });

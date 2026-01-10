@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 
 type OrderUpdate = {
-    type: 'new_order' | 'order_updated' | 'order_fulfilled' | 'connected' | 'heartbeat';
+    type: 'new_order' | 'order_updated' | 'order_fulfilled' | 'order_cancelled' | 'connected' | 'heartbeat';
     order?: any;
     orderId?: number;
     orderNumber?: string;

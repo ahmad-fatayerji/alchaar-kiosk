@@ -24,6 +24,7 @@ type Order = {
   orderNumber: string;
   createdAt: string;
   isFulfilled: boolean;
+  isCancelled: boolean;
   items: OrderItem[];
 };
 
@@ -171,9 +172,19 @@ export default function OrderEditDialog({
             Edit Order #{order.orderNumber}
             <Badge
               variant={order.isFulfilled ? "default" : "secondary"}
-              className="ml-2"
+              className={`ml-2 ${
+                order.isCancelled
+                  ? "bg-red-600 text-white"
+                  : order.isFulfilled
+                    ? "bg-green-600 text-white"
+                    : "bg-yellow-500 text-white"
+              }`}
             >
-              {order.isFulfilled ? "Fulfilled" : "Pending"}
+              {order.isCancelled
+                ? "Cancelled"
+                : order.isFulfilled
+                  ? "Fulfilled"
+                  : "Pending"}
             </Badge>
           </DialogTitle>
         </DialogHeader>

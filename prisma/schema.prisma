@@ -6,7 +6,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 /**
@@ -123,9 +122,11 @@ model Order {
   orderNumber String?     @unique // Daily reset format: MMDD (nullable for migration)
   createdAt   DateTime    @default(now())
   isFulfilled Boolean     @default(false)
+  isCancelled Boolean     @default(false)
   items       OrderItem[]
 
   @@index([isFulfilled])
+  @@index([isCancelled])
   @@index([orderNumber])
 }
 
