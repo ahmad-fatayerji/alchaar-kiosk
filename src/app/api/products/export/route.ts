@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import * as XLSX from "xlsx";
 
 /* GET /api/products/export
    Streams an Excel file with all products. */
 export async function GET() {
-    const rows = await prisma.product.findMany({
+    const rows: Array<{
+        barcode: bigint;
+        name: string;
+        qtyInStock: number;
+        price: Prisma.Decimal;
+    }> = await prisma.product.findMany({
         select: { barcode: true, name: true, qtyInStock: true, price: true },
         orderBy: { barcode: "asc" },
     });

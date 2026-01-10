@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import { slugify } from "@/lib/slugify";
 
 /* ------------------------------------------------------------------
@@ -75,17 +76,19 @@ export async function POST(req: Request) {
                 arabicName: arabicName?.trim() || null,
                 sortOrder: nextOrder,
             },
-        });
+        }),
+    ];
 
-        if (parentId != null) {
-            await tx.product.updateMany({
+    if (parentId != null) {
+        ops.push(
+            prisma.product.updateMany({
                 where: { categoryId: parentId },
                 data: { categoryId: null },
-            });
-        }
+            }),
+        );
+    }
 
-        return cat;
-    });
+    const [created] = await prisma.$transaction(ops);
 
     return NextResponse.json(created, { status: 201 });
 }

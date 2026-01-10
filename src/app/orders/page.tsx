@@ -29,6 +29,7 @@ type Order = {
   orderNumber: string;
   createdAt: string;
   isFulfilled: boolean;
+  isCancelled: boolean;
   items: OrderItem[];
 };
 
@@ -92,6 +93,14 @@ export default function OrdersPage() {
           prevOrders.map((order) =>
             order.id === update.orderId
               ? { ...order, isFulfilled: true }
+              : order
+          )
+        );
+      } else if (update.type === "order_cancelled") {
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === update.order?.id
+              ? { ...order, isCancelled: true }
               : order
           )
         );
@@ -172,6 +181,37 @@ export default function OrdersPage() {
   const handleEditOrder = (order: Order) => {
     setSelectedOrder(order);
     setEditDialogOpen(true);
+  };
+
+  const handleCancelOrder = async (orderId: number) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this order?"
+    );
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`/api/orders/${orderId}/cancel`, {
+        method: "PATCH",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === orderId
+              ? { ...order, isCancelled: true, ...result.order }
+              : order
+          )
+        );
+        alert("Order cancelled successfully!");
+      } else {
+        const error = await response.json();
+        alert(`Error cancelling order: ${error.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      alert("Failed to cancel order. Please try again.");
+    }
   };
 
   const handleOrderUpdated = (updatedOrder: Order) => {
@@ -299,6 +339,7 @@ export default function OrdersPage() {
             const { prefix, suffix } = formatOrderNumber(order.orderNumber);
             const isExpanded = expandedOrders.has(order.id);
             const isNewOrder = newOrderIds.has(order.id);
+            const isPending = !order.isFulfilled && !order.isCancelled;
 
             return (
               <Card
@@ -336,12 +377,18 @@ export default function OrdersPage() {
                       <Badge
                         variant="secondary"
                         className={
-                          order.isFulfilled
-                            ? "bg-green-600 text-white hover:bg-green-700"
-                            : "bg-yellow-500 text-white hover:bg-yellow-600"
+                          order.isCancelled
+                            ? "bg-red-600 text-white hover:bg-red-700"
+                            : order.isFulfilled
+                              ? "bg-green-600 text-white hover:bg-green-700"
+                              : "bg-yellow-500 text-white hover:bg-yellow-600"
                         }
                       >
-                        {order.isFulfilled ? "Fulfilled" : "Pending"}
+                        {order.isCancelled
+                          ? "Cancelled"
+                          : order.isFulfilled
+                            ? "Fulfilled"
+                            : "Pending"}
                       </Badge>
                     </div>
 
@@ -450,7 +497,7 @@ export default function OrdersPage() {
                           </div>
 
                           <div className="flex items-center gap-3">
-                            {!order.isFulfilled && (
+                            {isPending && (
                               <Button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -465,7 +512,7 @@ export default function OrdersPage() {
                               </Button>
                             )}
 
-                            {!order.isFulfilled && (
+                            {isPending && (
                               <Button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -475,6 +522,20 @@ export default function OrdersPage() {
                                 className="bg-green-500 hover:bg-green-600 text-white font-medium"
                               >
                                 Mark Fulfilled
+                              </Button>
+                            )}
+
+                            {isPending && (
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCancelOrder(order.id);
+                                }}
+                                size="sm"
+                                variant="outline"
+                                className="border-red-200 text-red-600 hover:bg-red-50"
+                              >
+                                Cancel Order
                               </Button>
                             )}
                           </div>

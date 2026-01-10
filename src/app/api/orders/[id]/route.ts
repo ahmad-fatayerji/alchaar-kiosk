@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import { broadcastOrderUpdate } from "@/lib/orderSSE";
+
+type OrderWithItems = Prisma.OrderGetPayload<{
+    include: { items: { include: { product: true } } };
+}>;
+type OrderItemWithProduct = {
+    productId: bigint;
+    qty: number;
+    product?: {
+        name: string;
+        price: Prisma.Decimal;
+        salePrice: Prisma.Decimal | null;
+    } | null;
+};
 
 export async function GET(
     request: NextRequest,
@@ -17,7 +31,7 @@ export async function GET(
             );
         }
 
-        const order = await prisma.order.findUnique({
+        const order: OrderWithItems | null = await prisma.order.findUnique({
             where: { id: orderId },
             include: {
                 items: {
@@ -35,12 +49,15 @@ export async function GET(
             );
         }
 
+        const items = order.items as OrderItemWithProduct[];
+
         return NextResponse.json({
             id: Number(order.id),
             orderNumber: order.orderNumber,
             createdAt: order.createdAt.toISOString(),
             isFulfilled: order.isFulfilled,
-            items: order.items.map((item) => ({
+            isCancelled: order.isCancelled,
+            items: items.map((item) => ({
                 barcode: item.productId.toString(),
                 name: item.product?.name || "Unknown Product",
                 quantity: item.qty,
@@ -91,6 +108,13 @@ export async function PATCH(
             );
         }
 
+        if (existingOrder.isCancelled) {
+            return NextResponse.json(
+                { error: "Cannot edit cancelled orders" },
+                { status: 400 }
+            );
+        }
+
         const body = await request.json();
         const { items } = body;
 
@@ -112,23 +136,18 @@ export async function PATCH(
         }
 
         // Update order items using a transaction
-        const updatedOrder = await prisma.$transaction(async (tx) => {
-            // Delete existing order items
-            await tx.orderItem.deleteMany({
+        const ops: Prisma.PrismaPromise<unknown>[] = [
+            prisma.orderItem.deleteMany({
                 where: { orderId: orderId },
-            });
-
-            // Create new order items
-            const orderItems = await tx.orderItem.createMany({
+            }),
+            prisma.orderItem.createMany({
                 data: items.map((item: { barcode: string; quantity: number }) => ({
                     orderId: orderId,
                     productId: BigInt(item.barcode),
                     qty: item.quantity,
                 })),
-            });
-
-            // Return updated order with items
-            return await tx.order.findUnique({
+            }),
+            prisma.order.findUnique({
                 where: { id: orderId },
                 include: {
                     items: {
@@ -137,16 +156,28 @@ export async function PATCH(
                         },
                     },
                 },
-            });
-        });
+            }),
+        ];
+
+        const results = await prisma.$transaction(ops);
+        const updatedOrder = results[2] as OrderWithItems | null;
+
+        if (!updatedOrder) {
+            return NextResponse.json(
+                { error: "Order not found" },
+                { status: 404 }
+            );
+        }
 
         // Format the updated order for response and broadcasting
+        const formattedItems = updatedOrder.items as OrderItemWithProduct[];
         const formattedOrder = {
-            id: Number(updatedOrder!.id),
-            orderNumber: updatedOrder!.orderNumber,
-            createdAt: updatedOrder!.createdAt.toISOString(),
-            isFulfilled: updatedOrder!.isFulfilled,
-            items: updatedOrder!.items.map((item) => ({
+            id: Number(updatedOrder.id),
+            orderNumber: updatedOrder.orderNumber,
+            createdAt: updatedOrder.createdAt.toISOString(),
+            isFulfilled: updatedOrder.isFulfilled,
+            isCancelled: updatedOrder.isCancelled,
+            items: formattedItems.map((item) => ({
                 barcode: item.productId.toString(),
                 name: item.product?.name || "Unknown Product",
                 quantity: item.qty,

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 
 /* ────────── POST /api/products/bulk-sale ────────── */
 export async function POST(req: Request) {
@@ -35,7 +36,8 @@ export async function POST(req: Request) {
             }
 
             // Get all products to calculate their new sale prices
-            const products = await prisma.product.findMany({
+            const products: Array<{ barcode: bigint; price: Prisma.Decimal }> =
+                await prisma.product.findMany({
                 where: {
                     barcode: {
                         in: barcodes.map(b => BigInt(b))
@@ -44,12 +46,12 @@ export async function POST(req: Request) {
                 select: {
                     barcode: true,
                     price: true
-                }
+                },
             });
 
             // Calculate new sale prices and update each product individually
             const multiplier = (100 - percentage) / 100;
-            const updatePromises = products.map(product => {
+            const updatePromises = products.map((product) => {
                 const originalPrice = Number(product.price);
                 const newSalePrice = Math.round(originalPrice * multiplier * 100) / 100; // Round to 2 decimal places
 
