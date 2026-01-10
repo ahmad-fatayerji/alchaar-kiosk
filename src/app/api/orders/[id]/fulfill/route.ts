@@ -51,7 +51,6 @@ export async function PATCH(
                 { status: 400 }
             );
         }
-
         if (orderWithItems.isCancelled) {
             return NextResponse.json(
                 { error: "Cannot fulfill a cancelled order" },
@@ -70,7 +69,11 @@ export async function PATCH(
         const insufficientStock: string[] = [];
         for (const item of items) {
             if (item.product.qtyInStock < item.qty) {
-                insufficientStock.push(`${item.product.name} (Available: ${item.product.qtyInStock}, Required: ${item.qty})`);
+                insufficientStock.push(
+                    showQuantities
+                        ? `${item.product.name} (Available: ${item.product.qtyInStock}, Required: ${item.qty})`
+                        : item.product.name
+                );
             }
         }
 

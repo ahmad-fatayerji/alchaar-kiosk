@@ -40,6 +40,12 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        const showQuantitiesSetting = await prisma.setting.findUnique({
+            where: { key: "show_quantities" },
+            select: { value: true },
+        });
+        const showQuantities = showQuantitiesSetting?.value === "true";
+
         // Check stock availability for all items before creating the order
         const stockValidation: StockProduct[] = await prisma.product.findMany({
             where: {
@@ -65,7 +71,9 @@ export async function POST(request: NextRequest) {
                 missingProducts.push(item.barcode);
             } else if (product.qtyInStock < item.quantity) {
                 insufficientStock.push(
-                    `${product.name} (Available: ${product.qtyInStock}, Requested: ${item.quantity})`
+                    showQuantities
+                        ? `${product.name} (Available: ${product.qtyInStock}, Requested: ${item.quantity})`
+                        : product.name
                 );
             }
         }
