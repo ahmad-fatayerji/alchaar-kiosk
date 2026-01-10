@@ -4,8 +4,15 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Settings, Eye, EyeOff, Tag, Save, Clock } from "lucide-react";
+import {
+  DEFAULT_IDLE_TIMEOUT_SECONDS,
+  MAX_IDLE_TIMEOUT_SECONDS,
+  parseIdleTimeoutSeconds,
+} from "@/lib/idleTimeout";
 import { Settings, Eye, EyeOff, Tag, Save, Clock } from "lucide-react";
 import {
   DEFAULT_IDLE_TIMEOUT_SECONDS,
@@ -18,6 +25,7 @@ type Settings = {
   sales_enabled: string;
   show_quantities: string;
   idle_timeout: string;
+  idle_timeout: string;
 };
 
 export default function SettingsPanel() {
@@ -26,7 +34,6 @@ export default function SettingsPanel() {
     sales_enabled: "true",
     show_quantities: "false",
     idle_timeout: String(DEFAULT_IDLE_TIMEOUT_SECONDS),
-    inactivity_timeout_ms: "60000",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
