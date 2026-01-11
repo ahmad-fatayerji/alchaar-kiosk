@@ -276,7 +276,7 @@ export default function CategoryPage() {
   }
 
   return (
-    <div className="kiosk-viewport min-h-screen bg-gradient-to-b from-green-50 to-white">
+    <div className="products-page kiosk-viewport min-h-screen bg-gradient-to-b from-green-50 to-white">
       {/* Header */}
       <div className="bg-white border-b border-green-200 kiosk-header-static">
         <div className="container mx-auto px-4 py-3 kiosk-text kiosk-portrait:py-6">
