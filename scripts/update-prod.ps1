@@ -23,6 +23,14 @@ docker compose --env-file $EnvFile -f $composeFile pull
 
 docker compose --env-file $EnvFile -f $composeFile up -d --build
 
+# Run migrations in the app container (build DATABASE_URL from POSTGRES_* inside container)
+Write-Host "Running Prisma migrations..." -ForegroundColor Yellow
+docker compose --env-file $EnvFile -f $composeFile exec app sh -lc 'DATABASE_URL="postgresql://${POSTGRES_USER:-kiosk}:${POSTGRES_PASSWORD:-secret}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-pharmacy}?schema=public" npx prisma migrate deploy'
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Prisma migrate deploy failed. Aborting update." -ForegroundColor Red
+    exit 1
+}
+
 # Cleanup old images
-Write-Host "Pruning unused images (optional)..." -ForegroundColor Yellow
+Write-Host "Pruning unused images (optional)..." -ForegroundColor Yellow        
 docker image prune -f

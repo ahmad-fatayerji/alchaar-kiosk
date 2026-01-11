@@ -14,6 +14,7 @@ RUN npm ci --production=false
 COPY . .
 # Ensure required public subfolders exist even if empty in git
 RUN mkdir -p public public/categories public/products
+ENV DATABASE_URL=postgresql://kiosk:secret@localhost:5432/pharmacy?schema=public
 RUN npx prisma generate
 RUN npm run build
 
@@ -34,6 +35,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY docker/entrypoint.sh ./docker/entrypoint.sh
 
 # Ensure entrypoint is executable

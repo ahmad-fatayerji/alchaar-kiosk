@@ -26,9 +26,12 @@ services:
 
   app:
     image: ${APP_IMAGE:-ghcr.io/ahmad-fatayerji/alchaar-kiosk:latest}
+    build:
+      context: .
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-kiosk}:${POSTGRES_PASSWORD:-secret}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-pharmacy}?schema=public}
       POSTGRES_USER: ${POSTGRES_USER:-kiosk}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
       POSTGRES_DB: ${POSTGRES_DB:-pharmacy}
@@ -46,7 +49,6 @@ services:
     volumes:
       - productsdata:/app/public/products
       - categoriesdata:/app/public/categories
-      - ./docker/entrypoint.sh:/app/docker/entrypoint.sh:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 30s
