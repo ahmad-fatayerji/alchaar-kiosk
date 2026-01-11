@@ -36,6 +36,7 @@ export default function Cart({ onCheckout }: CartProps) {
     {}
   );
   const { t, formatDigits, formatPrice } = useI18n();
+  const totalItems = getTotalItems();
   const hasAskForPriceItem = !hidePrices
     ? state.items.some((item) => {
         const hasSale =
@@ -50,8 +51,13 @@ export default function Cart({ onCheckout }: CartProps) {
   type FabDock = { side: "left" | "right"; y: number };
   const [fabDock, setFabDock] = useState<FabDock | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showAddToast, setShowAddToast] = useState(false);
+  const [pulseBadge, setPulseBadge] = useState(false);
   const dragBtnRef = useRef<HTMLButtonElement | null>(null);
   const pointerOffsetRef = useRef<number>(0); // offset inside button for smooth vertical drag
+  const prevTotalRef = useRef(totalItems);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pulseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load saved FAB dock (backwards compatibility with old free-float format)
   useEffect(() => {
@@ -179,6 +185,41 @@ export default function Cart({ onCheckout }: CartProps) {
     loadSettings();
   }, [state.isOpen, state.items.length]);
 
+  useEffect(() => {
+    const prevTotal = prevTotalRef.current;
+    if (totalItems > prevTotal) {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+      if (pulseTimeoutRef.current) {
+        clearTimeout(pulseTimeoutRef.current);
+      }
+      setShowAddToast(false);
+      setPulseBadge(false);
+      requestAnimationFrame(() => {
+        setShowAddToast(true);
+        setPulseBadge(true);
+      });
+      toastTimeoutRef.current = setTimeout(() => {
+        setShowAddToast(false);
+      }, 1400);
+      pulseTimeoutRef.current = setTimeout(() => {
+        setPulseBadge(false);
+      }, 700);
+    }
+    prevTotalRef.current = totalItems;
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+        toastTimeoutRef.current = null;
+      }
+      if (pulseTimeoutRef.current) {
+        clearTimeout(pulseTimeoutRef.current);
+        pulseTimeoutRef.current = null;
+      }
+    };
+  }, [totalItems]);
+
   const handleQuantityUpdate = (barcode: string, newQuantity: number) => {
     const stockQty = productStocks[barcode];
     updateQuantity(barcode, newQuantity, stockQty, showQuantities);
@@ -246,12 +287,21 @@ export default function Cart({ onCheckout }: CartProps) {
           className="bg-[#3da874] hover:bg-[#2d7a56] text-white rounded-full relative h-14 w-14 p-0 flex items-center justify-center shadow-xl transition-all kiosk-portrait:h-[6rem] kiosk-portrait:w-[6rem] kiosk-portrait:border-4 kiosk-portrait:border-white/30 kiosk-portrait:shadow-2xl kiosk-portrait:shadow-black/30"
         >
           <ShoppingCart className="h-7 w-7 kiosk-portrait:h-[3rem] kiosk-portrait:w-[3rem]" />
-          {getTotalItems() > 0 && (
-            <Badge className="cart-badge absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[1.5rem] h-6 rounded-full flex items-center justify-center kiosk-portrait:-top-2.5 kiosk-portrait:-right-2.5 kiosk-portrait:text-lg kiosk-portrait:min-w-[2.4rem] kiosk-portrait:h-[2.4rem] kiosk-portrait:rounded-full kiosk-portrait:px-1.5 kiosk-portrait:font-bold kiosk-portrait:tracking-tight">
-              {formatDigits(getTotalItems())}
+          {totalItems > 0 && (
+            <Badge
+              className={`cart-badge absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[1.5rem] h-6 rounded-full flex items-center justify-center kiosk-portrait:-top-2.5 kiosk-portrait:-right-2.5 kiosk-portrait:text-lg kiosk-portrait:min-w-[2.4rem] kiosk-portrait:h-[2.4rem] kiosk-portrait:rounded-full kiosk-portrait:px-1.5 kiosk-portrait:font-bold kiosk-portrait:tracking-tight ${
+                pulseBadge ? "cart-badge-bump" : ""
+              }`}
+            >
+              {formatDigits(totalItems)}
             </Badge>
           )}
         </Button>
+        {showAddToast && (
+          <div className="cart-fab-toast" role="status" aria-live="polite">
+            {t("added_to_cart")}
+          </div>
+        )}
       </div>
     );
   }
@@ -431,7 +481,7 @@ export default function Cart({ onCheckout }: CartProps) {
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center justify-between mb-4 kiosk-portrait:mb-[2.4rem]">
                   <div className="text-lg font-semibold md:text-xl kiosk-portrait:text-[clamp(2rem,1.5vw,2.6rem)]">
-                    {t("total_items")}: {formatDigits(getTotalItems())}
+                    {t("total_items")}: {formatDigits(totalItems)}
                   </div>
                   <div className="cart-total text-2xl font-bold text-[#3da874] md:text-[1.9rem] kiosk-portrait:text-[clamp(3rem,2.2vw,3.8rem)]">
                     {hasAskForPriceItem

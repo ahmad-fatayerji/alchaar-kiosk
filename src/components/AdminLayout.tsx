@@ -7,12 +7,19 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
+type AdminTabItem = {
+  id: "categories" | "filters" | "products" | "settings";
+  label: string;
+  icon: typeof FolderTree;
+  disabled?: boolean;
+};
+
 export const adminTabs = [
-  { id: "categories", label: "Categories", icon: FolderTree },
+  { id: "categories", label: "Categories", icon: FolderTree, disabled: false },
   { id: "filters", label: "Filters", icon: Tags, disabled: true },
-  { id: "products", label: "Products", icon: Package },
-  { id: "settings", label: "Settings", icon: Settings },
-] as const;
+  { id: "products", label: "Products", icon: Package, disabled: false },
+  { id: "settings", label: "Settings", icon: Settings, disabled: false },
+] as const satisfies readonly AdminTabItem[];
 
 export type Tab = (typeof adminTabs)[number]["id"];
 
