@@ -15,6 +15,7 @@ import {
 import OrderEditDialog from "@/components/OrderEditDialog";
 import { useOrderUpdates } from "@/hooks/useOrderUpdates";
 import { todayInLebanonYMD, formatLebanon } from "@/lib/time";
+import { useMessages } from "@/contexts/MessageContext";
 
 type OrderItem = {
   barcode: string;
@@ -46,6 +47,7 @@ export default function OrdersPage() {
   const [newOrderIds, setNewOrderIds] = useState<Set<number>>(new Set());
 
   const { isConnected, handleOrderUpdate } = useOrderUpdates(dateFilter);
+  const { notify, confirm } = useMessages();
 
   useEffect(() => {
     fetchOrdersByDate();
@@ -156,25 +158,37 @@ export default function OrdersPage() {
             )
             .join("\n");
 
-          alert(
-            `Order fulfilled successfully!\n\nStock updates:\n${updateSummary}`
-          );
+          notify({
+            title: "Order fulfilled",
+            message: `Stock updates:\n${updateSummary}`,
+            variant: "success",
+            duration: 9000,
+          });
         } else {
-          alert("Order fulfilled successfully!");
+          notify({ message: "Order fulfilled successfully!", variant: "success" });
         }
       } else {
         const error = await response.json();
         if (error.error === "Insufficient stock") {
-          alert(
-            `Cannot fulfill order:\n\n${error.message}\n\nPlease check inventory and try again.`
-          );
+          notify({
+            title: "Cannot fulfill order",
+            message: `${error.message}\n\nPlease check inventory and try again.`,
+            variant: "error",
+            duration: 9000,
+          });
         } else {
-          alert(`Error fulfilling order: ${error.error || "Unknown error"}`);
+          notify({
+            message: `Error fulfilling order: ${error.error || "Unknown error"}`,
+            variant: "error",
+          });
         }
       }
     } catch (error) {
       console.error("Error fulfilling order:", error);
-      alert("Failed to fulfill order. Please try again.");
+      notify({
+        message: "Failed to fulfill order. Please try again.",
+        variant: "error",
+      });
     }
   };
 
@@ -184,9 +198,11 @@ export default function OrdersPage() {
   };
 
   const handleCancelOrder = async (orderId: number) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to cancel this order?"
-    );
+    const confirmed = await confirm({
+      message: "Are you sure you want to cancel this order?",
+      confirmLabel: "Cancel order",
+      confirmVariant: "destructive",
+    });
     if (!confirmed) return;
 
     try {
@@ -203,14 +219,20 @@ export default function OrdersPage() {
               : order
           )
         );
-        alert("Order cancelled successfully!");
+        notify({ message: "Order cancelled successfully!", variant: "success" });
       } else {
         const error = await response.json();
-        alert(`Error cancelling order: ${error.error || "Unknown error"}`);
+        notify({
+          message: `Error cancelling order: ${error.error || "Unknown error"}`,
+          variant: "error",
+        });
       }
     } catch (error) {
       console.error("Error cancelling order:", error);
-      alert("Failed to cancel order. Please try again.");
+      notify({
+        message: "Failed to cancel order. Please try again.",
+        variant: "error",
+      });
     }
   };
 

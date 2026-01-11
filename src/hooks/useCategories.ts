@@ -1,9 +1,10 @@
-/* ------------------------------------------------------------------ */
+﻿/* ------------------------------------------------------------------ */
 /* src/hooks/useCategories.ts                                         */
 /* ------------------------------------------------------------------ */
 "use client";
 
 import { useCallback, useState } from "react";
+import { useMessages } from "@/contexts/MessageContext";
 
 /* ---------- shared Category shape -------------------------------- */
 export type Category = {
@@ -23,6 +24,7 @@ export type Category = {
 export function useCategories() {
     const [tree, setTree] = useState<Category[]>([]);
     const [busyIds, setBusyIds] = useState<Set<number>>(new Set());
+    const { notify } = useMessages();
 
     /* ---- helper: fetch root list ----------------------------------- */
     const loadRoot = useCallback(async () => {
@@ -76,10 +78,13 @@ export function useCategories() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ parentId, name, arabicName }),
             });
-            if (!res.ok) return alert("Create category failed");
+            if (!res.ok) {
+                notify({ message: "Create category failed", variant: "error" });
+                return;
+            }
             await loadRoot();                     // always re-fetch for consistency
         },
-        [loadRoot],
+        [loadRoot, notify],
     );
 
     const rename = useCallback(
@@ -91,7 +96,7 @@ export function useCategories() {
             });
             await loadRoot();                     // ⬅️  re-fetch for consistency
         },
-        [loadRoot],
+        [loadRoot, notify],
     );
 
     const remove = useCallback(
@@ -99,7 +104,7 @@ export function useCategories() {
             await fetch(`/api/categories/${cat.id}`, { method: "DELETE" });
             await loadRoot();                     // ⬅️  re-fetch after delete
         },
-        [loadRoot],
+        [loadRoot, notify],
     );
 
     /* ---- reorder siblings ---------------------------------------- */
@@ -152,7 +157,7 @@ export function useCategories() {
                 body: JSON.stringify({ parentId, orderedIds }),
             });
             if (!res.ok) {
-                alert('Reorder failed');
+                notify({ message: "Reorder failed", variant: "error" });
                 await loadRoot(); // fallback full refresh
             }
         },
@@ -181,3 +186,4 @@ export function useCategories() {
         reorder,
     };
 }
+

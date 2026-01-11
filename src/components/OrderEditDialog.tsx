@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Minus, X, Search } from "lucide-react";
+import { useMessages } from "@/contexts/MessageContext";
 
 type OrderItem = {
   barcode: string;
@@ -53,6 +54,7 @@ export default function OrderEditDialog({
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { notify } = useMessages();
 
   useEffect(() => {
     if (order) {
@@ -146,11 +148,11 @@ export default function OrderEditDialog({
         onClose();
       } else {
         const error = await response.json();
-        alert(`Error: ${error.error}`);
+        notify({ message: `Error: ${error.error}`, variant: "error" });
       }
     } catch (error) {
       console.error("Error saving order:", error);
-      alert("Failed to save changes");
+      notify({ message: "Failed to save changes", variant: "error" });
     }
     setSaving(false);
   };

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, X, Plus, Minus, Trash2, CreditCard } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useI18n } from "@/contexts/LangContext";
+import { useMessages } from "@/contexts/MessageContext";
 
 type CartProps = {
   onCheckout?: (orderNumber: string) => void;
@@ -36,6 +37,7 @@ export default function Cart({ onCheckout }: CartProps) {
     {}
   );
   const { t, formatDigits, formatPrice } = useI18n();
+  const { notify } = useMessages();
   const totalItems = getTotalItems();
   const hasAskForPriceItem = !hidePrices
     ? state.items.some((item) => {
@@ -252,20 +254,29 @@ export default function Cart({ onCheckout }: CartProps) {
       } else {
         const error = await response.json();
         if (error.error === "Insufficient stock for some items") {
-          alert(
-            `Cannot place order:\n\n${error.message}\n\nPlease adjust quantities and try again.`
-          );
+          notify({
+            title: "Cannot place order",
+            message: `${error.message}\n\nPlease adjust quantities and try again.`,
+            variant: "error",
+            duration: 9000,
+          });
         } else if (error.error === "Some products do not exist") {
-          alert(
-            `Some products in your cart are no longer available. Please remove unavailable items and try again.`
-          );
+          notify({
+            message:
+              "Some products in your cart are no longer available. Please remove unavailable items and try again.",
+            variant: "error",
+            duration: 9000,
+          });
         } else {
-          alert(`Failed to create order: ${error.error || "Unknown error"}`);
+          notify({
+            message: `Failed to create order: ${error.error || "Unknown error"}`,
+            variant: "error",
+          });
         }
       }
     } catch (error) {
       console.error("Error creating order:", error);
-      alert("Failed to create order. Please try again.");
+      notify({ message: "Failed to create order. Please try again.", variant: "error" });
     } finally {
       setIsProcessing(false);
     }

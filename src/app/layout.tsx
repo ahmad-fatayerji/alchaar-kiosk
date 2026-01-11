@@ -3,6 +3,7 @@ import "@/app/global.css";
 import type { Metadata } from "next";
 import { CartProvider } from "@/contexts/CartContext";
 import { LanguageProvider } from "@/contexts/LangContext";
+import { MessageProvider } from "@/contexts/MessageContext";
 import { Roboto } from "next/font/google";
 import KioskBoot from "@/components/KioskBoot";
 import LangToggleHost from "@/components/LangToggleHost";
@@ -37,12 +38,14 @@ export default function RootLayout({
       </head>
       <body>
         <LanguageProvider>
-          <CartProvider>
-            <KioskBoot />
-            <LangToggleHost />
-            <InactivityReset />
-            {children}
-          </CartProvider>
+          <MessageProvider>
+            <CartProvider>
+              <KioskBoot />
+              <LangToggleHost />
+              <InactivityReset />
+              {children}
+            </CartProvider>
+          </MessageProvider>
         </LanguageProvider>
       </body>
     </html>

@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useMessages } from "@/contexts/MessageContext";
 
 type Props = {
   search: string;
@@ -65,6 +66,7 @@ export default function ProductsToolbar({
   const [conflictOpen, setConflictOpen] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
+  const { notify } = useMessages();
 
   async function runImport(
     file: File,
@@ -82,7 +84,10 @@ export default function ProductsToolbar({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(`Import failed (${res.status}): ${j.error || "unknown error"}`);
+        notify({
+          message: `Import failed (${res.status}): ${j.error || "unknown error"}`,
+          variant: "error",
+        });
         return;
       }
       const summary = await res.json();
