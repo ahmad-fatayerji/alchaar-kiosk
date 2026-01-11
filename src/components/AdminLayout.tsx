@@ -7,14 +7,14 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
-const tabs = [
+export const adminTabs = [
   { id: "categories", label: "Categories", icon: FolderTree },
-  { id: "filters", label: "Filters", icon: Tags },
+  { id: "filters", label: "Filters", icon: Tags, disabled: true },
   { id: "products", label: "Products", icon: Package },
   { id: "settings", label: "Settings", icon: Settings },
 ] as const;
 
-export type Tab = (typeof tabs)[number]["id"];
+export type Tab = (typeof adminTabs)[number]["id"];
 
 export default function AdminLayout({
   tab,
@@ -39,7 +39,9 @@ export default function AdminLayout({
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
-          {tabs.map(({ id, label, icon: Icon }) => (
+          {adminTabs
+            .filter((item) => !item.disabled)
+            .map(({ id, label, icon: Icon }) => (
             <Button
               key={id}
               variant={id === tab ? "default" : "ghost"}
