@@ -46,10 +46,10 @@ function Ensure-Env([string]$envFile) {
     }
 }
 
-function Run-Compose([string]$envFile, [string[]]$args) {
+function Run-Compose([string]$envFile, [string[]]$composeArgs) {
     $compose = Get-ComposePath
     $envPath = Get-EnvPath $envFile
-    $cmd = @('compose', '--env-file', $envPath, '-f', $compose) + $args
+    $cmd = @('compose', '--env-file', $envPath, '-f', $compose) + $composeArgs
     Write-Host "> docker $($cmd -join ' ')" -ForegroundColor DarkGray
     docker @cmd
 }
@@ -88,24 +88,51 @@ function Backup-DB([string]$envFile) {
 
 function Restore-DB([string]$envFile) {
     Ensure-Docker; Ensure-Env $envFile
-    # List backups inside the docker volume
-    try {
-        $list = Run-Compose $envFile @('exec', '-T', 'db', 'bash', '-lc', 'ls -1 /backups') | Where-Object { $_ -ne '' }
+    Write-Host "Restore source:" -ForegroundColor White
+    Write-Host "  1) From backups volume (list)"
+    Write-Host "  2) From file path (.sql or .sql.gz)"
+    $source = Read-Host "Choose restore source (1/2)"
+    $backupName = $null
+
+    if ($source -eq '1') {
+        try {
+            $list = Run-Compose $envFile @('exec', '-T', 'db', 'bash', '-lc', 'ls -1 /backups 2>/dev/null') | Where-Object { $_ -ne '' }
+        }
+        catch {
+            $list = @()
+        }
+        if (-not $list -or $list.Count -eq 0) {
+            Write-Host "No backups found in the 'backups' volume. Copy a file there or create a backup first." -ForegroundColor Yellow
+            return
+        }
+        Write-Host "Available backups:" -ForegroundColor Cyan
+        for ($i = 0; $i -lt $list.Count; $i++) {
+            Write-Host ("[{0}] {1}" -f ($i + 1), $list[$i])
+        }
+        $choice = Read-Host "Enter the number to restore"
+        if (-not [int]::TryParse($choice, [ref]$null)) { Write-Host "Invalid selection." -ForegroundColor Red; return }
+        $index = [int]$choice - 1
+        if ($index -lt 0 -or $index -ge $list.Count) { Write-Host "Out of range." -ForegroundColor Red; return }
+        $backupName = $list[$index]
     }
-    catch {
-        $list = @()
+    elseif ($source -eq '2') {
+        $path = Read-Host "Enter full path to backup file"
+        $path = $path.Trim()
+        if (($path.StartsWith('"') -and $path.EndsWith('"')) -or ($path.StartsWith("'") -and $path.EndsWith("'"))) {
+            $path = $path.Substring(1, $path.Length - 2)
+        }
+        if ([string]::IsNullOrWhiteSpace($path)) { Write-Host "Cancelled." -ForegroundColor Yellow; return }
+        if (-not (Test-Path $path)) { Write-Host "File not found: $path" -ForegroundColor Red; return }
+        $backupName = Split-Path $path -Leaf
+        Write-Host "Copying $backupName to backups volume..." -ForegroundColor Cyan
+        Run-Compose $envFile @('cp', $path, "db:/backups/$backupName")
+        if ($LASTEXITCODE -ne 0) { Write-Host "Copy failed." -ForegroundColor Red; return }
     }
-    if (-not $list -or $list.Count -eq 0) {
-        Write-Host "No backups found in the 'backups' volume. Copy a file there or create a backup first." -ForegroundColor Yellow
+    else {
+        Write-Host "Invalid selection." -ForegroundColor Red
         return
     }
-    Write-Host "Available backups:" -ForegroundColor Cyan
-    for ($i = 0; $i -lt $list.Count; $i++) { Write-Host ("[{0}] {1}" -f ($i + 1), $list[$i]) }
-    $choice = Read-Host "Enter the number to restore"
-    if (-not [int]::TryParse($choice, [ref]$null)) { Write-Host "Invalid selection." -ForegroundColor Red; return }
-    $index = [int]$choice - 1
-    if ($index -lt 0 -or $index -ge $list.Count) { Write-Host "Out of range." -ForegroundColor Red; return }
-    $backupName = $list[$index]
+
     $confirm = Read-Host "This will overwrite database '$((Run-Compose $envFile @('config') | Out-String) | Out-Null; (Get-Content (Get-EnvPath $envFile) | Where-Object { $_ -match '^POSTGRES_DB=' } ).ForEach({ $_.Split('=')[1] }) -join '')'. Type YES to continue"
     if ($confirm -ne 'YES') { Write-Host "Cancelled." -ForegroundColor Yellow; return }
     $root = Get-RootPath
@@ -113,7 +140,6 @@ function Restore-DB([string]$envFile) {
     & $restoreScript -EnvFile (Split-Path (Get-EnvPath $envFile) -Leaf) -BackupName $backupName
     if ($LASTEXITCODE -ne 0) { Write-Host "Restore failed." -ForegroundColor Red } else { Write-Host "Restore completed." -ForegroundColor Green }
 }
-
 function Show-Status([string]$envFile) { Ensure-Docker; Run-Compose $envFile @('ps') }
 
 function Show-Logs([string]$envFile) {

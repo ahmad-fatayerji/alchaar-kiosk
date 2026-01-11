@@ -27,10 +27,9 @@ $pgPass = ($envVars | Where-Object { $_.key -eq 'POSTGRES_PASSWORD' }).value
 if (-not $pgPass) { $pgPass = 'postgres' }
 
 # Run pg_dump via docker compose exec (non-interactive)
-$env:PGPASSWORD = $pgPass
 $cmd = @(
   'compose', '--env-file', $EnvFile, '-f', $composeFile,
-  'exec', '-T', 'db',
+  'exec', '-T', '-e', "PGPASSWORD=$pgPass", 'db',
   'bash', '-lc',
   "pg_dump -U ${pgUser} ${pgDb} | gzip > /backups/${BackupName}"
 )

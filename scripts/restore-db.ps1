@@ -17,14 +17,43 @@ $pgDb = ($envVars | Where-Object { $_.key -eq 'POSTGRES_DB' }).value
 if (-not $pgDb) { $pgDb = 'kiosk' }
 $pgPass = ($envVars | Where-Object { $_.key -eq 'POSTGRES_PASSWORD' }).value
 if (-not $pgPass) { $pgPass = 'postgres' }
+function Escape-BashSingle([string]$value) {
+  return $value -replace "'", '''"''"'''
+}
 
 Write-Host "Restoring DB from $BackupName..." -ForegroundColor Cyan
-$env:PGPASSWORD = $pgPass
-$cmd = @(
+$remotePath = "/backups/$BackupName"
+$remotePathEscaped = Escape-BashSingle $remotePath
+
+$checkCmd = @(
   'compose', '--env-file', $EnvFile, '-f', $composeFile,
   'exec', '-T', 'db',
   'bash', '-lc',
-  "if [ -f /backups/${BackupName} ]; then gunzip -c /backups/${BackupName} | psql -U ${pgUser} ${pgDb}; else psql -U ${pgUser} ${pgDb} < /backups/${BackupName}; fi"
+  "test -f '$remotePathEscaped'"
+)
+docker @checkCmd
+if ($LASTEXITCODE -ne 0) { Write-Host "Backup not found: $BackupName" -ForegroundColor Red; exit 1 }
+
+$dropCmd = @(
+  'compose', '--env-file', $EnvFile, '-f', $composeFile,
+  'exec', '-T', '-e', "PGPASSWORD=$pgPass", 'db',
+  'psql', '-U', $pgUser, $pgDb, '-v', 'ON_ERROR_STOP=1',
+  '-c', 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;'
+)
+docker @dropCmd
+if ($LASTEXITCODE -ne 0) { Write-Host "Pre-restore cleanup failed" -ForegroundColor Red; exit 1 }
+
+if ($BackupName -match '\.gz$') {
+  $restoreCmd = "gunzip -c '$remotePathEscaped' | psql -U ${pgUser} ${pgDb}"
+}
+else {
+  $restoreCmd = "psql -U ${pgUser} ${pgDb} < '$remotePathEscaped'"
+}
+$cmd = @(
+  'compose', '--env-file', $EnvFile, '-f', $composeFile,
+  'exec', '-T', '-e', "PGPASSWORD=$pgPass", 'db',
+  'bash', '-lc',
+  $restoreCmd
 )
 
 docker @cmd
