@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ProductDialog, { Product } from "./ProductDialog";
 import ProductTable from "./ProductTable";
 import ProductsToolbar from "./ProductsToolbar";
@@ -41,6 +41,8 @@ export default function ProductsPanel() {
 
   /* ---------- UI state ---------- */
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<"name-asc" | "name-desc">("name-asc");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [editing, setEditing] = useState<Product | null | undefined>(undefined);
   const [assignOpen, setAssignOpen] = useState(false);
   const [saleOpen, setSaleOpen] = useState(false);
@@ -106,6 +108,41 @@ export default function ProductsPanel() {
     refresh(); // Refresh products
   };
 
+  const sortedCats = useMemo(
+    () => [...cats].sort((a, b) => a.name.localeCompare(b.name)),
+    [cats]
+  );
+
+  const filteredProducts = useMemo(() => {
+    let next = products;
+
+    if (categoryFilter !== "all") {
+      if (categoryFilter === "none") {
+        next = next.filter((p) => p.categoryId == null && !p.category?.id);
+      } else {
+        const targetId = Number(categoryFilter);
+        next = next.filter((p) => {
+          const catId = p.categoryId ?? p.category?.id;
+          return Number(catId) === targetId;
+        });
+      }
+    }
+
+    if (sortBy) {
+      const direction = sortBy === "name-asc" ? 1 : -1;
+      next = [...next].sort((a, b) => {
+        const left = String(a.name ?? "");
+        const right = String(b.name ?? "");
+        return (
+          left.localeCompare(right, undefined, { sensitivity: "base" }) *
+          direction
+        );
+      });
+    }
+
+    return next;
+  }, [products, categoryFilter, sortBy]);
+
   return (
     <>
       <div className="mb-8">
@@ -145,6 +182,11 @@ export default function ProductsPanel() {
       <ProductsToolbar
         search={search}
         onSearch={setSearch}
+        sortBy={sortBy}
+        onSortByChange={setSortBy}
+        categoryFilter={categoryFilter}
+        onCategoryFilterChange={setCategoryFilter}
+        categories={sortedCats}
         onNew={() => setEditing(null)}
         onBulk={bulkUpload}
         onExport={exportAll}
@@ -160,7 +202,7 @@ export default function ProductsPanel() {
       <Card>
         <CardContent className="p-0">
           <ProductTable
-            data={products}
+            data={filteredProducts}
             globalFilter={search}
             selected={selected}
             setSelected={setSelected}
