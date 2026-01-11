@@ -8,6 +8,7 @@ import { ShoppingCart, X, Plus, Minus, Trash2, CreditCard } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useI18n } from "@/contexts/LangContext";
 import { useMessages } from "@/contexts/MessageContext";
+import { usePathname } from "next/navigation";
 
 type CartProps = {
   onCheckout?: (orderNumber: string) => void;
@@ -36,6 +37,7 @@ export default function Cart({ onCheckout }: CartProps) {
   const [productStocks, setProductStocks] = useState<Record<string, number>>(
     {}
   );
+  const pathname = usePathname();
   const { t, formatDigits, formatPrice } = useI18n();
   const { notify } = useMessages();
   const totalItems = getTotalItems();
@@ -56,7 +58,10 @@ export default function Cart({ onCheckout }: CartProps) {
   const [showAddToast, setShowAddToast] = useState(false);
   const [pulseBadge, setPulseBadge] = useState(false);
   const dragBtnRef = useRef<HTMLButtonElement | null>(null);
-  const pointerOffsetRef = useRef<number>(0); // offset inside button for smooth vertical drag
+  const dragStartXRef = useRef<number>(0);
+  const draggedRef = useRef(false);
+  const prevSideRef = useRef<FabDock["side"] | null>(null);
+  const [sideAnim, setSideAnim] = useState(false);
   const prevTotalRef = useRef(totalItems);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pulseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -98,24 +103,17 @@ export default function Cart({ onCheckout }: CartProps) {
   const handleFabPointerDown: React.PointerEventHandler = (e) => {
     if (state.isOpen) return;
     setIsDragging(true);
-    const rect = dragBtnRef.current?.getBoundingClientRect();
-    pointerOffsetRef.current = rect ? e.clientY - rect.top : 0;
+    draggedRef.current = false;
+    dragStartXRef.current = e.clientX;
+    const lockedY = fabDock?.y ?? Math.round(window.innerHeight * 0.5);
 
     const move = (ev: PointerEvent) => {
+      const deltaX = ev.clientX - dragStartXRef.current;
+      if (Math.abs(deltaX) < 12) return;
+      draggedRef.current = true;
       const side: FabDock["side"] =
         ev.clientX < window.innerWidth / 2 ? "left" : "right";
-      const margin = 96; // more breathing room large screens
-      const rawY =
-        ev.clientY - pointerOffsetRef.current + (rect ? rect.height / 2 : 0);
-      // Prevent reaching extreme top / header area
-      const header = document.querySelector(
-        ".products-header-bar, .kiosk-header-static"
-      ) as HTMLElement | null;
-      const headerBottom = header?.getBoundingClientRect().bottom || 140;
-      const topClamp = Math.max(margin, headerBottom + 40);
-      const maxY = window.innerHeight - margin;
-      const y = Math.min(Math.max(rawY, topClamp), maxY);
-      setFabDock({ side, y });
+      setFabDock({ side, y: lockedY });
     };
     const up = () => {
       setIsDragging(false);
@@ -143,6 +141,17 @@ export default function Cart({ onCheckout }: CartProps) {
       }
     }
   }, [fabDock]);
+
+  useEffect(() => {
+    const nextSide = fabDock?.side ?? "left";
+    if (prevSideRef.current && prevSideRef.current !== nextSide) {
+      setSideAnim(true);
+      const t = setTimeout(() => setSideAnim(false), 350);
+      prevSideRef.current = nextSide;
+      return () => clearTimeout(t);
+    }
+    prevSideRef.current = nextSide;
+  }, [fabDock?.side]);
 
   // Load settings and fetch stock information when cart opens
   useEffect(() => {
@@ -283,17 +292,41 @@ export default function Cart({ onCheckout }: CartProps) {
   };
 
   if (!state.isOpen) {
+    const isProductsPage =
+      pathname === "/products" || pathname?.startsWith("/category/");
+    const currentSide = fabDock?.side ?? "left";
     // Anchored bottom-left; disable drag logic while preserving previous code for possible revert
+    const dockedStyle =
+      fabDock && !isDragging && !isProductsPage
+        ? {
+            top: `${fabDock.y}px`,
+            bottom: "auto",
+            left: fabDock.side === "left" ? "1.5rem" : "auto",
+            right: fabDock.side === "right" ? "1.5rem" : "auto",
+            transform: "translateY(-50%)",
+          }
+        : undefined;
     return (
       <div
-        className="kiosk-fab fixed left-4 bottom-4 z-50"
+        className={`kiosk-fab fixed left-4 bottom-4 z-50 ${
+          sideAnim ? "cart-fab-slide" : ""
+        }`}
+        data-side={currentSide}
         style={{
           insetInlineStart: undefined,
+          ...(dockedStyle ?? {}),
         }}
       >
         <Button
           ref={dragBtnRef}
-          onClick={() => toggleCart()}
+          onPointerDown={handleFabPointerDown}
+          onClick={() => {
+            if (draggedRef.current) {
+              draggedRef.current = false;
+              return;
+            }
+            toggleCart();
+          }}
           aria-label={t("shopping_cart")}
           className="bg-[#3da874] hover:bg-[#2d7a56] text-white rounded-full relative h-14 w-14 p-0 flex items-center justify-center shadow-xl transition-all kiosk-portrait:h-[6rem] kiosk-portrait:w-[6rem] kiosk-portrait:border-4 kiosk-portrait:border-white/30 kiosk-portrait:shadow-2xl kiosk-portrait:shadow-black/30"
         >

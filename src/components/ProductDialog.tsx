@@ -29,6 +29,7 @@ export type Product = {
   salePrice?: string | null;
   qtyInStock: number;
   categoryId: number | null;
+  category?: Category | null;
   archived?: boolean;
 };
 

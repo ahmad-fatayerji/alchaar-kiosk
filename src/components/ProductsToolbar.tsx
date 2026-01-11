@@ -14,6 +14,14 @@ import SearchBox from "./SearchBox";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRef, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -22,10 +30,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useMessages } from "@/contexts/MessageContext";
+import type { Category } from "./ProductDialog";
 
 type Props = {
   search: string;
   onSearch(v: string): void;
+  sortBy: "name-asc" | "name-desc";
+  onSortByChange(v: "name-asc" | "name-desc"): void;
+  categoryFilter: string;
+  onCategoryFilterChange(v: string): void;
+  categories: Category[];
   onNew(): void;
   onBulk(files: FileList): void;
   onExport(): void;
@@ -42,6 +56,11 @@ type Props = {
 export default function ProductsToolbar({
   search,
   onSearch,
+  sortBy,
+  onSortByChange,
+  categoryFilter,
+  onCategoryFilterChange,
+  categories,
   onNew,
   onBulk,
   onExport,
@@ -64,6 +83,7 @@ export default function ProductsToolbar({
     Record<string, boolean>
   >({});
   const [conflictOpen, setConflictOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState("");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const { notify } = useMessages();
@@ -148,11 +168,62 @@ export default function ProductsToolbar({
 
   return (
     <div className="products-toolbar mb-6 flex flex-wrap items-center justify-between gap-4 p-4 bg-muted/30 rounded-lg border">
-      <SearchBox
-        value={search}
-        onChange={(e) => onSearch(e.target.value)}
-        className="w-64"
-      />
+      <div className="flex flex-wrap items-center gap-3">
+        <SearchBox
+          value={search}
+          onChange={(e) => onSearch(e.target.value)}
+          className="w-64"
+        />
+        <Select
+          value={sortBy}
+          onValueChange={(value) =>
+            onSortByChange(value as "name-asc" | "name-desc")
+          }
+        >
+          <SelectTrigger className="h-8 w-40">
+            <SelectValue placeholder="Sort" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name-asc">Name A-Z</SelectItem>
+            <SelectItem value="name-desc">Name Z-A</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={categoryFilter}
+          onValueChange={onCategoryFilterChange}
+          onOpenChange={(open) => {
+            if (!open) setCategorySearch("");
+          }}
+        >
+          <SelectTrigger className="h-8 w-48">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <div className="p-1">
+              <Input
+                value={categorySearch}
+                onChange={(e) => setCategorySearch(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
+                placeholder="Search categories..."
+                className="h-8"
+              />
+            </div>
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="none">Uncategorized</SelectItem>
+            {categories
+              .filter((cat) =>
+                cat.name
+                  .toLowerCase()
+                  .includes(categorySearch.trim().toLowerCase())
+              )
+              .map((cat) => (
+                <SelectItem key={cat.id} value={String(cat.id)}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="flex items-center gap-3">
         {/* show archived toggle */}
