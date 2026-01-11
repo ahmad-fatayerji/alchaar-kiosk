@@ -36,6 +36,15 @@ export default function Cart({ onCheckout }: CartProps) {
     {}
   );
   const { t, formatDigits, formatPrice } = useI18n();
+  const hasAskForPriceItem = !hidePrices
+    ? state.items.some((item) => {
+        const hasSale =
+          salesEnabled &&
+          item.salePrice &&
+          Number(item.salePrice) > 0;
+        return !hasSale && Number(item.price) === 0;
+      })
+    : false;
 
   // Floating cart (FAB) drag state (snap-to-edge)
   type FabDock = { side: "left" | "right"; y: number };
@@ -301,6 +310,8 @@ export default function Cart({ onCheckout }: CartProps) {
                     ? Number(item.salePrice)
                     : Number(item.price);
                   const totalPrice = unitPrice * item.quantity;
+                  const showAskForPrice =
+                    !hidePrices && !hasSale && unitPrice === 0;
                   const stockQty = productStocks[item.barcode];
                   const isAtStockLimit =
                     showQuantities &&
@@ -346,6 +357,10 @@ export default function Cart({ onCheckout }: CartProps) {
                                 </Badge>
                               )}
                             </>
+                          ) : showAskForPrice ? (
+                            <span className="font-semibold text-gray-500">
+                              {t("ask_for_price")}
+                            </span>
                           ) : (
                             <span className="font-bold text-[#3da874]">
                               ${unitPrice.toFixed(2)}
@@ -393,7 +408,9 @@ export default function Cart({ onCheckout }: CartProps) {
 
                       {/* Item Total */}
                       <div className="text-lg font-bold text-[#3da874] w-20 text-right md:w-24 kiosk-portrait:text-[clamp(2rem,1.6vw,2.8rem)] kiosk-portrait:w-[6.5rem]">
-                        {formatPrice(totalPrice)}
+                        {showAskForPrice
+                          ? t("ask_for_price")
+                          : formatPrice(totalPrice)}
                       </div>
 
                       {/* Remove Button */}
@@ -417,19 +434,21 @@ export default function Cart({ onCheckout }: CartProps) {
                     {t("total_items")}: {formatDigits(getTotalItems())}
                   </div>
                   <div className="cart-total text-2xl font-bold text-[#3da874] md:text-[1.9rem] kiosk-portrait:text-[clamp(3rem,2.2vw,3.8rem)]">
-                    {formatPrice(
-                      state.items.reduce((sum, i) => {
-                        const applySale =
-                          salesEnabled &&
-                          !hidePrices &&
-                          i.salePrice &&
-                          Number(i.salePrice) > 0;
-                        const p = applySale
-                          ? Number(i.salePrice)
-                          : Number(i.price);
-                        return sum + p * i.quantity;
-                      }, 0)
-                    )}
+                    {hasAskForPriceItem
+                      ? t("ask_for_price")
+                      : formatPrice(
+                          state.items.reduce((sum, i) => {
+                            const applySale =
+                              salesEnabled &&
+                              !hidePrices &&
+                              i.salePrice &&
+                              Number(i.salePrice) > 0;
+                            const p = applySale
+                              ? Number(i.salePrice)
+                              : Number(i.price);
+                            return sum + p * i.quantity;
+                          }, 0)
+                        )}
                   </div>
                 </div>
 

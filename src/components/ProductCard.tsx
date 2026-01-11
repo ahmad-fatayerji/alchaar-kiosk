@@ -47,7 +47,7 @@ export default function ProductCard({
     Number(product.salePrice) > 0;
   const regularPrice = Number(product.price);
   const salePrice = hasSale ? Number(product.salePrice) : null;
-  const showNA = !hasSale && !hidePrices && salesEnabled && regularPrice === 0;
+  const showAskForPrice = !hasSale && !hidePrices && regularPrice === 0;
 
   function fallback(img: HTMLImageElement) {
     const tried = img.src.split("?")[0];
@@ -179,9 +179,9 @@ export default function ProductCard({
                     {formatPrice(regularPrice)}
                   </span>
                 </div>
-              ) : showNA ? (
+              ) : showAskForPrice ? (
                 <span className="product-card-price text-lg font-semibold text-gray-500">
-                  N/A
+                  {t("ask_for_price")}
                 </span>
               ) : (
                 <span className="product-card-price text-lg font-bold text-gray-900">

@@ -48,6 +48,7 @@ export const dict = {
         stock_left_short: "left {count}",
         min_label: "Min",
         max_label: "Max",
+        ask_for_price: "Ask for price",
     },
     ar: {
         welcome: "مرحبا بكم في صيدلية الشعار",
@@ -98,5 +99,6 @@ export const dict = {
         stock_left_short: "متبقي {count}",
         min_label: "الأدنى",
         max_label: "الأعلى",
+        ask_for_price: "اسأل عن السعر",
     },
 } as const;
