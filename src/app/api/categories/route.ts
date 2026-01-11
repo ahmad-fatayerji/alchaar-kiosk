@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import { slugify } from "@/lib/slugify";
 
 /* ------------------------------------------------------------------
@@ -57,17 +58,17 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "name required" }, { status: 400 });
     }
 
-    // Create category; if it's a subcategory, ensure the parent no longer holds products
-    const created = await prisma.$transaction(async (tx) => {
-        // determine next sortOrder within the sibling group
-        const maxSibling = await tx.category.findFirst({
-            where: { parentId: parentId ?? null },
-            orderBy: { sortOrder: "desc" },
-            select: { sortOrder: true },
-        });
-        const nextOrder = (maxSibling?.sortOrder ?? 0) + 1;
+    // determine next sortOrder within the sibling group
+    const maxSibling = await prisma.category.findFirst({
+        where: { parentId: parentId ?? null },
+        orderBy: { sortOrder: "desc" },
+        select: { sortOrder: true },
+    });
+    const nextOrder = (maxSibling?.sortOrder ?? 0) + 1;
 
-        const cat = await tx.category.create({
+    // Create category; if it's a subcategory, ensure the parent no longer holds products
+    const ops: Prisma.PrismaPromise<unknown>[] = [
+        prisma.category.create({
             data: {
                 name,
                 slug: slugify(name),
@@ -75,17 +76,19 @@ export async function POST(req: Request) {
                 arabicName: arabicName?.trim() || null,
                 sortOrder: nextOrder,
             },
-        });
+        }),
+    ];
 
-        if (parentId != null) {
-            await tx.product.updateMany({
+    if (parentId != null) {
+        ops.push(
+            prisma.product.updateMany({
                 where: { categoryId: parentId },
                 data: { categoryId: null },
-            });
-        }
+            }),
+        );
+    }
 
-        return cat;
-    });
+    const [created] = await prisma.$transaction(ops);
 
     return NextResponse.json(created, { status: 201 });
 }

@@ -21,6 +21,7 @@ export const dict = {
         in_stock_only: "In Stock Only",
         out_of_stock: "Out of Stock",
         add_to_cart: "Add to Cart",
+        added_to_cart: "Added to cart",
         out_of_stock_btn: "Out of Stock",
         contact_for_pricing: "Contact staff for pricing",
         back_to_categories: "Back to Categories",
@@ -48,6 +49,7 @@ export const dict = {
         stock_left_short: "left {count}",
         min_label: "Min",
         max_label: "Max",
+        ask_for_price: "Ask for price",
     },
     ar: {
         welcome: "مرحبا بكم في صيدلية الشعار",
@@ -71,6 +73,7 @@ export const dict = {
         in_stock_only: "المتوفر فقط",
         out_of_stock: "غير متوفر",
         add_to_cart: "أضف إلى السلة",
+        added_to_cart: "تمت الإضافة إلى السلة",
         out_of_stock_btn: "غير متوفر",
         contact_for_pricing: "يرجى مراجعة الموظف للحصول على السعر",
         back_to_categories: "الرجوع إلى الفئات",
@@ -98,5 +101,6 @@ export const dict = {
         stock_left_short: "متبقي {count}",
         min_label: "الأدنى",
         max_label: "الأعلى",
+        ask_for_price: "اسأل عن السعر",
     },
 } as const;

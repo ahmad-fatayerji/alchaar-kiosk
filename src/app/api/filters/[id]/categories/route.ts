@@ -14,10 +14,11 @@ export async function GET(
         return NextResponse.json({ error: "bad id" }, { status: 400 });
     }
 
-    const links = await prisma.categoryFilter.findMany({
-        where: { filterId },
-        select: { categoryId: true },
-    });
+    const links: Array<{ categoryId: number }> =
+        await prisma.categoryFilter.findMany({
+            where: { filterId },
+            select: { categoryId: true },
+        });
 
     /* plain number[] is enough for the client */
     return NextResponse.json(links.map((l) => l.categoryId));

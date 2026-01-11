@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import { isAuthed } from "@/lib/adminAuth";
 import AdminLogin from "@/components/AdminLogin";
-import AdminLayout, { Tab } from "@/components/AdminLayout";
+import AdminLayout, { Tab, adminTabs } from "@/components/AdminLayout";
 import AdminDashboard from "@/components/AdminDashboard";
 
 /** localStorage key we’ll use */
@@ -19,8 +19,11 @@ export default function AdminPage() {
   /* ---------- tab state (read once from localStorage) ---------- */
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window === "undefined") return "categories";
-    const stored = localStorage.getItem(TAB_KEY) as Tab | null;
-    return stored ?? "categories";
+    const stored = localStorage.getItem(TAB_KEY);
+    const isEnabledTab = adminTabs.some(
+      (item) => item.id === stored && !item.disabled
+    );
+    return isEnabledTab ? (stored as Tab) : "categories";
   });
 
   /* remember tab changes */

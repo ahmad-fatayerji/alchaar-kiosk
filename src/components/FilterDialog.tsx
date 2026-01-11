@@ -28,6 +28,7 @@ export type FilterRow = {
 
 type Props = {
   open: boolean;
+  mode: "create" | "edit";
   filter: FilterRow | null;
   onClose(): void;
   onSaved(): void;
@@ -35,41 +36,65 @@ type Props = {
 
 export default function FilterDialog({
   open,
+  mode,
   filter,
   onClose,
   onSaved,
 }: Props) {
-  const [name, setName] = useState(filter?.name ?? "");
-  const [units, setUnits] = useState(filter?.units ?? "");
-  const [type, setType] = useState<FilterRow["type"]>(filter?.type ?? "LABEL");
+  const isEdit = mode === "edit";
+  const [name, setName] = useState("");
+  const [units, setUnits] = useState("");
+  const [type, setType] = useState<FilterRow["type"]>("LABEL");
   const [busy, setBusy] = useState(false);
 
   /* reset when a new row is selected */
   useEffect(() => {
-    setName(filter?.name ?? "");
-    setUnits(filter?.units ?? "");
-    setType(filter?.type ?? "LABEL");
-  }, [filter]);
+    if (!open) return;
+    if (isEdit && filter) {
+      setName(filter.name ?? "");
+      setUnits(filter.units ?? "");
+      setType(filter.type ?? "LABEL");
+      return;
+    }
+    if (!isEdit) {
+      setName("");
+      setUnits("");
+      setType("LABEL");
+    }
+  }, [filter, isEdit, open]);
 
-  if (!filter) return null;
+  if (!open) return null;
+  if (isEdit && !filter) return null;
 
   async function save() {
     setBusy(true);
 
-    /* 1️⃣ name + units */
-    await fetch(`/api/filters/${filter!.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), units: units.trim() || null }),
-    });
-
-    /* 2️⃣ type change */
-    if (type !== filter!.type) {
-      await fetch(`/api/filters/${filter!.id}`, {
+    if (mode === "create") {
+      await fetch("/api/filters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type }),
+        body: JSON.stringify({
+          name: name.trim(),
+          type,
+          units: units.trim() || null,
+        }),
       });
+    } else {
+      /* 1 name + units */
+      await fetch(`/api/filters/${filter!.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), units: units.trim() || null }),
+      });
+
+      /* 2 type change */
+      if (type !== filter!.type) {
+        await fetch(`/api/filters/${filter!.id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type }),
+        });
+      }
     }
 
     setBusy(false);
@@ -81,7 +106,7 @@ export default function FilterDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit filter</DialogTitle>
+          <DialogTitle>{isEdit ? "Edit filter" : "New filter"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -119,7 +144,7 @@ export default function FilterDialog({
             Cancel
           </Button>
           <Button disabled={busy || !name.trim()} onClick={save}>
-            {busy ? "Saving…" : "Save"}
+            {busy ? (isEdit ? "Saving..." : "Creating...") : isEdit ? "Save" : "Create"}
           </Button>
         </DialogFooter>
       </DialogContent>

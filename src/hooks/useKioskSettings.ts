@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+    DEFAULT_IDLE_TIMEOUT_SECONDS,
+    parseIdleTimeoutSeconds,
+} from "@/lib/idleTimeout";
 
 export type KioskSettings = {
     hidePrices: boolean;
     salesEnabled: boolean;
     showQuantities: boolean;
+    idleTimeoutSeconds: number;
 };
 
 /**
@@ -17,6 +22,7 @@ export function useKioskSettings() {
         hidePrices: false,
         salesEnabled: true,
         showQuantities: false,
+        idleTimeoutSeconds: DEFAULT_IDLE_TIMEOUT_SECONDS,
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -27,10 +33,15 @@ export function useKioskSettings() {
             .then((res) => res.json())
             .then((data) => {
                 if (cancelled) return;
+                const idleTimeoutSeconds = parseIdleTimeoutSeconds(
+                    data.idle_timeout ?? data.idle_timeout_seconds,
+                    DEFAULT_IDLE_TIMEOUT_SECONDS
+                );
                 setSettings({
                     hidePrices: data.hide_prices === "true",
                     salesEnabled: data.sales_enabled !== "false",
                     showQuantities: data.show_quantities === "true",
+                    idleTimeoutSeconds,
                 });
                 setLoading(false);
             })

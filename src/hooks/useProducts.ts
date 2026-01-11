@@ -4,6 +4,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useMessages } from "@/contexts/MessageContext";
 import type { Product } from "@/components/ProductDialog";
 import { bumpThumbVersion } from "@/hooks/useThumbVersion";
 
@@ -16,6 +17,7 @@ type FilterValue = Parameters<
 export function useProducts() {
     const [products, setProducts] = useState<Product[]>([]);
     const [busy, setBusy] = useState(false);
+    const { notify, confirm } = useMessages();
 
     /* NEW: set of selected barcodes for bulk ops */
     const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -70,33 +72,38 @@ export function useProducts() {
                 try {
                     const info = await res.json();
                     if (info?.action === "archived") {
-                        alert(`Product ${barcode} was archived because it has order history.`);
+                        notify({ message: `Product ${barcode} was archived because it has order history.`, variant: "warning" });
                     }
                 } catch { }
             } else {
                 try {
                     const info = await res.json();
                     if (res.status === 404) {
-                        alert(`Product ${barcode} was not found (already deleted).`);
+                        notify({ message: `Product ${barcode} was not found (already deleted).`, variant: "warning" });
                     } else if (res.status === 409) {
-                        alert(`Cannot delete product ${barcode}: it is referenced by existing orders.`);
+                        notify({ message: `Cannot delete product ${barcode}: it is referenced by existing orders.`, variant: "error" });
                     } else {
-                        alert(`Delete failed (${res.status}): ${info?.error || 'unknown error'}`);
+                        notify({ message: `Delete failed (${res.status}): ${info?.error || "unknown error"}`, variant: "error" });
                     }
                 } catch {
-                    alert(`Delete failed with status ${res.status}.`);
+                    notify({ message: `Delete failed with status ${res.status}.`, variant: "error" });
                 }
             }
             refresh();
         },
-        [refresh]
+        [refresh, notify]
     );
 
     /* ---- bulk delete ---------------------------------------------- */
     const bulkDelete = useCallback(
         async (codes: string[]) => {
             if (!codes.length) return;
-            if (!confirm(`Delete ${codes.length} products?`)) return;
+            const confirmed = await confirm({
+                message: `Delete ${codes.length} products?`,
+                confirmLabel: "Delete",
+                confirmVariant: "destructive",
+            });
+            if (!confirmed) return;
 
             setBusy(true);
             const res = await fetch("/api/products/bulk", {
@@ -119,20 +126,27 @@ export function useProducts() {
                     parts.push(`Conflicts: ${summary.conflicts.length} (referenced by orders)`);
                 if (summary.notFound?.length) parts.push(`Not found: ${summary.notFound.length}`);
                 if (summary.invalid?.length) parts.push(`Invalid codes: ${summary.invalid.length}`);
-                if (parts.length > 1) alert(parts.join("\n"));
+                if (parts.length > 1) {
+                    notify({
+                        title: "Bulk delete summary",
+                        message: parts.join("\n"),
+                        variant: "info",
+                        duration: 7000,
+                    });
+                }
             } else {
                 try {
                     const j = await res.json();
-                    alert(`Bulk delete failed (${res.status}): ${j?.error || 'unknown error'}`);
+                    notify({ message: `Bulk delete failed (${res.status}): ${j?.error || "unknown error"}`, variant: "error" });
                 } catch {
-                    alert(`Bulk delete failed with status ${res.status}.`);
+                    notify({ message: `Bulk delete failed with status ${res.status}.`, variant: "error" });
                 }
             }
             setSelected(new Set());
             await refresh();
             setBusy(false);
         },
-        [refresh]
+        [refresh, confirm, notify]
     );
 
     /* ---- bulk assign to category ---------------------------------- */
@@ -186,14 +200,14 @@ export function useProducts() {
                 if (!res.ok) {
                     // revert on failure
                     setProducts((prev) => prev.map(pr => pr.barcode === String(barcode) ? { ...pr, qtyInStock: current } : pr));
-                    alert("Stock update failed");
+                    notify({ message: "Stock update failed", variant: "error" });
                 }
             } finally {
                 // optionally silent background refresh for consistency
                 refresh();
             }
         },
-        [products, refresh]
+        [products, refresh, notify]
     );
 
     return {

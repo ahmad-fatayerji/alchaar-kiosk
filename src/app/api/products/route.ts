@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import { buildProductWhere } from "@/lib/filters"; // already in your repo
 
 /* ──────────────────────────────────────────────────────────
@@ -18,7 +19,9 @@ export async function GET(req: Request) {
     }
     const where = buildProductWhere(searchParams);
 
-    const list = await prisma.product.findMany({
+    const list: Prisma.ProductGetPayload<{
+        include: { category: true };
+    }>[] = await prisma.product.findMany({
         where,
         include: { category: true },
         orderBy: { barcode: "asc" },

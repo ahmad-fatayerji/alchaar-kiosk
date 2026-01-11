@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import type { FilterType } from "@prisma/client";   // 👈 enum comes from the client
+import type { FilterType, Prisma } from "@prisma/client";   // 👈 enum comes from the client
 
 /* ─────────── GET: list all filter defs ─────────── */
 export async function GET() {
-    const defs = await prisma.filterDef.findMany({
+    const defs: Prisma.FilterDefGetPayload<{
+        include: { categories: true };
+    }>[] = await prisma.filterDef.findMany({
         include: { categories: true },
         orderBy: { id: "asc" },
     });
@@ -37,3 +39,5 @@ export async function POST(req: Request) {
 
     return NextResponse.json(created, { status: 201 });
 }
+
+

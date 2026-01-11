@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import { lebanonDayToUtcRange } from "@/lib/time";
+
+type OrderWithItems = Prisma.OrderGetPayload<{
+    include: { items: { include: { product: true } } };
+}>;
+type OrderItemWithProduct = {
+    product: { barcode: bigint; name: string; price: Prisma.Decimal; salePrice: Prisma.Decimal | null };
+    qty: number;
+};
 
 export async function GET(request: NextRequest) {
     try {
@@ -14,7 +23,7 @@ export async function GET(request: NextRequest) {
         // Interpret the given YYYY-MM-DD as Lebanon local date and convert to UTC range
         const { start: startOfDay, end: endOfDay } = lebanonDayToUtcRange(dateStr);
 
-        const orders = await db.order.findMany({
+        const orders: OrderWithItems[] = await db.order.findMany({
             where: {
                 createdAt: {
                     gte: startOfDay,
@@ -34,19 +43,24 @@ export async function GET(request: NextRequest) {
         });
 
         // Transform the data to handle BigInt serialization
-        const serializedOrders = orders.map((order) => ({
-            id: Number(order.id),
-            orderNumber: order.orderNumber || null,
-            createdAt: order.createdAt.toISOString(),
-            isFulfilled: Boolean(order.isFulfilled),
-            items: order.items.map((item) => ({
-                barcode: String(item.product.barcode),
-                name: String(item.product.name),
-                quantity: Number(item.qty),
-                price: String(item.product.price),
-                salePrice: item.product.salePrice ? String(item.product.salePrice) : null,
-            })),
-        }));
+        const serializedOrders = orders.map((order) => {
+            const items = order.items as OrderItemWithProduct[];
+
+            return {
+                id: Number(order.id),
+                orderNumber: order.orderNumber || null,
+                createdAt: order.createdAt.toISOString(),
+                isFulfilled: Boolean(order.isFulfilled),
+                isCancelled: Boolean(order.isCancelled),
+                items: items.map((item) => ({
+                    barcode: String(item.product.barcode),
+                    name: String(item.product.name),
+                    quantity: Number(item.qty),
+                    price: String(item.product.price),
+                    salePrice: item.product.salePrice ? String(item.product.salePrice) : null,
+                })),
+            };
+        });
 
         return NextResponse.json(serializedOrders);
     } catch (error) {

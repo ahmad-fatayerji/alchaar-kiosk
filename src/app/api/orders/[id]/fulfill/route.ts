@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import { broadcastOrderUpdate } from "@/lib/orderSSE";
+
+type OrderItemWithProduct = {
+    productId: bigint;
+    qty: number;
+    product: { qtyInStock: number; name: string };
+};
 
 export async function PATCH(
     request: NextRequest,
@@ -18,7 +25,9 @@ export async function PATCH(
         }
 
         // Get the order with its items to calculate quantity updates
-        const orderWithItems = await prisma.order.findUnique({
+        const orderWithItems: Prisma.OrderGetPayload<{
+            include: { items: { include: { product: true } } };
+        }> | null = await prisma.order.findUnique({
             where: { id: orderId },
             include: {
                 items: {
@@ -42,12 +51,29 @@ export async function PATCH(
                 { status: 400 }
             );
         }
+        if (orderWithItems.isCancelled) {
+            return NextResponse.json(
+                { error: "Cannot fulfill a cancelled order" },
+                { status: 400 }
+            );
+        }
 
+        const items = orderWithItems.items as OrderItemWithProduct[];
+
+        const showQuantitiesSetting = await prisma.setting.findUnique({
+            where: { key: "show_quantities" },
+            select: { value: true },
+        });
+        const showQuantities = showQuantitiesSetting?.value === "true";
         // Check if there's sufficient stock for all items
         const insufficientStock: string[] = [];
-        for (const item of orderWithItems.items) {
+        for (const item of items) {
             if (item.product.qtyInStock < item.qty) {
-                insufficientStock.push(`${item.product.name} (Available: ${item.product.qtyInStock}, Required: ${item.qty})`);
+                insufficientStock.push(
+                    showQuantities
+                        ? `${item.product.name} (Available: ${item.product.qtyInStock}, Required: ${item.qty})`
+                        : item.product.name
+                );
             }
         }
 
@@ -63,27 +89,26 @@ export async function PATCH(
         }
 
         // Use transaction to fulfill order and update product quantities atomically
-        const result = await prisma.$transaction(async (tx) => {
-            // Update product quantities
-            for (const item of orderWithItems.items) {
-                await tx.product.update({
-                    where: { barcode: item.productId },
-                    data: {
-                        qtyInStock: {
-                            decrement: item.qty,
-                        },
+        const ops: Prisma.PrismaPromise<unknown>[] = items.map((item) =>
+            prisma.product.update({
+                where: { barcode: item.productId },
+                data: {
+                    qtyInStock: {
+                        decrement: item.qty,
                     },
-                });
-            }
+                },
+            }),
+        );
 
-            // Mark order as fulfilled
-            const order = await tx.order.update({
+        ops.push(
+            prisma.order.update({
                 where: { id: orderId },
                 data: { isFulfilled: true },
-            });
+            }),
+        );
 
-            return order;
-        });
+        const results = await prisma.$transaction(ops);
+        const result = results[results.length - 1] as Prisma.OrderGetPayload<{}>;
 
         // Broadcast the fulfillment update to all connected clients
         broadcastOrderUpdate({
@@ -100,8 +125,9 @@ export async function PATCH(
                 orderNumber: result.orderNumber,
                 createdAt: result.createdAt.toISOString(),
                 isFulfilled: result.isFulfilled,
+                isCancelled: result.isCancelled,
             },
-            quantitiesUpdated: orderWithItems.items.map(item => ({
+            quantitiesUpdated: items.map(item => ({
                 barcode: item.productId.toString(),
                 productName: item.product.name,
                 quantityDeducted: item.qty,

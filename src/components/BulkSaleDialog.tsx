@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@radix-ui/react-radio-group";
 import { Tag, TrendingDown, X, Percent } from "lucide-react";
+import { useMessages } from "@/contexts/MessageContext";
 
 type BulkSaleDialogProps = {
   open: boolean;
@@ -32,16 +33,20 @@ export default function BulkSaleDialog({
   const [salePrice, setSalePrice] = useState("");
   const [percentage, setPercentage] = useState("");
   const [loading, setLoading] = useState(false);
+  const { notify } = useMessages();
 
   const handleApplySale = async () => {
     if (saleType === "fixed") {
       if (!salePrice || Number(salePrice) <= 0) {
-        alert("Please enter a valid sale price");
+        notify({ message: "Please enter a valid sale price", variant: "warning" });
         return;
       }
     } else {
       if (!percentage || Number(percentage) <= 0 || Number(percentage) >= 100) {
-        alert("Please enter a valid percentage between 1 and 99");
+        notify({
+          message: "Please enter a valid percentage between 1 and 99",
+          variant: "warning",
+        });
         return;
       }
     }
@@ -69,11 +74,14 @@ export default function BulkSaleDialog({
         setSaleType("fixed");
       } else {
         const error = await response.json();
-        alert(`Failed to apply sale: ${error.message || "Unknown error"}`);
+        notify({
+          message: `Failed to apply sale: ${error.message || "Unknown error"}`,
+          variant: "error",
+        });
       }
     } catch (error) {
       console.error("Bulk sale failed:", error);
-      alert("Failed to apply sale");
+      notify({ message: "Failed to apply sale", variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -103,11 +111,14 @@ export default function BulkSaleDialog({
         handleClose();
       } else {
         const error = await response.json();
-        alert(`Failed to remove sale: ${error.message || "Unknown error"}`);
+        notify({
+          message: `Failed to remove sale: ${error.message || "Unknown error"}`,
+          variant: "error",
+        });
       }
     } catch (error) {
       console.error("Remove sale failed:", error);
-      alert("Failed to remove sale");
+      notify({ message: "Failed to remove sale", variant: "error" });
     } finally {
       setLoading(false);
     }

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, X, Plus, Minus, Trash2, CreditCard } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useI18n } from "@/contexts/LangContext";
+import { useMessages } from "@/contexts/MessageContext";
 
 type CartProps = {
   onCheckout?: (orderNumber: string) => void;
@@ -36,13 +37,29 @@ export default function Cart({ onCheckout }: CartProps) {
     {}
   );
   const { t, formatDigits, formatPrice } = useI18n();
+  const { notify } = useMessages();
+  const totalItems = getTotalItems();
+  const hasAskForPriceItem = !hidePrices
+    ? state.items.some((item) => {
+        const hasSale =
+          salesEnabled &&
+          item.salePrice &&
+          Number(item.salePrice) > 0;
+        return !hasSale && Number(item.price) === 0;
+      })
+    : false;
 
   // Floating cart (FAB) drag state (snap-to-edge)
   type FabDock = { side: "left" | "right"; y: number };
   const [fabDock, setFabDock] = useState<FabDock | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showAddToast, setShowAddToast] = useState(false);
+  const [pulseBadge, setPulseBadge] = useState(false);
   const dragBtnRef = useRef<HTMLButtonElement | null>(null);
   const pointerOffsetRef = useRef<number>(0); // offset inside button for smooth vertical drag
+  const prevTotalRef = useRef(totalItems);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pulseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load saved FAB dock (backwards compatibility with old free-float format)
   useEffect(() => {
@@ -170,6 +187,41 @@ export default function Cart({ onCheckout }: CartProps) {
     loadSettings();
   }, [state.isOpen, state.items.length]);
 
+  useEffect(() => {
+    const prevTotal = prevTotalRef.current;
+    if (totalItems > prevTotal) {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+      if (pulseTimeoutRef.current) {
+        clearTimeout(pulseTimeoutRef.current);
+      }
+      setShowAddToast(false);
+      setPulseBadge(false);
+      requestAnimationFrame(() => {
+        setShowAddToast(true);
+        setPulseBadge(true);
+      });
+      toastTimeoutRef.current = setTimeout(() => {
+        setShowAddToast(false);
+      }, 1400);
+      pulseTimeoutRef.current = setTimeout(() => {
+        setPulseBadge(false);
+      }, 700);
+    }
+    prevTotalRef.current = totalItems;
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+        toastTimeoutRef.current = null;
+      }
+      if (pulseTimeoutRef.current) {
+        clearTimeout(pulseTimeoutRef.current);
+        pulseTimeoutRef.current = null;
+      }
+    };
+  }, [totalItems]);
+
   const handleQuantityUpdate = (barcode: string, newQuantity: number) => {
     const stockQty = productStocks[barcode];
     updateQuantity(barcode, newQuantity, stockQty, showQuantities);
@@ -202,20 +254,29 @@ export default function Cart({ onCheckout }: CartProps) {
       } else {
         const error = await response.json();
         if (error.error === "Insufficient stock for some items") {
-          alert(
-            `Cannot place order:\n\n${error.message}\n\nPlease adjust quantities and try again.`
-          );
+          notify({
+            title: "Cannot place order",
+            message: `${error.message}\n\nPlease adjust quantities and try again.`,
+            variant: "error",
+            duration: 9000,
+          });
         } else if (error.error === "Some products do not exist") {
-          alert(
-            `Some products in your cart are no longer available. Please remove unavailable items and try again.`
-          );
+          notify({
+            message:
+              "Some products in your cart are no longer available. Please remove unavailable items and try again.",
+            variant: "error",
+            duration: 9000,
+          });
         } else {
-          alert(`Failed to create order: ${error.error || "Unknown error"}`);
+          notify({
+            message: `Failed to create order: ${error.error || "Unknown error"}`,
+            variant: "error",
+          });
         }
       }
     } catch (error) {
       console.error("Error creating order:", error);
-      alert("Failed to create order. Please try again.");
+      notify({ message: "Failed to create order. Please try again.", variant: "error" });
     } finally {
       setIsProcessing(false);
     }
@@ -237,12 +298,21 @@ export default function Cart({ onCheckout }: CartProps) {
           className="bg-[#3da874] hover:bg-[#2d7a56] text-white rounded-full relative h-14 w-14 p-0 flex items-center justify-center shadow-xl transition-all kiosk-portrait:h-[6rem] kiosk-portrait:w-[6rem] kiosk-portrait:border-4 kiosk-portrait:border-white/30 kiosk-portrait:shadow-2xl kiosk-portrait:shadow-black/30"
         >
           <ShoppingCart className="h-7 w-7 kiosk-portrait:h-[3rem] kiosk-portrait:w-[3rem]" />
-          {getTotalItems() > 0 && (
-            <Badge className="cart-badge absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[1.5rem] h-6 rounded-full flex items-center justify-center kiosk-portrait:-top-2.5 kiosk-portrait:-right-2.5 kiosk-portrait:text-lg kiosk-portrait:min-w-[2.4rem] kiosk-portrait:h-[2.4rem] kiosk-portrait:rounded-full kiosk-portrait:px-1.5 kiosk-portrait:font-bold kiosk-portrait:tracking-tight">
-              {formatDigits(getTotalItems())}
+          {totalItems > 0 && (
+            <Badge
+              className={`cart-badge absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[1.5rem] h-6 rounded-full flex items-center justify-center kiosk-portrait:-top-2.5 kiosk-portrait:-right-2.5 kiosk-portrait:text-lg kiosk-portrait:min-w-[2.4rem] kiosk-portrait:h-[2.4rem] kiosk-portrait:rounded-full kiosk-portrait:px-1.5 kiosk-portrait:font-bold kiosk-portrait:tracking-tight ${
+                pulseBadge ? "cart-badge-bump" : ""
+              }`}
+            >
+              {formatDigits(totalItems)}
             </Badge>
           )}
         </Button>
+        {showAddToast && (
+          <div className="cart-fab-toast" role="status" aria-live="polite">
+            {t("added_to_cart")}
+          </div>
+        )}
       </div>
     );
   }
@@ -301,6 +371,8 @@ export default function Cart({ onCheckout }: CartProps) {
                     ? Number(item.salePrice)
                     : Number(item.price);
                   const totalPrice = unitPrice * item.quantity;
+                  const showAskForPrice =
+                    !hidePrices && !hasSale && unitPrice === 0;
                   const stockQty = productStocks[item.barcode];
                   const isAtStockLimit =
                     showQuantities &&
@@ -346,6 +418,10 @@ export default function Cart({ onCheckout }: CartProps) {
                                 </Badge>
                               )}
                             </>
+                          ) : showAskForPrice ? (
+                            <span className="font-semibold text-gray-500">
+                              {t("ask_for_price")}
+                            </span>
                           ) : (
                             <span className="font-bold text-[#3da874]">
                               ${unitPrice.toFixed(2)}
@@ -393,7 +469,9 @@ export default function Cart({ onCheckout }: CartProps) {
 
                       {/* Item Total */}
                       <div className="text-lg font-bold text-[#3da874] w-20 text-right md:w-24 kiosk-portrait:text-[clamp(2rem,1.6vw,2.8rem)] kiosk-portrait:w-[6.5rem]">
-                        {formatPrice(totalPrice)}
+                        {showAskForPrice
+                          ? t("ask_for_price")
+                          : formatPrice(totalPrice)}
                       </div>
 
                       {/* Remove Button */}
@@ -414,22 +492,24 @@ export default function Cart({ onCheckout }: CartProps) {
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center justify-between mb-4 kiosk-portrait:mb-[2.4rem]">
                   <div className="text-lg font-semibold md:text-xl kiosk-portrait:text-[clamp(2rem,1.5vw,2.6rem)]">
-                    {t("total_items")}: {formatDigits(getTotalItems())}
+                    {t("total_items")}: {formatDigits(totalItems)}
                   </div>
                   <div className="cart-total text-2xl font-bold text-[#3da874] md:text-[1.9rem] kiosk-portrait:text-[clamp(3rem,2.2vw,3.8rem)]">
-                    {formatPrice(
-                      state.items.reduce((sum, i) => {
-                        const applySale =
-                          salesEnabled &&
-                          !hidePrices &&
-                          i.salePrice &&
-                          Number(i.salePrice) > 0;
-                        const p = applySale
-                          ? Number(i.salePrice)
-                          : Number(i.price);
-                        return sum + p * i.quantity;
-                      }, 0)
-                    )}
+                    {hasAskForPriceItem
+                      ? t("ask_for_price")
+                      : formatPrice(
+                          state.items.reduce((sum, i) => {
+                            const applySale =
+                              salesEnabled &&
+                              !hidePrices &&
+                              i.salePrice &&
+                              Number(i.salePrice) > 0;
+                            const p = applySale
+                              ? Number(i.salePrice)
+                              : Number(i.price);
+                            return sum + p * i.quantity;
+                          }, 0)
+                        )}
                   </div>
                 </div>
 

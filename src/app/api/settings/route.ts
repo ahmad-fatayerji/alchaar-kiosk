@@ -3,13 +3,14 @@ import prisma from "@/lib/prisma";
 
 /* ────────── GET /api/settings ────────── */
 export async function GET() {
-    const settings = await prisma.setting.findMany();
+    const settings: Array<{ key: string; value: string }> =
+        await prisma.setting.findMany();
 
     // Convert to key-value object for easier access
-    const settingsObj = settings.reduce((acc, setting) => {
+    const settingsObj = settings.reduce<Record<string, string>>((acc, setting) => {
         acc[setting.key] = setting.value;
         return acc;
-    }, {} as Record<string, string>);
+    }, {});
 
     return NextResponse.json(settingsObj);
 }
@@ -56,3 +57,4 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true });
 }
+

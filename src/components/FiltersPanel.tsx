@@ -8,12 +8,16 @@ import FilterDialog, { FilterRow } from "./FilterDialog";
 import FilterCategoriesDialog from "./FilterCategoriesDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useMessages } from "@/contexts/MessageContext";
 
 export default function FiltersPanel() {
   const [rows, setRows] = useState<FilterRow[]>([]);
   const [search, setSearch] = useState("");
-  const [editing, setEditing] = useState<FilterRow | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
+  const [activeFilter, setActiveFilter] = useState<FilterRow | null>(null);
   const [busy, setBusy] = useState(false);
+  const { confirm } = useMessages();
 
   /* NEW: state for “manage categories” dialog */
   const [catDlgId, setCatDlgId] = useState<number | null>(null);
@@ -28,25 +32,20 @@ export default function FiltersPanel() {
   }, []);
 
   /* ---------- create ---------- */
-  async function create() {
-    const name = prompt("New filter name:");
-    if (!name?.trim()) return;
-
-    const type = prompt("Type? label / number / range", "label")?.toUpperCase();
-    if (!["LABEL", "NUMBER", "RANGE"].includes(type ?? ""))
-      return alert("Bad type");
-
-    await fetch("/api/filters", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), type }),
-    });
-    load();
+  function openCreate() {
+    setDialogMode("create");
+    setActiveFilter(null);
+    setDialogOpen(true);
   }
 
   /* ---------- delete ---------- */
   async function remove(id: number) {
-    if (!confirm("Delete this filter?")) return;
+    const confirmed = await confirm({
+      message: "Delete this filter?",
+      confirmLabel: "Delete",
+      confirmVariant: "destructive",
+    });
+    if (!confirmed) return;
     setBusy(true);
     await fetch(`/api/filters/${id}`, { method: "DELETE" });
     setBusy(false);
@@ -76,7 +75,7 @@ export default function FiltersPanel() {
             className="w-64"
         />
 
-        <Button size="sm" onClick={create}>
+        <Button size="sm" onClick={openCreate}>
           <Plus className="mr-1.5 h-4 w-4" />
             New Filter
         </Button>
@@ -129,7 +128,11 @@ export default function FiltersPanel() {
                           variant="outline"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => setEditing(r)}
+                          onClick={() => {
+                            setActiveFilter(r);
+                            setDialogMode("edit");
+                            setDialogOpen(true);
+                          }}
                           title="Edit filter"
                         >
                           <Pencil size={14} />
@@ -158,9 +161,13 @@ export default function FiltersPanel() {
 
       {/* edit dialog */}
       <FilterDialog
-        open={editing !== null}
-        filter={editing}
-        onClose={() => setEditing(null)}
+        open={dialogOpen}
+        mode={dialogMode}
+        filter={activeFilter}
+        onClose={() => {
+          setDialogOpen(false);
+          setActiveFilter(null);
+        }}
         onSaved={load}
       />
 

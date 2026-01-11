@@ -15,6 +15,7 @@ import {
 import OrderEditDialog from "@/components/OrderEditDialog";
 import { useOrderUpdates } from "@/hooks/useOrderUpdates";
 import { todayInLebanonYMD, formatLebanon } from "@/lib/time";
+import { useMessages } from "@/contexts/MessageContext";
 
 type OrderItem = {
   barcode: string;
@@ -29,6 +30,7 @@ type Order = {
   orderNumber: string;
   createdAt: string;
   isFulfilled: boolean;
+  isCancelled: boolean;
   items: OrderItem[];
 };
 
@@ -45,6 +47,7 @@ export default function OrdersPage() {
   const [newOrderIds, setNewOrderIds] = useState<Set<number>>(new Set());
 
   const { isConnected, handleOrderUpdate } = useOrderUpdates(dateFilter);
+  const { notify, confirm } = useMessages();
 
   useEffect(() => {
     fetchOrdersByDate();
@@ -55,7 +58,7 @@ export default function OrdersPage() {
     const cleanup = handleOrderUpdate((update) => {
       if (update.type === "new_order") {
         // Only add the order if it's for the currently filtered date
-        if (update.date === dateFilter) {
+        if (dateFilter && update.date === dateFilter) {
           setOrders((prevOrders) => {
             // Check if order already exists to avoid duplicates
             const exists = prevOrders.some(
@@ -95,6 +98,14 @@ export default function OrdersPage() {
               : order
           )
         );
+      } else if (update.type === "order_cancelled") {
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === update.order?.id
+              ? { ...order, isCancelled: true }
+              : order
+          )
+        );
       }
     });
 
@@ -102,6 +113,11 @@ export default function OrdersPage() {
   }, [dateFilter, handleOrderUpdate]);
 
   const fetchOrdersByDate = async () => {
+    if (!dateFilter) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const response = await fetch(`/api/orders/by-date?date=${dateFilter}`);
@@ -142,31 +158,82 @@ export default function OrdersPage() {
             )
             .join("\n");
 
-          alert(
-            `Order fulfilled successfully!\n\nStock updates:\n${updateSummary}`
-          );
+          notify({
+            title: "Order fulfilled",
+            message: `Stock updates:\n${updateSummary}`,
+            variant: "success",
+            duration: 9000,
+          });
         } else {
-          alert("Order fulfilled successfully!");
+          notify({ message: "Order fulfilled successfully!", variant: "success" });
         }
       } else {
         const error = await response.json();
         if (error.error === "Insufficient stock") {
-          alert(
-            `Cannot fulfill order:\n\n${error.message}\n\nPlease check inventory and try again.`
-          );
+          notify({
+            title: "Cannot fulfill order",
+            message: `${error.message}\n\nPlease check inventory and try again.`,
+            variant: "error",
+            duration: 9000,
+          });
         } else {
-          alert(`Error fulfilling order: ${error.error || "Unknown error"}`);
+          notify({
+            message: `Error fulfilling order: ${error.error || "Unknown error"}`,
+            variant: "error",
+          });
         }
       }
     } catch (error) {
       console.error("Error fulfilling order:", error);
-      alert("Failed to fulfill order. Please try again.");
+      notify({
+        message: "Failed to fulfill order. Please try again.",
+        variant: "error",
+      });
     }
   };
 
   const handleEditOrder = (order: Order) => {
     setSelectedOrder(order);
     setEditDialogOpen(true);
+  };
+
+  const handleCancelOrder = async (orderId: number) => {
+    const confirmed = await confirm({
+      message: "Are you sure you want to cancel this order?",
+      confirmLabel: "Cancel order",
+      confirmVariant: "destructive",
+    });
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`/api/orders/${orderId}/cancel`, {
+        method: "PATCH",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === orderId
+              ? { ...order, isCancelled: true, ...result.order }
+              : order
+          )
+        );
+        notify({ message: "Order cancelled successfully!", variant: "success" });
+      } else {
+        const error = await response.json();
+        notify({
+          message: `Error cancelling order: ${error.error || "Unknown error"}`,
+          variant: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      notify({
+        message: "Failed to cancel order. Please try again.",
+        variant: "error",
+      });
+    }
   };
 
   const handleOrderUpdated = (updatedOrder: Order) => {
@@ -280,12 +347,13 @@ export default function OrdersPage() {
         <div className="text-center py-8 text-gray-500">Loading orders...</div>
       ) : filteredOrders.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          No orders found for{" "}
-          {formatLebanon(`${dateFilter}T00:00:00`, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          })}
+          {dateFilter
+            ? `No orders found for ${formatLebanon(`${dateFilter}T00:00:00`, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}`
+            : "Select a date to view orders."}
         </div>
       ) : (
         <div className="space-y-2">
@@ -293,6 +361,7 @@ export default function OrdersPage() {
             const { prefix, suffix } = formatOrderNumber(order.orderNumber);
             const isExpanded = expandedOrders.has(order.id);
             const isNewOrder = newOrderIds.has(order.id);
+            const isPending = !order.isFulfilled && !order.isCancelled;
 
             return (
               <Card
@@ -330,12 +399,18 @@ export default function OrdersPage() {
                       <Badge
                         variant="secondary"
                         className={
-                          order.isFulfilled
-                            ? "bg-green-600 text-white hover:bg-green-700"
-                            : "bg-yellow-500 text-white hover:bg-yellow-600"
+                          order.isCancelled
+                            ? "bg-red-600 text-white hover:bg-red-700"
+                            : order.isFulfilled
+                              ? "bg-green-600 text-white hover:bg-green-700"
+                              : "bg-yellow-500 text-white hover:bg-yellow-600"
                         }
                       >
-                        {order.isFulfilled ? "Fulfilled" : "Pending"}
+                        {order.isCancelled
+                          ? "Cancelled"
+                          : order.isFulfilled
+                            ? "Fulfilled"
+                            : "Pending"}
                       </Badge>
                     </div>
 
@@ -444,7 +519,7 @@ export default function OrdersPage() {
                           </div>
 
                           <div className="flex items-center gap-3">
-                            {!order.isFulfilled && (
+                            {isPending && (
                               <Button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -459,7 +534,7 @@ export default function OrdersPage() {
                               </Button>
                             )}
 
-                            {!order.isFulfilled && (
+                            {isPending && (
                               <Button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -469,6 +544,20 @@ export default function OrdersPage() {
                                 className="bg-green-500 hover:bg-green-600 text-white font-medium"
                               >
                                 Mark Fulfilled
+                              </Button>
+                            )}
+
+                            {isPending && (
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCancelOrder(order.id);
+                                }}
+                                size="sm"
+                                variant="outline"
+                                className="border-red-200 text-red-600 hover:bg-red-50"
+                              >
+                                Cancel Order
                               </Button>
                             )}
                           </div>

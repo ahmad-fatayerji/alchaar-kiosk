@@ -11,6 +11,7 @@ import { bumpThumbVersion } from "@/hooks/useThumbVersion";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import AdminCategoryDialog from "./AdminCategoryDialog";
+import { useMessages } from "@/contexts/MessageContext";
 
 export default function CategoriesPanel() {
   const {
@@ -23,6 +24,7 @@ export default function CategoriesPanel() {
     remove,
     reorder,
   } = useCategories();
+  const { confirm, notify } = useMessages();
 
   const [dialogCatId, setDialogCatId] = useState<number | null>(null);
   const [thumbCatId, setThumbCatId] = useState<number | null>(null);
@@ -52,13 +54,16 @@ export default function CategoriesPanel() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        alert(`Upload failed: ${data.error || res.status}`);
+        notify({
+          message: `Upload failed: ${data.error || res.status}`,
+          variant: "error",
+        });
         return;
       }
       bumpThumbVersion(); // 🔄 refresh
       await loadRoot();
     } catch (err) {
-      alert("Network error uploading image");
+      notify({ message: "Network error uploading image", variant: "error" });
     } finally {
       setThumbCatId(null);
       e.target.value = "";
@@ -110,9 +115,14 @@ export default function CategoriesPanel() {
             targetCat: cat,
           })
         }
-        remove={(cat) => {
-          if (confirm(`Delete “${cat.name}” and all its children?`))
-            remove(cat);
+        remove={async (cat) => {
+          const confirmed = await confirm({
+            message: `Delete "${cat.name}" and all its children?`,
+            confirmLabel: "Delete",
+            confirmVariant: "destructive",
+          });
+          if (!confirmed) return;
+          await remove(cat);
         }}
         openDialog={(id) => setDialogCatId(id)}
         uploadThumb={(id) => {

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Minus, X, Search } from "lucide-react";
+import { useMessages } from "@/contexts/MessageContext";
 
 type OrderItem = {
   barcode: string;
@@ -24,6 +25,7 @@ type Order = {
   orderNumber: string;
   createdAt: string;
   isFulfilled: boolean;
+  isCancelled: boolean;
   items: OrderItem[];
 };
 
@@ -52,6 +54,7 @@ export default function OrderEditDialog({
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { notify } = useMessages();
 
   useEffect(() => {
     if (order) {
@@ -145,11 +148,11 @@ export default function OrderEditDialog({
         onClose();
       } else {
         const error = await response.json();
-        alert(`Error: ${error.error}`);
+        notify({ message: `Error: ${error.error}`, variant: "error" });
       }
     } catch (error) {
       console.error("Error saving order:", error);
-      alert("Failed to save changes");
+      notify({ message: "Failed to save changes", variant: "error" });
     }
     setSaving(false);
   };
@@ -171,9 +174,19 @@ export default function OrderEditDialog({
             Edit Order #{order.orderNumber}
             <Badge
               variant={order.isFulfilled ? "default" : "secondary"}
-              className="ml-2"
+              className={`ml-2 ${
+                order.isCancelled
+                  ? "bg-red-600 text-white"
+                  : order.isFulfilled
+                    ? "bg-green-600 text-white"
+                    : "bg-yellow-500 text-white"
+              }`}
             >
-              {order.isFulfilled ? "Fulfilled" : "Pending"}
+              {order.isCancelled
+                ? "Cancelled"
+                : order.isFulfilled
+                  ? "Fulfilled"
+                  : "Pending"}
             </Badge>
           </DialogTitle>
         </DialogHeader>
