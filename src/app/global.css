@@ -566,6 +566,11 @@ html[data-kiosk-home] .kiosk-home-hint,
   white-space: nowrap;
 }
 
+.kiosk-fab[data-side="right"] .cart-fab-toast {
+  left: auto;
+  right: calc(100% + 0.6rem);
+}
+
 .kiosk-portrait .kiosk-fab .cart-fab-toast {
   font-size: 1.25rem;
   padding: 0.7rem 1.4rem;
