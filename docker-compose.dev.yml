@@ -1,0 +1,28 @@
+name: alchaar-kiosk-dev
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kiosk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+      POSTGRES_DB: ${POSTGRES_DB:-pharmacy}
+    ports:
+      - "${DEV_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - dev_dbdata:/var/lib/postgresql/data
+      - dev_backups:/backups
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-kiosk} -d ${POSTGRES_DB:-pharmacy} || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  dev_dbdata: {}
+  dev_backups: {}

@@ -293,6 +293,14 @@
   font-size: 1.125rem !important;
   height: 3.75rem !important; /* 60px */
 }
+.kiosk-portrait .kiosk-viewport .kiosk-search-bar {
+  display: none;
+}
+@media (orientation: portrait) {
+  .products-page .kiosk-search-bar {
+    display: none;
+  }
+}
 .kiosk-portrait .kiosk-viewport .kiosk-label {
   font-size: 1.125rem;
 }
@@ -564,6 +572,11 @@ html[data-kiosk-home] .kiosk-home-hint,
   animation: cartToastPop 1.4s ease-out;
   pointer-events: none;
   white-space: nowrap;
+}
+
+.kiosk-fab[data-side="right"] .cart-fab-toast {
+  left: auto;
+  right: calc(100% + 0.6rem);
 }
 
 .kiosk-portrait .kiosk-fab .cart-fab-toast {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
@@ -16,7 +16,9 @@ import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 type Category = {
   id: number;
   name: string;
+  arabicName?: string | null;
   slug: string;
+  parentId?: number | null;
   hasChildren?: boolean;
   children?: Category[];
 };
@@ -49,7 +51,6 @@ function findCategoryById(
 
 export default function CategoryPage() {
   const params = useParams();
-  const router = useRouter();
   const categoryId = params.id as string;
   const [category, setCategory] = useState<Category | null>(null);
   const [subcategories, setSubcategories] = useState<Category[]>([]);
@@ -57,10 +58,11 @@ export default function CategoryPage() {
   const [loading, setLoading] = useState(true);
   const [isLeafCategory, setIsLeafCategory] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
-  const [parentPath, setParentPath] = useState<{ id: number; name: string }[]>(
-    []
-  );
+  const [parentPath, setParentPath] = useState<
+    { id: number; name: string; arabicName?: string | null }[]
+  >([]);
   const { t, lang, setLang } = useI18n();
+  const isArabic = lang === "ar";
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     priceMin: 0,
@@ -113,10 +115,10 @@ export default function CategoryPage() {
           setCategory(categoryInfo);
 
           // Build parent path for breadcrumbs
-          const buildParentPath = async (
-            catId: number
-          ): Promise<{ id: number; name: string }[]> => {
-            const path: { id: number; name: string }[] = [];
+          const buildParentPath = async (): Promise<
+            { id: number; name: string; arabicName?: string | null }[]
+          > => {
+            const path: { id: number; name: string; arabicName?: string | null }[] = [];
             let currentCat = categoryInfo;
 
             while (currentCat && currentCat.parentId) {
@@ -124,7 +126,11 @@ export default function CategoryPage() {
                 const parent = await fetch(
                   `/api/categories/${currentCat.parentId}/info`
                 ).then((r) => r.json());
-                path.unshift({ id: parent.id, name: parent.name });
+                path.unshift({
+                  id: parent.id,
+                  name: parent.name,
+                  arabicName: parent.arabicName,
+                });
                 currentCat = parent;
               } catch {
                 break;
@@ -134,7 +140,7 @@ export default function CategoryPage() {
             return path;
           };
 
-          buildParentPath(parseInt(categoryId)).then(setParentPath);
+          buildParentPath().then(setParentPath);
 
           // Only fetch products if this is a leaf category (no children)
           if (!hasChildren) {
@@ -280,29 +286,28 @@ export default function CategoryPage() {
       {/* Header */}
       <div className="bg-white border-b border-green-200 kiosk-header-static">
         <div className="container mx-auto px-4 py-3 kiosk-text kiosk-portrait:py-6">
-          <div className="flex items-center relative">
-            {/* Back button on left */}
-            <div className="flex items-center gap-4">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+            <div className="flex items-center gap-4 min-w-0 justify-self-start">
               <Button
                 variant="ghost"
                 size="lg"
                 onClick={handleBack}
-                className="kiosk-button text-[#3da874] hover:bg-green-50 px-5 py-3 text-xl font-semibold kiosk-portrait:text-[2.8rem] kiosk-portrait:px-12 kiosk-portrait:py-10"
+                className="kiosk-button text-[#3da874] hover:bg-green-50 px-4 py-3 text-xl font-semibold max-w-full kiosk-portrait:text-[2.4rem] kiosk-portrait:px-8 kiosk-portrait:py-8"
               >
-                <ArrowLeft className="mr-3 h-8 w-8 kiosk-portrait:h-20 kiosk-portrait:w-20" />
-                <span className="leading-none kiosk-portrait:text-[2.8rem]">
+                <ArrowLeft
+                  className={`${isArabic ? "ml-3 rotate-180" : "mr-3"} h-8 w-8 shrink-0 kiosk-portrait:h-16 kiosk-portrait:w-16`}
+                />
+                <span className="leading-none truncate">
                   {parentPath.length > 0 ? t("back") : t("back_to_categories")}
                 </span>
               </Button>
             </div>
-            {/* Centered category title */}
-            <h1 className="kiosk-title text-3xl font-bold text-[#3da874] kiosk-portrait:text-[4.2rem] absolute left-1/2 -translate-x-1/2 pointer-events-none">
-              {lang === "ar" && (category as any)?.arabicName
-                ? (category as any).arabicName
+            <h1 className="kiosk-title text-3xl font-bold text-[#3da874] kiosk-portrait:text-[4rem] text-center truncate min-w-0 px-2">
+              {isArabic && category?.arabicName
+                ? category.arabicName
                 : category?.name || `Category ${categoryId}`}
             </h1>
-            {/* Language toggle on right */}
-            <div className="ml-auto flex items-center gap-3">
+            <div className="flex items-center gap-3 justify-self-end">
               {(["en", "ar"] as const).map((code) => (
                 <button
                   key={code}
@@ -310,7 +315,7 @@ export default function CategoryPage() {
                     e.stopPropagation();
                     setLang(code);
                   }}
-                  className={`px-3 h-10 rounded-xl border-2 font-semibold tracking-wide transition-colors text-sm kiosk-portrait:h-[7rem] kiosk-portrait:text-[2.2rem] kiosk-portrait:px-10 kiosk-portrait:rounded-[2rem] ${
+                  className={`px-3 h-10 rounded-xl border-2 font-semibold tracking-wide transition-colors text-sm kiosk-portrait:h-[5.8rem] kiosk-portrait:text-[1.8rem] kiosk-portrait:px-7 kiosk-portrait:rounded-[1.6rem] ${
                     lang === code
                       ? "bg-[#3da874] text-white border-[#3da874] shadow"
                       : "bg-white text-[#3da874] border-[#3da874] hover:bg-green-50"
@@ -328,22 +333,32 @@ export default function CategoryPage() {
                 onClick={() => handleBreadcrumbClick(null)}
                 className="hover:text-[#3da874] transition-colors"
               >
-                {t("browse")}
+                <bdi>{t("browse")}</bdi>
               </button>
               {parentPath.map((parent) => (
                 <span key={parent.id} className="flex items-center">
-                  <span className="mx-2">→</span>
+                  <span className="mx-2" aria-hidden>
+                    {isArabic ? "<-" : "->"}
+                  </span>
                   <button
                     onClick={() => handleBreadcrumbClick(parent.id)}
                     className="hover:text-[#3da874] transition-colors"
                   >
-                    {parent.name}
+                    <bdi>
+                      {isArabic && parent.arabicName ? parent.arabicName : parent.name}
+                    </bdi>
                   </button>
                 </span>
               ))}
-              <span className="mx-2">→</span>
+              <span className="mx-2" aria-hidden>
+                {isArabic ? "<-" : "->"}
+              </span>
               <span className="text-[#3da874] font-medium">
-                {category?.name}
+                <bdi>
+                  {isArabic && category?.arabicName
+                    ? category.arabicName
+                    : category?.name}
+                </bdi>
               </span>
             </div>
           )}
@@ -375,8 +390,8 @@ export default function CategoryPage() {
                     }
                     description={
                       subcategory.hasChildren
-                        ? "Contains subcategories"
-                        : "Contains products"
+                        ? t("category_has_children_desc")
+                        : t("category_browse_desc")
                     }
                     onClick={handleSubcategoryClick}
                   />
@@ -441,3 +456,4 @@ export default function CategoryPage() {
     </div>
   );
 }
+

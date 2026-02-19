@@ -34,6 +34,7 @@ export default function ProductsPage() {
 
   const { hidePrices, showQuantities, idleTimeoutSeconds } = useKioskSettings();
   const { t, lang, setLang } = useI18n();
+  const isArabic = lang === "ar";
 
   useIdleTimeout({
     timeoutMs: idleTimeoutSeconds * 1000,
@@ -172,43 +173,46 @@ export default function ProductsPage() {
     <div className="products-page kiosk-viewport min-h-screen bg-gradient-to-b from-green-50 to-white">
       {/* Header */}
       <div className="bg-white border-b border-green-200 kiosk-header-static">
-        <div className="container mx-auto px-4 py-3 kiosk-text kiosk-portrait:py-6 products-header-bar relative flex items-center">
-          {/* Back button (left) */}
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="lg"
-              onClick={handleBack}
-              className="kiosk-button products-back-button text-[#3da874] hover:bg-green-50 px-5 py-3 text-xl font-semibold kiosk-portrait:text-[2.8rem] kiosk-portrait:px-12 kiosk-portrait:py-10"
-            >
-              <ArrowLeft className="mr-3 h-8 w-8 kiosk-portrait:h-20 kiosk-portrait:w-20" />
-              <span className="leading-none kiosk-portrait:text-[2.8rem]">
-                {t("back_to_categories")}
-              </span>
-            </Button>
-          </div>
-          {/* Centered title absolute to remain centered regardless of side widths */}
-          <h1 className="kiosk-title text-3xl font-bold text-[#3da874] kiosk-portrait:text-[4.5rem] absolute left-1/2 -translate-x-1/2 pointer-events-none">
-            {t("all_products")}
-          </h1>
-          {/* Right language toggle (kiosk only visible here) */}
-          <div className="ml-auto flex items-center gap-3">
-            {(["en", "ar"] as const).map((code) => (
-              <button
-                key={code}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setLang(code);
-                }}
-                className={`px-3 h-10 rounded-xl border-2 font-semibold tracking-wide transition-colors text-sm kiosk-portrait:h-[7rem] kiosk-portrait:text-[2.2rem] kiosk-portrait:px-10 kiosk-portrait:rounded-[2rem] ${
-                  lang === code
-                    ? "bg-[#3da874] text-white border-[#3da874] shadow"
-                    : "bg-white text-[#3da874] border-[#3da874] hover:bg-green-50"
-                }`}
+        <div className="container mx-auto px-4 py-3 kiosk-text kiosk-portrait:py-6">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+            <div className="min-w-0 justify-self-start">
+              <Button
+                variant="ghost"
+                size="lg"
+                onClick={handleBack}
+                className="kiosk-button products-back-button text-[#3da874] hover:bg-green-50 px-4 py-3 text-xl font-semibold max-w-full kiosk-portrait:text-[2.4rem] kiosk-portrait:px-8 kiosk-portrait:py-8"
               >
-                {code.toUpperCase()}
-              </button>
-            ))}
+                <ArrowLeft
+                  className={`${isArabic ? "ml-3 rotate-180" : "mr-3"} h-8 w-8 shrink-0 kiosk-portrait:h-16 kiosk-portrait:w-16`}
+                />
+                <span className="leading-none truncate">
+                  {t("back_to_categories")}
+                </span>
+              </Button>
+            </div>
+
+            <h1 className="kiosk-title text-3xl font-bold text-[#3da874] kiosk-portrait:text-[4rem] text-center truncate min-w-0 px-2">
+              {t("all_products")}
+            </h1>
+
+            <div className="justify-self-end flex items-center gap-2">
+              {(["en", "ar"] as const).map((code) => (
+                <button
+                  key={code}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLang(code);
+                  }}
+                  className={`px-3 h-10 rounded-xl border-2 font-semibold tracking-wide transition-colors text-sm kiosk-portrait:h-[5.8rem] kiosk-portrait:text-[1.8rem] kiosk-portrait:px-7 kiosk-portrait:rounded-[1.6rem] ${
+                    lang === code
+                      ? "bg-[#3da874] text-white border-[#3da874] shadow"
+                      : "bg-white text-[#3da874] border-[#3da874] hover:bg-green-50"
+                  }`}
+                >
+                  {code.toUpperCase()}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
