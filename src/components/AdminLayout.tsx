@@ -82,7 +82,7 @@ export default function AdminLayout({
           setInfoError(
             error instanceof Error
               ? error.message
-              : "Failed to load build information"
+              : "Failed to load build information",
           );
         }
       } finally {
@@ -105,7 +105,9 @@ export default function AdminLayout({
             <h1 className="text-xl font-bold tracking-tight text-foreground">
               Admin Panel
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">Manage your store</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage your store
+            </p>
           </div>
 
           <nav className="flex-1 p-4 space-y-2">
@@ -119,7 +121,7 @@ export default function AdminLayout({
                     "w-full justify-start gap-3 h-10 px-3",
                     id === tab
                       ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent",
                   )}
                   onClick={() => onTab(id)}
                 >
@@ -152,16 +154,15 @@ export default function AdminLayout({
           </div>
         </aside>
 
-        <section className="flex-1 overflow-y-auto bg-muted/30 p-8">{children}</section>
+        <section className="flex-1 overflow-y-auto bg-muted/30 p-8">
+          {children}
+        </section>
       </main>
 
       <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Build Information</DialogTitle>
-            <DialogDescription>
-              Snapshot of this running app image/build for debugging.
-            </DialogDescription>
           </DialogHeader>
 
           {isInfoLoading && (
@@ -171,7 +172,9 @@ export default function AdminLayout({
             </div>
           )}
 
-          {infoError && <div className="text-sm text-red-600">Failed: {infoError}</div>}
+          {infoError && (
+            <div className="text-sm text-red-600">Failed: {infoError}</div>
+          )}
 
           {!isInfoLoading && !infoError && buildInfo && (
             <dl className="space-y-2 text-sm">
