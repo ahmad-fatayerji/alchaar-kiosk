@@ -280,9 +280,9 @@ export default function CategoryPage() {
       {/* Header */}
       <div className="bg-white border-b border-green-200 kiosk-header-static">
         <div className="container mx-auto px-4 py-3 kiosk-text kiosk-portrait:py-6">
-          <div className="flex items-center relative">
+          <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
             {/* Back button on left */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 min-w-0">
               <Button
                 variant="ghost"
                 size="lg"
@@ -295,14 +295,14 @@ export default function CategoryPage() {
                 </span>
               </Button>
             </div>
-            {/* Centered category title */}
-            <h1 className="kiosk-title text-3xl font-bold text-[#3da874] kiosk-portrait:text-[4.2rem] absolute left-1/2 -translate-x-1/2 pointer-events-none">
+            {/* Centered category title (no overlap with side controls) */}
+            <h1 className="kiosk-title text-3xl font-bold text-[#3da874] kiosk-portrait:text-[4.2rem] text-center truncate min-w-0 px-2">
               {lang === "ar" && (category as any)?.arabicName
                 ? (category as any).arabicName
                 : category?.name || `Category ${categoryId}`}
             </h1>
             {/* Language toggle on right */}
-            <div className="ml-auto flex items-center gap-3">
+            <div className="flex items-center gap-3">
               {(["en", "ar"] as const).map((code) => (
                 <button
                   key={code}
