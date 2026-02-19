@@ -41,8 +41,14 @@ export default function ProductsPanel() {
 
   /* ---------- UI state ---------- */
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<"name-asc" | "name-desc">("name-asc");
+  const [nameSort, setNameSort] = useState<"none" | "asc" | "desc">("asc");
+  const [priceSort, setPriceSort] = useState<"none" | "asc" | "desc">("none");
+  const [stockSort, setStockSort] = useState<"none" | "asc" | "desc">("none");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [priceMin, setPriceMin] = useState<string>("");
+  const [priceMax, setPriceMax] = useState<string>("");
+  const [stockMin, setStockMin] = useState<string>("");
+  const [stockMax, setStockMax] = useState<string>("");
   const [editing, setEditing] = useState<Product | null | undefined>(undefined);
   const [assignOpen, setAssignOpen] = useState(false);
   const [saleOpen, setSaleOpen] = useState(false);
@@ -128,8 +134,26 @@ export default function ProductsPanel() {
       }
     }
 
-    if (sortBy) {
-      const direction = sortBy === "name-asc" ? 1 : -1;
+    const minPrice = priceMin.trim() === "" ? null : Number(priceMin);
+    const maxPrice = priceMax.trim() === "" ? null : Number(priceMax);
+    if (minPrice != null && !Number.isNaN(minPrice)) {
+      next = next.filter((p) => Number(p.price) >= minPrice);
+    }
+    if (maxPrice != null && !Number.isNaN(maxPrice)) {
+      next = next.filter((p) => Number(p.price) <= maxPrice);
+    }
+
+    const minStock = stockMin.trim() === "" ? null : Number(stockMin);
+    const maxStock = stockMax.trim() === "" ? null : Number(stockMax);
+    if (minStock != null && !Number.isNaN(minStock)) {
+      next = next.filter((p) => Number(p.qtyInStock ?? 0) >= minStock);
+    }
+    if (maxStock != null && !Number.isNaN(maxStock)) {
+      next = next.filter((p) => Number(p.qtyInStock ?? 0) <= maxStock);
+    }
+
+    if (nameSort !== "none") {
+      const direction = nameSort === "asc" ? 1 : -1;
       next = [...next].sort((a, b) => {
         const left = String(a.name ?? "");
         const right = String(b.name ?? "");
@@ -138,10 +162,30 @@ export default function ProductsPanel() {
           direction
         );
       });
+    } else if (priceSort !== "none") {
+      const direction = priceSort === "asc" ? 1 : -1;
+      next = [...next].sort(
+        (a, b) => (Number(a.price) - Number(b.price)) * direction
+      );
+    } else if (stockSort !== "none") {
+      const direction = stockSort === "asc" ? 1 : -1;
+      next = [...next].sort(
+        (a, b) => (Number(a.qtyInStock ?? 0) - Number(b.qtyInStock ?? 0)) * direction
+      );
     }
 
     return next;
-  }, [products, categoryFilter, sortBy]);
+  }, [
+    products,
+    categoryFilter,
+    nameSort,
+    priceSort,
+    stockSort,
+    priceMin,
+    priceMax,
+    stockMin,
+    stockMax,
+  ]);
 
   return (
     <>
@@ -182,11 +226,6 @@ export default function ProductsPanel() {
       <ProductsToolbar
         search={search}
         onSearch={setSearch}
-        sortBy={sortBy}
-        onSortByChange={setSortBy}
-        categoryFilter={categoryFilter}
-        onCategoryFilterChange={setCategoryFilter}
-        categories={sortedCats}
         onNew={() => setEditing(null)}
         onBulk={bulkUpload}
         onExport={exportAll}
@@ -211,6 +250,41 @@ export default function ProductsPanel() {
             onUploaded={() => refresh(showArchived)}
             salesEnabled={salesEnabled}
             onAdjustStock={adjustStock}
+            categories={sortedCats}
+            nameSort={nameSort}
+            onNameSortChange={(value) => {
+              setNameSort(value);
+              if (value !== "none") {
+                setPriceSort("none");
+                setStockSort("none");
+              }
+            }}
+            priceSort={priceSort}
+            onPriceSortChange={(value) => {
+              setPriceSort(value);
+              if (value !== "none") {
+                setNameSort("none");
+                setStockSort("none");
+              }
+            }}
+            stockSort={stockSort}
+            onStockSortChange={(value) => {
+              setStockSort(value);
+              if (value !== "none") {
+                setNameSort("none");
+                setPriceSort("none");
+              }
+            }}
+            categoryFilter={categoryFilter}
+            onCategoryFilterChange={setCategoryFilter}
+            priceMin={priceMin}
+            priceMax={priceMax}
+            onPriceMinChange={setPriceMin}
+            onPriceMaxChange={setPriceMax}
+            stockMin={stockMin}
+            stockMax={stockMax}
+            onStockMinChange={setStockMin}
+            onStockMaxChange={setStockMax}
           />
         </CardContent>
       </Card>

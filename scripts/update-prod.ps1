@@ -9,6 +9,18 @@ if (!(Test-Path $composeFile)) { Write-Host "Missing $composeFile" -ForegroundCo
 Write-Host "Updating production stack..." -ForegroundColor Cyan
 $env:COMPOSE_PROJECT_NAME = "alchaar-kiosk"
 
+if (-not $env:APP_GIT_SHA) {
+    $gitSha = git rev-parse HEAD 2>$null
+    if ($LASTEXITCODE -eq 0 -and $gitSha) { $env:APP_GIT_SHA = $gitSha.Trim() }
+}
+if (-not $env:APP_GIT_REF) {
+    $gitRef = git rev-parse --abbrev-ref HEAD 2>$null
+    if ($LASTEXITCODE -eq 0 -and $gitRef) { $env:APP_GIT_REF = $gitRef.Trim() }
+}
+if (-not $env:APP_BUILD_TIME) {
+    $env:APP_BUILD_TIME = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+}
+
 # Pre-update backup (abort on failure)
 $ts = Get-Date -Format "yyyyMMdd-HHmmss"
 $backupName = "preupdate-$ts.sql.gz"

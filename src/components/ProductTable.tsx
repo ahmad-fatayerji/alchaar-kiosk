@@ -9,6 +9,12 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import {
+  ArrowDownAZ,
+  ArrowUpAZ,
+  ChevronDown,
+  SlidersHorizontal,
+} from "lucide-react";
 
 import {
   Table,
@@ -18,53 +24,304 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import RowActions from "./RowActions";
 import Thumb from "./Thumb";
-import type { Product } from "./ProductDialog";
+import type { Product, Category } from "./ProductDialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
-/* ------------------------------------------------------------------ */
-/* Props                                                               */
-/* ------------------------------------------------------------------ */
 type Props = {
   data: Product[];
   globalFilter: string;
   selected: Set<string>;
-  /* ← accept either a Set *or* an updater fn */
   setSelected: React.Dispatch<React.SetStateAction<Set<string>>>;
   onEdit(p: Product): void;
   onDelete(code: string): void;
-  onUploaded(): void; // refresh after single-row thumb upload
-  salesEnabled?: boolean; // whether sales features are enabled
+  onUploaded(): void;
+  salesEnabled?: boolean;
   onAdjustStock?: (barcode: string, delta: number) => void;
+  categories: Category[];
+  nameSort: "none" | "asc" | "desc";
+  onNameSortChange: (value: "none" | "asc" | "desc") => void;
+  priceSort: "none" | "asc" | "desc";
+  onPriceSortChange: (value: "none" | "asc" | "desc") => void;
+  stockSort: "none" | "asc" | "desc";
+  onStockSortChange: (value: "none" | "asc" | "desc") => void;
+  categoryFilter: string;
+  onCategoryFilterChange: (value: string) => void;
+  priceMin: string;
+  priceMax: string;
+  onPriceMinChange: (value: string) => void;
+  onPriceMaxChange: (value: string) => void;
+  stockMin: string;
+  stockMax: string;
+  onStockMinChange: (value: string) => void;
+  onStockMaxChange: (value: string) => void;
 };
 
-/* ------------------------------------------------------------------ */
-/* Column definitions                                                  */
-/* ------------------------------------------------------------------ */
+function HeaderButton({
+  children,
+  active,
+  onClick,
+}: {
+  children: React.ReactNode;
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className={
+        "-ml-2 h-8 px-2 text-sm font-semibold " +
+        (active ? "text-foreground" : "text-muted-foreground")
+      }
+      onClick={onClick}
+    >
+      {children}
+    </Button>
+  );
+}
+
+function CategoryFilterHeader({
+  categoryFilter,
+  onCategoryFilterChange,
+  categories,
+}: {
+  categoryFilter: string;
+  onCategoryFilterChange: (value: string) => void;
+  categories: Category[];
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [query, setQuery] = React.useState("");
+
+  const filteredCategories = React.useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return categories;
+    return categories.filter((cat) => cat.name.toLowerCase().includes(q));
+  }, [categories, query]);
+
+  const active = categoryFilter !== "all";
+
+  return (
+    <>
+      <HeaderButton active={active} onClick={() => setOpen(true)}>
+        Category
+        <ChevronDown className="h-4 w-4" />
+      </HeaderButton>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Filter by Category</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search categories..."
+            className="mb-3"
+          />
+          <div className="max-h-80 overflow-y-auto space-y-1">
+            <Button
+              type="button"
+              variant={categoryFilter === "all" ? "secondary" : "ghost"}
+              className="w-full justify-start"
+              onClick={() => {
+                onCategoryFilterChange("all");
+                setOpen(false);
+              }}
+            >
+              All Categories
+            </Button>
+            <Button
+              type="button"
+              variant={categoryFilter === "none" ? "secondary" : "ghost"}
+              className="w-full justify-start"
+              onClick={() => {
+                onCategoryFilterChange("none");
+                setOpen(false);
+              }}
+            >
+              Uncategorized
+            </Button>
+            {filteredCategories.map((cat) => (
+              <Button
+                key={cat.id}
+                type="button"
+                variant={
+                  categoryFilter === String(cat.id) ? "secondary" : "ghost"
+                }
+                className="w-full justify-start"
+                onClick={() => {
+                  onCategoryFilterChange(String(cat.id));
+                  setOpen(false);
+                }}
+              >
+                {cat.name}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function RangeFilterHeader({
+  label,
+  sort,
+  onSortChange,
+  min,
+  max,
+  onMinChange,
+  onMaxChange,
+  step,
+}: {
+  label: string;
+  sort: "none" | "asc" | "desc";
+  onSortChange: (value: "none" | "asc" | "desc") => void;
+  min: string;
+  max: string;
+  onMinChange: (value: string) => void;
+  onMaxChange: (value: string) => void;
+  step: string;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [draftMin, setDraftMin] = React.useState(min);
+  const [draftMax, setDraftMax] = React.useState(max);
+  const active = min.trim() !== "" || max.trim() !== "";
+  const nextSort = sort === "asc" ? "desc" : sort === "desc" ? "none" : "asc";
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      setDraftMin(min);
+      setDraftMax(max);
+      setOpen(true);
+      return;
+    }
+    onMinChange(draftMin);
+    onMaxChange(draftMax);
+    setOpen(false);
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <HeaderButton active={sort !== "none"} onClick={() => onSortChange(nextSort)}>
+        {label}
+        {sort === "asc" ? (
+          <ArrowUpAZ className="h-4 w-4" />
+        ) : sort === "desc" ? (
+          <ArrowDownAZ className="h-4 w-4" />
+        ) : (
+          <ChevronDown className="h-4 w-4" />
+        )}
+      </HeaderButton>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className={
+          "h-8 px-2 " + (active ? "text-foreground" : "text-muted-foreground")
+        }
+        onClick={() => handleOpenChange(true)}
+      >
+        <SlidersHorizontal className="h-4 w-4" />
+      </Button>
+
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{label} Filter</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Min</div>
+              <Input
+                type="number"
+                step={step}
+                value={draftMin}
+                onChange={(e) => setDraftMin(e.target.value)}
+                className="h-8"
+              />
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Max</div>
+              <Input
+                type="number"
+                step={step}
+                value={draftMax}
+                onChange={(e) => setDraftMax(e.target.value)}
+                className="h-8"
+              />
+            </div>
+            <div className="flex justify-end pt-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setDraftMin("");
+                  setDraftMax("");
+                  handleOpenChange(false);
+                }}
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 const buildColumns = (
   onEdit: Props["onEdit"],
   onDelete: Props["onDelete"],
   onUploaded: Props["onUploaded"],
   selected: Set<string>,
   toggleSel: (code: string, newSet?: Set<string>) => void,
-  salesEnabled: boolean = true,
-  onAdjustStock?: Props["onAdjustStock"]
+  onAdjustStock: Props["onAdjustStock"],
+  categories: Category[],
+  nameSort: Props["nameSort"],
+  onNameSortChange: Props["onNameSortChange"],
+  priceSort: Props["priceSort"],
+  onPriceSortChange: Props["onPriceSortChange"],
+  stockSort: Props["stockSort"],
+  onStockSortChange: Props["onStockSortChange"],
+  categoryFilter: string,
+  onCategoryFilterChange: Props["onCategoryFilterChange"],
+  priceMin: string,
+  priceMax: string,
+  onPriceMinChange: Props["onPriceMinChange"],
+  onPriceMaxChange: Props["onPriceMaxChange"],
+  stockMin: string,
+  stockMax: string,
+  onStockMinChange: Props["onStockMinChange"],
+  onStockMaxChange: Props["onStockMaxChange"]
 ): ColumnDef<Product>[] => [
-  /* ---- selection checkbox ---- */
   {
     id: "select",
     enableSorting: false,
     size: 50,
     header: ({ table }) => {
       const allCodes = table.getRowModel().rows.map((r) => r.original.barcode);
-      const allSelected = allCodes.every((c) => selected.has(c));
+      const allSelected =
+        allCodes.length > 0 && allCodes.every((c) => selected.has(c));
       return (
         <div className="flex justify-center p-2">
           <Checkbox
-            checked={allSelected && allCodes.length > 0}
+            checked={allSelected}
             onCheckedChange={() => {
               const set = new Set(selected);
               if (allSelected) allCodes.forEach((c) => set.delete(c));
@@ -84,7 +341,6 @@ const buildColumns = (
       </div>
     ),
   },
-  /* ---- thumbnail ---- */
   {
     id: "thumb",
     header: () => <span className="sr-only">Image</span>,
@@ -92,7 +348,6 @@ const buildColumns = (
     size: 70,
     cell: ({ row }) => <Thumb code={row.original.barcode} />,
   },
-  /* ---- barcode ---- */
   {
     accessorKey: "barcode",
     header: "Barcode",
@@ -102,10 +357,27 @@ const buildColumns = (
       </code>
     ),
   },
-  /* ---- name ---- */
   {
     accessorKey: "name",
-    header: "Name",
+    header: () => {
+      const nextState =
+        nameSort === "asc" ? "desc" : nameSort === "desc" ? "none" : "asc";
+      return (
+        <HeaderButton
+          active={nameSort !== "none"}
+          onClick={() => onNameSortChange(nextState)}
+        >
+          Name
+          {nameSort === "asc" ? (
+            <ArrowUpAZ className="h-4 w-4" />
+          ) : nameSort === "desc" ? (
+            <ArrowDownAZ className="h-4 w-4" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
+          )}
+        </HeaderButton>
+      );
+    },
     cell: ({ row, getValue }) => {
       const archived = (row.original as any).archived;
       return (
@@ -142,38 +414,41 @@ const buildColumns = (
       );
     },
   },
-  /* ---- category ---- */
   {
     accessorKey: "category",
-    header: "Category",
+    header: () => (
+      <CategoryFilterHeader
+        categoryFilter={categoryFilter}
+        onCategoryFilterChange={onCategoryFilterChange}
+        categories={categories}
+      />
+    ),
     cell: ({ getValue }) =>
       typeof getValue() === "string" ? (
         <Badge variant="outline">{getValue() as string}</Badge>
       ) : (getValue() as any)?.name ? (
         <Badge variant="outline">{(getValue() as any).name}</Badge>
       ) : (
-        <span className="text-muted-foreground">—</span>
+        <span className="text-muted-foreground">-</span>
       ),
   },
-  /* ---- price ---- */
   {
     accessorKey: "price",
     header: () => (
-      <div className="flex items-center gap-2">
-        Price
-        {!salesEnabled && (
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-            Sales Disabled
-          </span>
-        )}
-      </div>
+      <RangeFilterHeader
+        label="Price"
+        sort={priceSort}
+        onSortChange={onPriceSortChange}
+        min={priceMin}
+        max={priceMax}
+        onMinChange={onPriceMinChange}
+        onMaxChange={onPriceMaxChange}
+        step="0.01"
+      />
     ),
     cell: ({ row }) => {
       const regularPrice = Number(row.original.price);
-      const hasSale =
-        salesEnabled &&
-        row.original.salePrice &&
-        Number(row.original.salePrice) > 0;
+      const hasSale = row.original.salePrice && Number(row.original.salePrice) > 0;
       const salePrice = hasSale ? Number(row.original.salePrice) : null;
       const isNA = !hasSale && regularPrice === 0;
 
@@ -197,10 +472,20 @@ const buildColumns = (
       );
     },
   },
-  /* ---- stock ---- */
   {
     accessorKey: "qtyInStock",
-    header: "Stock",
+    header: () => (
+      <RangeFilterHeader
+        label="Stock"
+        sort={stockSort}
+        onSortChange={onStockSortChange}
+        min={stockMin}
+        max={stockMax}
+        onMinChange={onStockMinChange}
+        onMaxChange={onStockMaxChange}
+        step="1"
+      />
+    ),
     cell: ({ row, getValue }) => {
       const qty = getValue() as number;
       const archived = (row.original as any).archived;
@@ -214,7 +499,7 @@ const buildColumns = (
               className="size-6 rounded border border-input text-xs leading-none flex items-center justify-center hover:bg-accent"
               aria-label="Decrease stock"
             >
-              −
+              -
             </button>
           )}
           <Badge
@@ -241,7 +526,6 @@ const buildColumns = (
       );
     },
   },
-  /* ---- row actions ---- */
   {
     id: "actions",
     enableSorting: false,
@@ -257,9 +541,6 @@ const buildColumns = (
   },
 ];
 
-/* ------------------------------------------------------------------ */
-/* Component                                                           */
-/* ------------------------------------------------------------------ */
 export default function ProductTable({
   data,
   globalFilter,
@@ -270,8 +551,24 @@ export default function ProductTable({
   onUploaded,
   salesEnabled = true,
   onAdjustStock,
+  categories,
+  nameSort,
+  onNameSortChange,
+  priceSort,
+  onPriceSortChange,
+  stockSort,
+  onStockSortChange,
+  categoryFilter,
+  onCategoryFilterChange,
+  priceMin,
+  priceMax,
+  onPriceMinChange,
+  onPriceMaxChange,
+  stockMin,
+  stockMax,
+  onStockMinChange,
+  onStockMaxChange,
 }: Props) {
-  /* helper to toggle selection */
   const toggleSel = React.useCallback(
     (code: string, newSet?: Set<string>) => {
       if (code === "___bulk" && newSet) {
@@ -287,7 +584,6 @@ export default function ProductTable({
     [setSelected]
   );
 
-  /* react-table instance */
   const table = useReactTable({
     data,
     columns: React.useMemo(
@@ -298,8 +594,24 @@ export default function ProductTable({
           onUploaded,
           selected,
           toggleSel,
-          salesEnabled,
-          onAdjustStock
+          onAdjustStock,
+          categories,
+          nameSort,
+          onNameSortChange,
+          priceSort,
+          onPriceSortChange,
+          stockSort,
+          onStockSortChange,
+          categoryFilter,
+          onCategoryFilterChange,
+          priceMin,
+          priceMax,
+          onPriceMinChange,
+          onPriceMaxChange,
+          stockMin,
+          stockMax,
+          onStockMinChange,
+          onStockMaxChange
         ),
       [
         onEdit,
@@ -307,8 +619,24 @@ export default function ProductTable({
         onUploaded,
         selected,
         toggleSel,
-        salesEnabled,
         onAdjustStock,
+        categories,
+        nameSort,
+        onNameSortChange,
+        priceSort,
+        onPriceSortChange,
+        stockSort,
+        onStockSortChange,
+        categoryFilter,
+        onCategoryFilterChange,
+        priceMin,
+        priceMax,
+        onPriceMinChange,
+        onPriceMaxChange,
+        stockMin,
+        stockMax,
+        onStockMinChange,
+        onStockMaxChange,
       ]
     ),
     state: { globalFilter },
@@ -318,7 +646,6 @@ export default function ProductTable({
     getSortedRowModel: getSortedRowModel(),
   });
 
-  /* render */
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -326,10 +653,7 @@ export default function ProductTable({
           {table.getHeaderGroups().map((hg) => (
             <TableRow key={hg.id} className="bg-muted/50">
               {hg.headers.map((h) => (
-                <TableHead
-                  key={h.id}
-                  className="whitespace-nowrap font-semibold"
-                >
+                <TableHead key={h.id} className="whitespace-nowrap font-semibold">
                   {h.isPlaceholder
                     ? null
                     : flexRender(h.column.columnDef.header, h.getContext())}
