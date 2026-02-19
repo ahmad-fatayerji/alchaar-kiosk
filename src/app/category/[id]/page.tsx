@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import ProductFilters, { FilterState } from "@/components/ProductFilters";
@@ -288,10 +289,21 @@ export default function CategoryPage() {
 
   return (
     <div className="products-page kiosk-viewport min-h-screen bg-gradient-to-b from-green-50 to-white">
+      <div className="products-top-logo-wrap pointer-events-none" aria-hidden>
+        <Image
+          src="/logo.svg"
+          alt=""
+          width={560}
+          height={220}
+          priority
+          className="products-top-logo object-contain"
+        />
+      </div>
+
       {/* Header */}
       <div className="bg-white border-b border-green-200 kiosk-header-static">
         <div className="container mx-auto px-4 py-3 kiosk-text kiosk-portrait:py-6">
-          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
             <div className="flex items-center gap-4 min-w-0 justify-self-start">
               <Button
                 variant="ghost"
@@ -399,7 +411,6 @@ export default function CategoryPage() {
                         : t("category_browse_desc")
                     }
                     onClick={handleSubcategoryClick}
-                    onImageClick={(src, alt) => setViewerImage({ src, alt })}
                   />
                 ))}
               </div>

@@ -12,7 +12,6 @@ type CategoryCardProps = {
   description: string;
   isViewAll?: boolean;
   onClick: (categoryId: number | null) => void;
-  onImageClick?: (imageSrc: string, alt: string) => void;
 };
 
 export default function CategoryCard({
@@ -21,11 +20,9 @@ export default function CategoryCard({
   description,
   isViewAll = false,
   onClick,
-  onImageClick,
 }: CategoryCardProps) {
   const [imageError, setImageError] = useState(false);
   const [imageSrc, setImageSrc] = useState("");
-  const [hasLoadedThumbnail, setHasLoadedThumbnail] = useState(false);
   const v = useThumbVersion();
   const { t } = useI18n();
 
@@ -42,10 +39,8 @@ export default function CategoryCard({
     if (base) {
       setImageError(false);
       setImageSrc(`${base}${exts[0]}?v=${v}`);
-      setHasLoadedThumbnail(false);
     } else {
       setImageSrc("");
-      setHasLoadedThumbnail(false);
     }
   }, [base, v]);
 
@@ -60,16 +55,8 @@ export default function CategoryCard({
       setImageSrc(nextSrc);
     } else {
       setImageError(true);
-      setHasLoadedThumbnail(false);
     }
   }
-
-  const handleImageClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isViewAll && !imageError && imageSrc && hasLoadedThumbnail) {
-      onImageClick?.(imageSrc, name);
-    }
-  };
 
   return (
     <Card
@@ -79,10 +66,7 @@ export default function CategoryCard({
       <CardContent className="p-0 h-full flex flex-col">
         {/* Image Section */}
         <div
-          className={`relative flex-1 bg-gray-50 overflow-hidden category-image ${
-            !isViewAll ? "cursor-zoom-in" : ""
-          }`}
-          onClick={handleImageClick}
+          className="relative flex-1 bg-gray-50 overflow-hidden category-image"
         >
           {isViewAll ? (
             // View All Design
@@ -97,15 +81,14 @@ export default function CategoryCard({
           ) : (
             // Category Image with multi-extension fallback (no Next/Image)
             <>
-              {!imageError && base ? (
+              {!imageError && base && imageSrc ? (
                 <img
                   src={imageSrc}
                   alt={name}
                   onError={(e) => fallback(e.currentTarget)}
-                  onLoad={(e) => {
-                    setImageSrc(e.currentTarget.currentSrc || e.currentTarget.src);
-                    setHasLoadedThumbnail(true);
-                  }}
+                  onLoad={(e) =>
+                    setImageSrc(e.currentTarget.currentSrc || e.currentTarget.src)
+                  }
                   className="absolute inset-0 h-full w-full object-cover select-none"
                   draggable={false}
                 />
