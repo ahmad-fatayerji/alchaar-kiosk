@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/build-with-env.mjs dev dev",
     "build": "node scripts/build-with-env.mjs prod build",
     "build:dev": "node scripts/build-with-env.mjs dev build",
     "build:prod": "node scripts/build-with-env.mjs prod build",

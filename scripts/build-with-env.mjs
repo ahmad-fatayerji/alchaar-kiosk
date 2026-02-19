@@ -74,8 +74,8 @@ const envFiles =
 
 const fileEnv = loadEnvFiles(envFiles);
 const env = sanitizeEnvVars({
-  ...fileEnv,
   ...process.env,
+  ...fileEnv,
   APP_ENV: mode,
 });
 
@@ -90,8 +90,12 @@ if (taskArg === "build") {
   run(prismaBin, ["generate"], env);
   run(nextBin, ["build"], env);
 } else if (taskArg === "start") {
+  run(prismaBin, ["generate"], env);
   run(nextBin, ["start"], env);
+} else if (taskArg === "dev") {
+  run(prismaBin, ["generate"], env);
+  run(nextBin, ["dev"], env);
 } else {
-  console.error(`Unknown task "${taskArg}". Use "build" or "start".`);
+  console.error(`Unknown task "${taskArg}". Use "build", "start", or "dev".`);
   process.exit(1);
 }
