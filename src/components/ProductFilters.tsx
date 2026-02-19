@@ -102,8 +102,8 @@ export default function ProductFilters({
       </CardHeader>
 
       <CardContent className="pt-0 kiosk-text">
-        {/* Search - always visible */}
-        <div className="relative mb-4">
+        {/* Search (desktop/admin; hidden on kiosk portrait) */}
+        <div className="relative mb-4 kiosk-search-bar">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
           <Input
             type="search"
