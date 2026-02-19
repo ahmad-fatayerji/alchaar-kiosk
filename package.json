@@ -4,13 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
-    "start": "next start",
+    "build": "node scripts/build-with-env.mjs prod build",
+    "build:dev": "node scripts/build-with-env.mjs dev build",
+    "build:prod": "node scripts/build-with-env.mjs prod build",
+    "start": "node scripts/build-with-env.mjs prod start",
+    "start:dev": "node scripts/build-with-env.mjs dev start",
     "lint": "next lint"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.2.0",
-    "@prisma/client": "^7.2.0",
+    "@prisma/adapter-pg": "7.2.0",
+    "@prisma/client": "7.2.0",
     "@radix-ui/react-checkbox": "^1.3.2",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-dropdown-menu": "^2.1.15",
@@ -22,6 +25,7 @@
     "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "lucide-react": "^0.525.0",
     "next": "^16.1.6",
@@ -41,7 +45,7 @@
     "@types/react-dom": "^19",
     "eslint": "^4.0.0",
     "eslint-config-next": "^16.1.6",
-    "prisma": "^7.2.0",
+    "prisma": "7.2.0",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.5",
     "typescript": "^5"
