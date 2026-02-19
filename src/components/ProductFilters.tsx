@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useRef, useCallback } from "react";
+import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { useI18n } from "@/contexts/LangContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,9 @@ export default function ProductFilters({
 
   const updateFilter = (key: keyof FilterState, value: any) => {
     onFiltersChange({ ...filters, [key]: value });
+  };
+  const updatePriceRange = (priceMin: number, priceMax: number) => {
+    onFiltersChange({ ...filters, priceMin, priceMax });
   };
 
   const clearFilters = () => {
@@ -265,10 +268,7 @@ export default function ProductFilters({
               min={0}
               max={maxPrice}
               value={[filters.priceMin, filters.priceMax]}
-              onChange={(lo, hi) => {
-                updateFilter("priceMin", lo);
-                updateFilter("priceMax", hi);
-              }}
+              onChange={updatePriceRange}
               label={t("price_range", {
                 min: filters.priceMin,
                 max: filters.priceMax,
@@ -348,7 +348,7 @@ function clamp(v: number, a: number, b: number) {
   return Math.min(Math.max(v, a), b);
 }
 
-const THUMB_SIZE = 28;
+const THUMB_SIZE = 34;
 
 function PriceRange({
   min,
@@ -381,21 +381,49 @@ function PriceRange({
     [min, max, onChange]
   );
 
+  useEffect(() => {
+    return () => {
+      if (frame.current) cancelAnimationFrame(frame.current);
+    };
+  }, []);
+
+  const valueFromPointer = useCallback(
+    (clientX: number) => {
+      if (!trackRef.current) return null;
+      const rect = trackRef.current.getBoundingClientRect();
+      const x = clamp(clientX - rect.left, 0, rect.width);
+      return min + (x / rect.width) * (max - min);
+    },
+    [min, max]
+  );
+
   const handlePointerDown = (e: React.PointerEvent, which: "lo" | "hi") => {
     if (disabled) return;
+    e.preventDefault();
+    e.stopPropagation();
     activeThumb.current = which;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    e.currentTarget.setPointerCapture(e.pointerId);
   };
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!activeThumb.current || disabled) return;
-    if (!trackRef.current) return;
-    const rect = trackRef.current.getBoundingClientRect();
-    const x = clamp(e.clientX - rect.left, 0, rect.width);
-    const val = min + (x / rect.width) * (max - min);
+
+  const handleTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (disabled) return;
+    const val = valueFromPointer(e.clientX);
+    if (val == null) return;
+    const distLo = Math.abs(val - lo);
+    const distHi = Math.abs(val - hi);
+    activeThumb.current = distLo <= distHi ? "lo" : "hi";
     if (activeThumb.current === "lo") setVals(val, hi);
     else setVals(lo, val);
   };
-  const handlePointerUp = (e: React.PointerEvent) => {
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!activeThumb.current || disabled) return;
+    const val = valueFromPointer(e.clientX);
+    if (val == null) return;
+    if (activeThumb.current === "lo") setVals(val, hi);
+    else setVals(lo, val);
+  };
+  const handlePointerUp = () => {
     activeThumb.current = null;
   };
 
@@ -413,7 +441,8 @@ function PriceRange({
       <div className="space-y-4 px-2 select-none">
         <div
           ref={trackRef}
-          className="relative h-10 flex items-center"
+          className="relative h-12 flex items-center touch-none"
+          onPointerDown={handleTrackPointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
@@ -431,7 +460,7 @@ function PriceRange({
                 onPointerDown={(e) => handlePointerDown(e, id)}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                className="absolute top-1/2 -translate-y-1/2 bg-white border-2 border-[#3da874] rounded-full shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3da874] transition-colors"
+                className="absolute z-10 top-1/2 -translate-y-1/2 bg-white border-2 border-[#3da874] rounded-full shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3da874] transition-colors touch-none cursor-grab active:cursor-grabbing"
                 style={{
                   width: THUMB_SIZE,
                   height: THUMB_SIZE,
