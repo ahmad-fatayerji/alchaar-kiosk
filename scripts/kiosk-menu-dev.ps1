@@ -60,13 +60,8 @@ function Restore-DB([string]$envFile) {
     Write-Host "Restore source:" -ForegroundColor White
     Write-Host "  1) From dev backups volume (list)"
     Write-Host "  2) From file path (.sql or .sql.gz)"
-    Write-Host "  B) Back"
-    $source = Read-Host "Choose restore source (1/2/B)"
+    $source = Read-Host "Choose restore source (1/2)"
     $backupName = $null
-
-    if ($source -match '^(B|b)$') {
-        return
-    }
 
     if ($source -eq '1') {
         try {
@@ -93,8 +88,7 @@ function Restore-DB([string]$envFile) {
         Write-Host "Examples:"
         Write-Host "  C:\backups\kiosk-dev-backup.sql.gz"
         Write-Host "  .\backups\kiosk-dev-backup.sql"
-        $path = Read-Host "Enter full path to backup file (or B to go back)"
-        if ($path -match '^(B|b)$') { return }
+        $path = Read-Host "Enter full path to backup file"
         $path = $path.Trim()
         if (($path.StartsWith('"') -and $path.EndsWith('"')) -or ($path.StartsWith("'") -and $path.EndsWith("'"))) {
             $path = $path.Substring(1, $path.Length - 2)
