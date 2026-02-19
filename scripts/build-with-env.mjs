@@ -63,6 +63,17 @@ function sanitizeEnvVars(vars) {
   return out;
 }
 
+function getGitValue(args) {
+  const result = spawnSync("git", args, {
+    encoding: "utf8",
+    shell: process.platform === "win32",
+  });
+
+  if (result.status !== 0) return undefined;
+  const value = (result.stdout || "").trim();
+  return value || undefined;
+}
+
 const modeArg = (process.argv[2] || "prod").toLowerCase();
 const taskArg = (process.argv[3] || "build").toLowerCase();
 const mode = modeArg === "dev" ? "development" : "production";
@@ -73,10 +84,20 @@ const envFiles =
     : [".env", ".env.production.local"];
 
 const fileEnv = loadEnvFiles(envFiles);
+const gitSha = getGitValue(["rev-parse", "HEAD"]);
+const gitRef = getGitValue(["rev-parse", "--abbrev-ref", "HEAD"]);
+const buildTime = new Date().toISOString();
+
 const env = sanitizeEnvVars({
   ...process.env,
   ...fileEnv,
   APP_ENV: mode,
+  APP_GIT_SHA: process.env.APP_GIT_SHA || fileEnv.APP_GIT_SHA || gitSha || "unknown",
+  APP_GIT_REF: process.env.APP_GIT_REF || fileEnv.APP_GIT_REF || gitRef || "unknown",
+  APP_BUILD_TIME:
+    process.env.APP_BUILD_TIME || fileEnv.APP_BUILD_TIME || buildTime,
+  APP_IMAGE_REF:
+    process.env.APP_IMAGE_REF || fileEnv.APP_IMAGE_REF || "local-runtime",
 });
 
 const binExt = process.platform === "win32" ? ".cmd" : "";
@@ -85,6 +106,8 @@ const nextBin = resolve(process.cwd(), "node_modules", ".bin", `next${binExt}`);
 
 console.log(`[build] mode=${mode}`);
 console.log(`[build] env files=${envFiles.join(", ")}`);
+console.log(`[build] git sha=${env.APP_GIT_SHA}`);
+console.log(`[build] git ref=${env.APP_GIT_REF}`);
 
 if (taskArg === "build") {
   run(prismaBin, ["generate"], env);

@@ -2,6 +2,11 @@
 # Production multi-stage build
 ##############################
 
+ARG APP_GIT_SHA=unknown
+ARG APP_GIT_REF=unknown
+ARG APP_BUILD_TIME=unknown
+ARG APP_IMAGE_REF=unknown
+
 # 1) Builder: install deps and build Next.js
 FROM node:20-alpine AS builder
 WORKDIR /app
@@ -22,6 +27,15 @@ RUN npm run build
 FROM node:20-alpine AS runner
 ENV NODE_ENV=production
 WORKDIR /app
+
+ARG APP_GIT_SHA=unknown
+ARG APP_GIT_REF=unknown
+ARG APP_BUILD_TIME=unknown
+ARG APP_IMAGE_REF=unknown
+ENV APP_GIT_SHA=$APP_GIT_SHA
+ENV APP_GIT_REF=$APP_GIT_REF
+ENV APP_BUILD_TIME=$APP_BUILD_TIME
+ENV APP_IMAGE_REF=$APP_IMAGE_REF
 
 # Install small utilities for healthcheck and DB wait
 RUN apk add --no-cache curl netcat-openbsd

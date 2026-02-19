@@ -20,6 +20,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Compute build metadata
+        id: build_meta
+        run: |
+          echo "build_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -50,3 +55,8 @@ jobs:
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            APP_GIT_SHA=${{ github.sha }}
+            APP_GIT_REF=${{ github.ref_name }}
+            APP_BUILD_TIME=${{ steps.build_meta.outputs.build_time }}
+            APP_IMAGE_REF=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
