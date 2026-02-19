@@ -10,7 +10,6 @@ import CategoryCard from "../../components/CategoryCard";
 import Cart from "../../components/Cart";
 import { Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import ImageViewer from "@/components/ImageViewer";
 
 type Category = {
   id: number;
@@ -21,10 +20,6 @@ type Category = {
 
 export default function BrowsePage() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [viewerImage, setViewerImage] = useState<{
-    src: string;
-    alt: string;
-  } | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { t, lang, setLang } = useI18n();
@@ -188,7 +183,6 @@ export default function BrowsePage() {
                   }
                   isViewAll={false}
                   onClick={handleCategorySelect}
-                  onImageClick={(src, alt) => setViewerImage({ src, alt })}
                 />
               ))}
           </div>
@@ -228,12 +222,6 @@ export default function BrowsePage() {
 
       {/* Cart Component */}
       <Cart onCheckout={handleCheckout} />
-      <ImageViewer
-        open={Boolean(viewerImage)}
-        src={viewerImage?.src || ""}
-        alt={viewerImage?.alt || ""}
-        onClose={() => setViewerImage(null)}
-      />
     </div>
   );
 }

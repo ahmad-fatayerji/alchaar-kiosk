@@ -191,7 +191,7 @@ export default function ProductsPage() {
       {/* Header */}
       <div className="bg-white border-b border-green-200 kiosk-header-static">
         <div className="container mx-auto px-4 py-3 kiosk-text kiosk-portrait:py-6">
-          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
             <div className="min-w-0 justify-self-start">
               <Button
                 variant="ghost"

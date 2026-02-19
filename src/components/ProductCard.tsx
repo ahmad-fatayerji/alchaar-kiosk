@@ -138,7 +138,7 @@ export default function ProductCard({
           className="relative flex-1 bg-gray-50 overflow-hidden cursor-zoom-in"
           onClick={handleImageClick}
         >
-          {!imageError ? (
+          {!imageError && imageSrc ? (
             <img
               src={imageSrc}
               alt={product.name}
