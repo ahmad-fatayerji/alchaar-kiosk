@@ -34,6 +34,7 @@ type Product = {
   name: string;
   price: string;
   salePrice?: string | null;
+  qtyInStock: number;
 };
 
 interface OrderEditDialogProps {
@@ -124,6 +125,9 @@ export default function OrderEditDialog({
     setSearchResults([]);
   };
 
+  const getInOrderQuantity = (barcode: string) =>
+    editedItems.find((item) => item.barcode === barcode)?.quantity ?? 0;
+
   const saveChanges = async () => {
     if (!order || editedItems.length === 0) return;
 
@@ -168,13 +172,13 @@ export default function OrderEditDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-[96vw] sm:max-w-4xl lg:max-w-5xl max-h-[86vh] overflow-hidden flex flex-col p-8">
         <DialogHeader>
-          <DialogTitle>
-            Edit Order #{order.orderNumber}
+          <DialogTitle className="flex items-center gap-3 text-3xl font-bold leading-none">
+            <span>Edit Order #{order.orderNumber}</span>
             <Badge
               variant={order.isFulfilled ? "default" : "secondary"}
-              className={`ml-2 ${
+              className={`text-base px-3 py-1 leading-none ${
                 order.isCancelled
                   ? "bg-red-600 text-white"
                   : order.isFulfilled
@@ -191,68 +195,94 @@ export default function OrderEditDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-4">
+        <div className="flex-1 overflow-y-auto space-y-6 mt-2">
           {/* Add Product Search */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <Input
                 placeholder="Search products to add..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-12 h-12 text-lg"
               />
             </div>
 
+            {loading && searchTerm.length >= 2 && (
+              <div className="text-base text-gray-500 px-1">Searching...</div>
+            )}
+
+            {!loading && searchTerm.length >= 2 && searchResults.length === 0 && (
+              <div className="text-base text-gray-500 px-1">No matching products</div>
+            )}
+
             {searchResults.length > 0 && (
-              <div className="border rounded-md max-h-32 overflow-y-auto">
-                {searchResults.map((product) => (
-                  <div
-                    key={product.barcode}
-                    className="p-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 flex justify-between items-center"
-                    onClick={() => addProduct(product)}
-                  >
-                    <div>
-                      <div className="font-medium">{product.name}</div>
-                      <div className="text-sm text-gray-500">
-                        {product.barcode}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-medium">
-                        {product.salePrice
-                          ? `$${product.salePrice}`
-                          : `$${product.price}`}
-                      </div>
-                      {product.salePrice && (
-                        <div className="text-sm text-gray-500 line-through">
-                          ${product.price}
+              <div className="border rounded-md max-h-44 overflow-y-auto">
+                {searchResults.map((product) => {
+                  const inOrderQty = getInOrderQuantity(product.barcode);
+                  const remainingAfterOrder = product.qtyInStock - inOrderQty;
+
+                  return (
+                    <div
+                      key={product.barcode}
+                      className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 flex justify-between items-center"
+                      onClick={() => addProduct(product)}
+                    >
+                      <div>
+                        <div className="font-semibold text-xl leading-tight">{product.name}</div>
+                        <div className="text-base text-gray-500">
+                          {product.barcode}
                         </div>
-                      )}
+                        <div
+                          className={`text-sm ${
+                            remainingAfterOrder <= 0
+                              ? "text-red-600"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          Stock: {product.qtyInStock}
+                          {inOrderQty > 0 &&
+                            ` | In order: ${inOrderQty} | Remaining: ${remainingAfterOrder}`}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold text-2xl">
+                          {product.salePrice
+                            ? `$${product.salePrice}`
+                            : `$${product.price}`}
+                        </div>
+                        {product.salePrice && (
+                          <div className="text-base text-gray-500 line-through">
+                            ${product.price}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
 
           {/* Current Items */}
           <div className="space-y-2">
-            <h3 className="font-medium">Order Items</h3>
+            <h3 className="font-semibold text-2xl">Order Items</h3>
             {editedItems.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
+              <div className="text-center py-4 text-lg text-gray-500">
                 No items in order. Search and add products above.
               </div>
             ) : (
               editedItems.map((item) => (
                 <div
                   key={item.barcode}
-                  className="flex items-center justify-between p-3 border rounded"
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 p-4 border rounded"
                 >
-                  <div className="flex-1">
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-sm text-gray-500">{item.barcode}</div>
-                    <div className="text-sm">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-lg leading-tight break-words">
+                      {item.name}
+                    </div>
+                    <div className="text-base text-gray-500">{item.barcode}</div>
+                    <div className="text-lg leading-tight">
                       {item.salePrice ? (
                         <>
                           <span className="font-medium">${item.salePrice}</span>
@@ -266,15 +296,16 @@ export default function OrderEditDialog({
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2">
                     <Button
-                      size="sm"
+                      size="icon"
                       variant="outline"
                       onClick={() =>
                         updateQuantity(item.barcode, item.quantity - 1)
                       }
+                      className="h-12 w-12"
                     >
-                      <Minus className="h-3 w-3" />
+                      <Minus className="h-5 w-5" />
                     </Button>
 
                     <Input
@@ -286,27 +317,28 @@ export default function OrderEditDialog({
                           parseInt(e.target.value) || 0
                         )
                       }
-                      className="w-16 text-center"
+                      className="w-20 h-12 text-xl text-center"
                       min="1"
                     />
 
                     <Button
-                      size="sm"
+                      size="icon"
                       variant="outline"
                       onClick={() =>
                         updateQuantity(item.barcode, item.quantity + 1)
                       }
+                      className="h-12 w-12"
                     >
-                      <Plus className="h-3 w-3" />
+                      <Plus className="h-5 w-5" />
                     </Button>
 
                     <Button
-                      size="sm"
+                      size="icon"
                       variant="outline"
                       onClick={() => removeItem(item.barcode)}
-                      className="text-red-600 hover:text-red-700"
+                      className="h-12 w-12 text-red-600 hover:text-red-700"
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
@@ -317,7 +349,7 @@ export default function OrderEditDialog({
           {/* Order Total */}
           {editedItems.length > 0 && (
             <div className="pt-4 border-t">
-              <div className="flex justify-between items-center font-medium text-lg">
+              <div className="flex justify-between items-center font-semibold text-3xl">
                 <span>Total:</span>
                 <span>${calculateTotal().toFixed(2)}</span>
               </div>
@@ -326,12 +358,13 @@ export default function OrderEditDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} className="h-12 px-6 text-xl">
             Cancel
           </Button>
           <Button
             onClick={saveChanges}
             disabled={saving || editedItems.length === 0}
+            className="h-12 px-6 text-xl"
           >
             {saving ? "Saving..." : "Save Changes"}
           </Button>
