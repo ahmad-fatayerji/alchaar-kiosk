@@ -22,15 +22,19 @@ type Product = {
 type ProductCardProps = {
   product: Product;
   onClick?: (product: Product) => void;
+  onImageClick?: (imageSrc: string, alt: string) => void;
   hidePrices?: boolean; // For admin override
 };
 
 export default function ProductCard({
   product,
   onClick,
+  onImageClick,
   hidePrices: hidePricesOverride,
 }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState("");
+  const [hasLoadedThumbnail, setHasLoadedThumbnail] = useState(false);
   const [hidePrices, setHidePrices] = useState(false);
   const [salesEnabled, setSalesEnabled] = useState(true);
   const [showQuantities, setShowQuantities] = useState(false);
@@ -49,14 +53,23 @@ export default function ProductCard({
   const salePrice = hasSale ? Number(product.salePrice) : null;
   const showAskForPrice = !hasSale && !hidePrices && regularPrice === 0;
 
+  useEffect(() => {
+    setImageError(false);
+    setImageSrc(`${base}${exts[0]}?v=${v}`);
+    setHasLoadedThumbnail(false);
+  }, [base, v]);
+
   function fallback(img: HTMLImageElement) {
     const tried = img.src.split("?")[0];
     const ext = tried.slice(tried.lastIndexOf("."));
     const next = exts[exts.indexOf(ext) + 1];
     if (next) {
-      img.src = `${base}${next}?v=${v}`;
+      const nextSrc = `${base}${next}?v=${v}`;
+      img.src = nextSrc;
+      setImageSrc(nextSrc);
     } else {
       setImageError(true);
+      setHasLoadedThumbnail(false);
     }
   }
 
@@ -87,6 +100,13 @@ export default function ProductCard({
     onClick?.(product);
   };
 
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!imageError && imageSrc && hasLoadedThumbnail) {
+      onImageClick?.(imageSrc, product.name);
+    }
+  };
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -114,12 +134,19 @@ export default function ProductCard({
     >
       <CardContent className="p-0 h-full flex flex-col">
         {/* Image Section */}
-        <div className="relative flex-1 bg-gray-50 overflow-hidden">
+        <div
+          className="relative flex-1 bg-gray-50 overflow-hidden cursor-zoom-in"
+          onClick={handleImageClick}
+        >
           {!imageError ? (
             <img
-              src={`${base}${exts[0]}?v=${v}`}
+              src={imageSrc}
               alt={product.name}
               onError={(e) => fallback(e.currentTarget)}
+              onLoad={(e) => {
+                setImageSrc(e.currentTarget.currentSrc || e.currentTarget.src);
+                setHasLoadedThumbnail(true);
+              }}
               className="absolute inset-0 h-full w-full object-cover select-none"
               draggable={false}
             />

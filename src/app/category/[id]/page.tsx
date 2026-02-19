@@ -9,6 +9,7 @@ import ProductFilters, { FilterState } from "@/components/ProductFilters";
 import CategoryCard from "@/components/CategoryCard";
 import Cart from "@/components/Cart";
 import OrderSuccess from "@/components/OrderSuccess";
+import ImageViewer from "@/components/ImageViewer";
 import { useI18n } from "@/contexts/LangContext";
 import { useKioskSettings } from "@/hooks/useKioskSettings";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
@@ -54,6 +55,10 @@ export default function CategoryPage() {
   const categoryId = params.id as string;
   const [category, setCategory] = useState<Category | null>(null);
   const [subcategories, setSubcategories] = useState<Category[]>([]);
+  const [viewerImage, setViewerImage] = useState<{
+    src: string;
+    alt: string;
+  } | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLeafCategory, setIsLeafCategory] = useState(false);
@@ -394,6 +399,7 @@ export default function CategoryPage() {
                         : t("category_browse_desc")
                     }
                     onClick={handleSubcategoryClick}
+                    onImageClick={(src, alt) => setViewerImage({ src, alt })}
                   />
                 ))}
               </div>
@@ -427,6 +433,7 @@ export default function CategoryPage() {
                     key={product.barcode}
                     product={product}
                     onClick={handleProductClick}
+                    onImageClick={(src, alt) => setViewerImage({ src, alt })}
                   />
                 ))}
               </div>
@@ -453,6 +460,12 @@ export default function CategoryPage() {
       {orderNumber && (
         <OrderSuccess orderNumber={orderNumber} onReturn={handleReturnHome} />
       )}
+      <ImageViewer
+        open={Boolean(viewerImage)}
+        src={viewerImage?.src || ""}
+        alt={viewerImage?.alt || ""}
+        onClose={() => setViewerImage(null)}
+      />
     </div>
   );
 }

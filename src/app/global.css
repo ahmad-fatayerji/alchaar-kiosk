@@ -811,3 +811,45 @@ html[data-kiosk-home] .kiosk-home-hint,
 .kiosk-portrait .browse-page .browse-inline-logo {
   display: none !important;
 }
+
+/* Products page: show logo in upper safe band on tall portrait kiosks */
+.products-page {
+  position: relative;
+}
+.products-page .products-top-logo-wrap {
+  display: none !important;
+  position: absolute;
+  top: clamp(
+    1.25rem,
+    calc((var(--kiosk-vertical-offset) + env(safe-area-inset-top, 0px)) / 2),
+    14vh
+  );
+  margin-top: 1rem;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  pointer-events: none;
+}
+.products-page .products-top-logo {
+  width: clamp(280px, 40vw, 620px);
+  height: auto;
+  opacity: 0.98;
+}
+@media (orientation: portrait) and (min-height: 1200px) {
+  .products-page .products-top-logo-wrap {
+    display: block !important;
+    top: calc(
+      (var(--kiosk-vertical-offset) + env(safe-area-inset-top, 0px)) / 2
+    );
+  }
+  .products-page .products-top-logo {
+    width: clamp(540px, 48vw, 980px);
+  }
+}
+.kiosk-portrait .products-page .products-top-logo-wrap {
+  display: block !important;
+  top: calc((var(--kiosk-vertical-offset) + env(safe-area-inset-top, 0px)) / 2);
+}
+.kiosk-portrait .products-page .products-top-logo {
+  width: clamp(540px, 48vw, 980px);
+}

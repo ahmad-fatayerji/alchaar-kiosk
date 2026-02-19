@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { ArrowLeft } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import ProductFilters, { FilterState } from "@/components/ProductFilters";
 import Cart from "@/components/Cart";
 import OrderSuccess from "@/components/OrderSuccess";
+import ImageViewer from "@/components/ImageViewer";
 import { useKioskSettings } from "@/hooks/useKioskSettings";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 import { useI18n } from "@/contexts/LangContext";
@@ -22,6 +24,10 @@ type Product = {
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [viewerImage, setViewerImage] = useState<{
+    src: string;
+    alt: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>({
@@ -171,6 +177,17 @@ export default function ProductsPage() {
 
   return (
     <div className="products-page kiosk-viewport min-h-screen bg-gradient-to-b from-green-50 to-white">
+      <div className="products-top-logo-wrap pointer-events-none" aria-hidden>
+        <Image
+          src="/logo.svg"
+          alt=""
+          width={560}
+          height={220}
+          priority
+          className="products-top-logo object-contain"
+        />
+      </div>
+
       {/* Header */}
       <div className="bg-white border-b border-green-200 kiosk-header-static">
         <div className="container mx-auto px-4 py-3 kiosk-text kiosk-portrait:py-6">
@@ -235,6 +252,7 @@ export default function ProductsPage() {
                 key={product.barcode}
                 product={product}
                 onClick={handleProductClick}
+                onImageClick={(src, alt) => setViewerImage({ src, alt })}
               />
             ))}
           </div>
@@ -257,6 +275,12 @@ export default function ProductsPage() {
       {orderNumber && (
         <OrderSuccess orderNumber={orderNumber} onReturn={handleReturnHome} />
       )}
+      <ImageViewer
+        open={Boolean(viewerImage)}
+        src={viewerImage?.src || ""}
+        alt={viewerImage?.alt || ""}
+        onClose={() => setViewerImage(null)}
+      />
     </div>
   );
 }

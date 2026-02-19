@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Package, ShoppingBag } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useThumbVersion } from "@/hooks/useThumbVersion";
 import { useI18n } from "@/contexts/LangContext";
 
@@ -12,6 +12,7 @@ type CategoryCardProps = {
   description: string;
   isViewAll?: boolean;
   onClick: (categoryId: number | null) => void;
+  onImageClick?: (imageSrc: string, alt: string) => void;
 };
 
 export default function CategoryCard({
@@ -20,8 +21,11 @@ export default function CategoryCard({
   description,
   isViewAll = false,
   onClick,
+  onImageClick,
 }: CategoryCardProps) {
   const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState("");
+  const [hasLoadedThumbnail, setHasLoadedThumbnail] = useState(false);
   const v = useThumbVersion();
   const { t } = useI18n();
 
@@ -34,17 +38,38 @@ export default function CategoryCard({
   // Prefer modern formats first
   const exts = [".avif", ".webp", ".jpg", ".jpeg", ".png"];
 
+  useEffect(() => {
+    if (base) {
+      setImageError(false);
+      setImageSrc(`${base}${exts[0]}?v=${v}`);
+      setHasLoadedThumbnail(false);
+    } else {
+      setImageSrc("");
+      setHasLoadedThumbnail(false);
+    }
+  }, [base, v]);
+
   function fallback(img: HTMLImageElement) {
     // rotate through extensions until one exists; show placeholder if none
     const tried = img.src.split("?")[0];
     const ext = tried.slice(tried.lastIndexOf("."));
     const next = exts[exts.indexOf(ext) + 1];
     if (next) {
-      img.src = `${base}${next}?v=${v}`;
+      const nextSrc = `${base}${next}?v=${v}`;
+      img.src = nextSrc;
+      setImageSrc(nextSrc);
     } else {
       setImageError(true);
+      setHasLoadedThumbnail(false);
     }
   }
+
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isViewAll && !imageError && imageSrc && hasLoadedThumbnail) {
+      onImageClick?.(imageSrc, name);
+    }
+  };
 
   return (
     <Card
@@ -53,7 +78,12 @@ export default function CategoryCard({
     >
       <CardContent className="p-0 h-full flex flex-col">
         {/* Image Section */}
-        <div className="relative flex-1 bg-gray-50 overflow-hidden category-image">
+        <div
+          className={`relative flex-1 bg-gray-50 overflow-hidden category-image ${
+            !isViewAll ? "cursor-zoom-in" : ""
+          }`}
+          onClick={handleImageClick}
+        >
           {isViewAll ? (
             // View All Design
             <div className="absolute inset-0 bg-gradient-to-br from-[#3da874] to-[#2d7a5f] flex items-center justify-center">
@@ -69,9 +99,13 @@ export default function CategoryCard({
             <>
               {!imageError && base ? (
                 <img
-                  src={`${base}${exts[0]}?v=${v}`}
+                  src={imageSrc}
                   alt={name}
                   onError={(e) => fallback(e.currentTarget)}
+                  onLoad={(e) => {
+                    setImageSrc(e.currentTarget.currentSrc || e.currentTarget.src);
+                    setHasLoadedThumbnail(true);
+                  }}
                   className="absolute inset-0 h-full w-full object-cover select-none"
                   draggable={false}
                 />
