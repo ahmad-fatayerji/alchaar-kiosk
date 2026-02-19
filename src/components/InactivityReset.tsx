@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 /*
  * InactivityReset
  * Listens for user interaction (pointer/keyboard/touch) and if no interaction
- * occurs for IDLE_MS, resets the cart and returns user to home page.
+ * occurs for IDLE_MS, resets the cart and returns user to browse page.
  * Skips behavior on /admin routes and /orders (admin management pages).
  */
 const DEFAULT_IDLE_MS = 60_000; // fallback
@@ -68,8 +68,8 @@ export default function InactivityReset() {
         if (!disabled) {
           clearCart();
           setCartOpen(false);
-          // Navigate home unless already there
-          if (pathname !== "/") router.push("/");
+          // Navigate to browse unless already there
+          if (pathname !== "/browse") router.push("/browse");
         }
       }, idleMs);
     }

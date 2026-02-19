@@ -40,7 +40,7 @@ export default function ProductsPage() {
     timeoutMs: idleTimeoutSeconds * 1000,
     enabled: idleTimeoutSeconds > 0,
     onTimeout: () => {
-      window.location.href = "/";
+      window.location.href = "/browse";
     },
   });
 
@@ -158,7 +158,7 @@ export default function ProductsPage() {
   };
 
   const handleReturnHome = () => {
-    window.location.href = "/";
+    window.location.href = "/browse";
   };
 
   if (loading) {

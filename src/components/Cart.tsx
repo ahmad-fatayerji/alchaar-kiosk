@@ -292,12 +292,14 @@ export default function Cart({ onCheckout }: CartProps) {
   };
 
   if (!state.isOpen) {
-    const isProductsPage =
-      pathname === "/products" || pathname?.startsWith("/category/");
+    const isShopperPage =
+      pathname === "/browse" ||
+      pathname === "/products" ||
+      pathname?.startsWith("/category/");
     const currentSide = fabDock?.side ?? "left";
     // Anchored bottom-left; disable drag logic while preserving previous code for possible revert
     const dockedStyle =
-      fabDock && !isDragging && !isProductsPage
+      fabDock && !isDragging && !isShopperPage
         ? {
             top: `${fabDock.y}px`,
             bottom: "auto",

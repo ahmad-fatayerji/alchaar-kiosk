@@ -76,7 +76,7 @@ export default function CategoryPage() {
     timeoutMs: idleTimeoutSeconds * 1000,
     enabled: idleTimeoutSeconds > 0,
     onTimeout: () => {
-      window.location.href = "/";
+      window.location.href = "/browse";
     },
   });
 
@@ -264,7 +264,7 @@ export default function CategoryPage() {
   };
 
   const handleReturnHome = () => {
-    window.location.href = "/";
+    window.location.href = "/browse";
   };
 
   const handleSubcategoryClick = (subcategoryId: number | null) => {

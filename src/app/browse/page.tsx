@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useI18n } from "@/contexts/LangContext";
 import { useKioskSettings } from "@/hooks/useKioskSettings";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
@@ -21,14 +22,14 @@ export default function BrowsePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const { t, lang } = useI18n();
+  const { t, lang, setLang } = useI18n();
   const { idleTimeoutSeconds } = useKioskSettings();
 
   useIdleTimeout({
     timeoutMs: idleTimeoutSeconds * 1000,
     enabled: idleTimeoutSeconds > 0,
     onTimeout: () => {
-      window.location.href = "/";
+      window.location.href = "/browse";
     },
   });
 
@@ -91,15 +92,62 @@ export default function BrowsePage() {
   }
 
   return (
-    <div className="kiosk-viewport browse-page min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 flex flex-col">
+    <div className="kiosk-viewport browse-page relative min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 flex flex-col">
+      <div className="browse-top-logo-wrap pointer-events-none" aria-hidden>
+        <Image
+          src="/logo.svg"
+          alt=""
+          width={560}
+          height={220}
+          priority
+          className="browse-top-logo object-contain"
+        />
+      </div>
+
       <div className="flex-grow">
+        <div className="container mx-auto px-6 pt-6 pb-2 kiosk-text">
+          <div className="flex items-center justify-between gap-4">
+            <Image
+              src="/logo.svg"
+              alt="Al-Chaar Pharmacy logo"
+              width={220}
+              height={88}
+              priority
+              className="browse-inline-logo h-14 w-auto object-contain"
+            />
+          </div>
+        </div>
+
         {/* Hero Section (original positioning) */}
-        <div className="container mx-auto px-6 py-12 text-center kiosk-text">
-          <div className="max-w-2xl mx-auto">
+        <div className="container mx-auto px-6 py-8 text-center kiosk-text">
+          <div className="w-full grid grid-cols-[1fr_auto_1fr] items-start gap-3">
+            <div />
             <h2 className="kiosk-title text-3xl font-bold text-gray-800 mb-4">
               {t("browse_subcategories")}
             </h2>
-            <p className="text-gray-700 leading-relaxed text-lg">
+            <div className="justify-self-end flex items-center gap-2">
+              {(["en", "ar"] as const).map((code) => (
+                <button
+                  key={code}
+                  aria-label={code === "en" ? "English" : "Arabic"}
+                  aria-pressed={lang === code}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLang(code);
+                  }}
+                  className={`px-3 h-10 rounded-xl border-2 font-semibold tracking-wide transition-colors text-sm kiosk-portrait:h-[5.8rem] kiosk-portrait:text-[1.8rem] kiosk-portrait:px-7 kiosk-portrait:rounded-[1.6rem] ${
+                    lang === code
+                      ? "bg-[#3da874] text-white border-[#3da874] shadow"
+                      : "bg-white text-[#3da874] border-[#3da874] hover:bg-green-50"
+                  }`}
+                >
+                  {code.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="max-w-2xl mx-auto">
+            <p className="text-gray-700 leading-relaxed text-lg -mt-1">
               {t("select_category")}
             </p>
           </div>

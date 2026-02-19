@@ -760,3 +760,54 @@ html[data-kiosk-home] .kiosk-home-hint,
   padding-top: 2.5rem !important;
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2.5rem) !important;
 }
+
+/* Browse page: place a larger logo in the upper non-reachable safe band */
+.browse-page .browse-top-logo-wrap {
+  display: none !important;
+  position: absolute;
+  top: clamp(
+    1.25rem,
+    calc((var(--kiosk-vertical-offset) + env(safe-area-inset-top, 0px)) / 2),
+    14vh
+  );
+  margin-top: 1rem;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+.browse-page .browse-top-logo {
+  width: clamp(280px, 40vw, 620px);
+  height: auto;
+  opacity: 0.98;
+}
+.browse-page .browse-inline-logo {
+  display: block !important;
+}
+
+/* Tall portrait kiosks: use top centered logo only */
+@media (orientation: portrait) and (min-height: 1200px) {
+  .browse-page .browse-top-logo-wrap {
+    display: block !important;
+    top: calc(
+      (var(--kiosk-vertical-offset) + env(safe-area-inset-top, 0px)) / 2
+    );
+  }
+  .browse-page .browse-top-logo {
+    width: clamp(540px, 48vw, 980px);
+  }
+  .browse-page .browse-inline-logo {
+    display: none !important;
+  }
+}
+
+/* Forced kiosk mode (html.kiosk-portrait): same behavior as tall portrait */
+.kiosk-portrait .browse-page .browse-top-logo-wrap {
+  display: block !important;
+  top: calc((var(--kiosk-vertical-offset) + env(safe-area-inset-top, 0px)) / 2);
+}
+.kiosk-portrait .browse-page .browse-top-logo {
+  width: clamp(540px, 48vw, 980px);
+}
+.kiosk-portrait .browse-page .browse-inline-logo {
+  display: none !important;
+}

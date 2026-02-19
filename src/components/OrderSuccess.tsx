@@ -65,14 +65,14 @@ export default function OrderSuccess({
           {/* Countdown */}
           <div className="text-center">
             <p className="text-sm text-gray-500 mb-3">
-              Returning to home screen in {countdown} seconds...
+              Returning to browse screen in {countdown} seconds...
             </p>
             <Button
               onClick={onReturn}
               variant="outline"
               className="text-[#3da874] border-[#3da874] hover:bg-[#3da874] hover:text-white"
             >
-              Return to Home
+              Return to Browse
             </Button>
           </div>
         </CardContent>

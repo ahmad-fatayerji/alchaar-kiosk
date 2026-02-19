@@ -34,7 +34,7 @@ Next.js 15, React 19, TypeScript, Tailwind CSS v4, Prisma, Postgres, Docker/Comp
 3. Copy `.env.example` to `.env` and set:
    - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
    - Optional `DATABASE_URL` (otherwise entrypoint builds one from PG vars)
-   - UI flags: `NEXT_PUBLIC_HIDE_PRICES`, `NEXT_PUBLIC_SALES_ENABLED`, `NEXT_PUBLIC_HIDE_STOCK`, `NEXT_PUBLIC_ADMIN_PASS`
+   - UI flags: `NEXT_PUBLIC_HIDE_PRICES`, `NEXT_PUBLIC_SALES_ENABLED`, `NEXT_PUBLIC_HIDE_STOCK`, `NEXT_PUBLIC_ADMIN_PASS`, `NEXT_PUBLIC_ENABLE_ROOT_PAGE` (optional, defaults to disabled; when disabled `/` redirects to `/browse`)
 4. Place product images (if any) in `public/products/`.
 5. Deploy:
 
