@@ -156,7 +156,7 @@ function Show-Logs([string]$envFile) {
     }
 }
 
-function Start-Stack([string]$envFile) { Ensure-Docker; Run-Compose $envFile @('up', '-d') }
+function Start-Stack([string]$envFile) { Ensure-Docker; Run-Compose $envFile @('up', '-d', '--no-build') }
 
 function Stop-Stack([string]$envFile) { Ensure-Docker; Run-Compose $envFile @('down') }
 
