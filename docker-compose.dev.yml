@@ -12,6 +12,7 @@ services:
       - "${DEV_POSTGRES_PORT:-5432}:5432"
     volumes:
       - dev_dbdata:/var/lib/postgresql/data
+      - dev_backups:/backups
     healthcheck:
       test:
         [
@@ -24,3 +25,4 @@ services:
 
 volumes:
   dev_dbdata: {}
+  dev_backups: {}
