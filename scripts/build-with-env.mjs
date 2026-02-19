@@ -92,6 +92,7 @@ if (taskArg === "build") {
 } else if (taskArg === "start") {
   run(nextBin, ["start"], env);
 } else if (taskArg === "dev") {
+  run(prismaBin, ["migrate", "deploy"], env);
   run(prismaBin, ["generate"], env);
   run(nextBin, ["dev"], env);
 } else {
