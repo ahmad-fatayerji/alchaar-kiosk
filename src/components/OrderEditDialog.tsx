@@ -22,7 +22,7 @@ type OrderItem = {
 
 type Order = {
   id: number;
-  orderNumber: string;
+  orderNumber: string | null;
   createdAt: string;
   isFulfilled: boolean;
   isCancelled: boolean;
