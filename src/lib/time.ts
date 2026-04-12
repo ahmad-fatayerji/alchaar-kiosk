@@ -10,6 +10,11 @@ export function todayInLebanonYMD(): string {
     return formatInTimeZone(new Date(), LEBANON_TZ, "yyyy-MM-dd");
 }
 
+export function ymdInLebanon(date: Date | string | number): string {
+    const d = typeof date === "string" || typeof date === "number" ? new Date(date) : date;
+    return formatInTimeZone(d, LEBANON_TZ, "yyyy-MM-dd");
+}
+
 // Given a YYYY-MM-DD understood in Lebanon local time,
 // return the UTC start and end Date objects covering that local day.
 export function lebanonDayToUtcRange(ymd: string): { start: Date; end: Date } {
