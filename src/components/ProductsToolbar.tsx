@@ -21,14 +21,26 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { useMessages } from "@/contexts/MessageContext";
+
+type Category = { id: number; name: string };
+type ExportOptions = { categoryId?: number };
 
 type Props = {
   search: string;
   onSearch(v: string): void;
   onNew(): void;
   onBulk(files: FileList): void;
-  onExport(): void;
+  onExport(options?: ExportOptions): void;
+  categories: Category[];
   onImported?(): void; // optional refresh callback after import
   onBulkDelete(): void;
   onBulkAssignClick(): void;
@@ -45,6 +57,7 @@ export default function ProductsToolbar({
   onNew,
   onBulk,
   onExport,
+  categories,
   onBulkDelete,
   onBulkAssignClick,
   onBulkSaleClick,
@@ -66,6 +79,10 @@ export default function ProductsToolbar({
   const [conflictOpen, setConflictOpen] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportMode, setExportMode] = useState<"all" | "category">("all");
+  const [exportCategoryId, setExportCategoryId] = useState("");
+  const [exportCategorySearch, setExportCategorySearch] = useState("");
   const { notify } = useMessages();
 
   async function runImport(
@@ -134,6 +151,17 @@ export default function ProductsToolbar({
     setTimeout(() => URL.revokeObjectURL(url), 3000);
   }
 
+  function runExport() {
+    if (exportMode === "category") {
+      const categoryId = Number(exportCategoryId);
+      if (!Number.isFinite(categoryId)) return;
+      onExport({ categoryId });
+    } else {
+      onExport();
+    }
+    setExportOpen(false);
+  }
+
   // Load sales enabled setting
   useEffect(() => {
     fetch("/api/settings")
@@ -145,6 +173,15 @@ export default function ProductsToolbar({
         setSalesEnabled(true); // Default to enabled if can't load
       });
   }, []);
+
+  const filteredExportCategories = categories.filter((category) =>
+    category.name
+      .toLowerCase()
+      .includes(exportCategorySearch.trim().toLowerCase())
+  );
+  const selectedExportCategory = categories.find(
+    (category) => category.id.toString() === exportCategoryId
+  );
 
   return (
     <div className="products-toolbar mb-6 flex flex-wrap items-center justify-between gap-4 p-4 bg-muted/30 rounded-lg border">
@@ -203,7 +240,7 @@ export default function ProductsToolbar({
         <Button
           variant="outline"
           size="sm"
-          onClick={onExport}
+          onClick={() => setExportOpen(true)}
           disabled={disabled}
         >
           <FileDown className="mr-1.5 h-4 w-4" />
@@ -293,6 +330,95 @@ export default function ProductsToolbar({
           New Product
         </Button>
       </div>
+
+      {/* Export Dialog */}
+      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Export products</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Export</label>
+              <Select
+                value={exportMode}
+                onValueChange={(value) => {
+                  setExportMode(value as "all" | "category");
+                  setExportCategoryId("");
+                  setExportCategorySearch("");
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Everything</SelectItem>
+                  <SelectItem value="category">Selected category</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {exportMode === "category" && (
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Category</label>
+                <Input
+                  value={exportCategorySearch}
+                  onChange={(event) =>
+                    setExportCategorySearch(event.target.value)
+                  }
+                  placeholder="Search categories"
+                />
+                <div className="max-h-64 overflow-y-auto rounded-md border">
+                  {filteredExportCategories.map((category) => {
+                    const selected = category.id.toString() === exportCategoryId;
+                    return (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() =>
+                          setExportCategoryId(category.id.toString())
+                        }
+                        className={`flex w-full items-center px-3 py-2 text-left text-sm hover:bg-muted ${
+                          selected ? "bg-muted font-medium" : ""
+                        }`}
+                      >
+                        {category.name}
+                      </button>
+                    );
+                  })}
+                  {filteredExportCategories.length === 0 && (
+                    <div className="px-3 py-4 text-sm text-muted-foreground">
+                      No categories found
+                    </div>
+                  )}
+                </div>
+                {selectedExportCategory && (
+                  <div className="text-xs text-muted-foreground">
+                    Selected: {selectedExportCategory.name}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setExportOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={runExport}
+              disabled={
+                disabled ||
+                (exportMode === "category" && !exportCategoryId)
+              }
+            >
+              <FileDown className="mr-1.5 h-4 w-4" />
+              Export
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Import Report Dialog */}
       <Dialog open={importOpen} onOpenChange={(o) => setImportOpen(o)}>

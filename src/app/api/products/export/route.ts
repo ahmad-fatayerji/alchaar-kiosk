@@ -4,14 +4,23 @@ import type { Prisma } from "@prisma/client";
 import * as XLSX from "xlsx";
 
 /* GET /api/products/export
-   Streams an Excel file with all products. */
-export async function GET() {
+   Streams an Excel file with products, optionally filtered by category. */
+export async function GET(req: Request) {
+    const { searchParams } = new URL(req.url);
+    const catParam = searchParams.get("cat");
+    const where: Prisma.ProductWhereInput = {};
+
+    if (catParam && /^\d+$/.test(catParam)) {
+        where.categoryId = Number(catParam);
+    }
+
     const rows: Array<{
         barcode: bigint;
         name: string;
         qtyInStock: number;
         price: Prisma.Decimal;
     }> = await prisma.product.findMany({
+        where,
         select: { barcode: true, name: true, qtyInStock: true, price: true },
         orderBy: { barcode: "asc" },
     });
@@ -37,9 +46,16 @@ export async function GET() {
         headers: {
             "Content-Type":
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "Content-Disposition": 'attachment; filename="products.xlsx"',
+            "Content-Disposition": `attachment; filename="${filenameForExport(
+                catParam
+            )}"`,
         },
     });
+}
+
+function filenameForExport(catParam: string | null) {
+    if (catParam && /^\d+$/.test(catParam)) return `products-category-${catParam}.xlsx`;
+    return "products.xlsx";
 }
 
 /* ensure Node runtime (needs Buffer) */

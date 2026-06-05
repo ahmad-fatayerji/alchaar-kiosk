@@ -98,8 +98,15 @@ export default function ProductsPanel() {
   }, []);
 
   /* ---------- export ---------- */
-  const exportAll = () => {
-    window.location.href = "/api/products/export";
+  const exportProducts = (options?: { categoryId?: number }) => {
+    const params = new URLSearchParams();
+    if (options?.categoryId != null) {
+      params.set("cat", String(options.categoryId));
+    }
+
+    window.location.href = `/api/products/export${
+      params.size ? `?${params.toString()}` : ""
+    }`;
   };
 
   /* ---------- bulk assign helper ---------- */
@@ -228,7 +235,8 @@ export default function ProductsPanel() {
         onSearch={setSearch}
         onNew={() => setEditing(null)}
         onBulk={bulkUpload}
-        onExport={exportAll}
+        onExport={exportProducts}
+        categories={sortedCats}
         onBulkDelete={() => bulkDelete([...selected])}
         onBulkAssignClick={() => setAssignOpen(true)}
         onBulkSaleClick={() => setSaleOpen(true)}
